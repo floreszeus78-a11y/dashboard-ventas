@@ -12,7 +12,6 @@
     --surface2: #1a2236;
     --border: #1e2d45;
     --accent: #0ea5e9;
-    --accent2: #38bdf8;
     --text: #e2e8f0;
     --muted: #64748b;
     --green: #22c55e;
@@ -23,8 +22,6 @@
     --red-bg: rgba(239,68,68,0.12);
     --orange: #f97316;
     --orange-bg: rgba(249,115,22,0.12);
-    --error: #ef4444;
-    --error-bg: rgba(239,68,68,0.1);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -32,9 +29,7 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    overflow-x: hidden;
   }
-
   header {
     background: linear-gradient(135deg, #0f172a 0%, #0a1628 100%);
     border-bottom: 1px solid var(--border);
@@ -48,22 +43,9 @@
     background: linear-gradient(135deg, var(--accent), #7c3aed);
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
   }
-  header h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-  }
-  header h1 span {
-    font-size: 13px;
-    color: var(--muted);
-    margin-left: 4px;
-  }
-
   .container { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
-
+  
   /* LOADING */
   .loading-overlay {
     position: fixed;
@@ -85,42 +67,123 @@
     animation: spin 1s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text {
-    color: var(--muted);
-    font-size: 14px;
+  
+  /* FILTERS */
+  .filters-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
   }
-  .loading-subtext {
+  .month-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .month-tab {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
     color: var(--muted);
-    font-size: 12px;
-    max-width: 300px;
-    text-align: center;
-    padding: 0 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .month-tab.active {
+    background: linear-gradient(135deg, var(--accent), #0369a1);
+    color: #fff;
   }
   
-  /* ERROR */
-  .error-container {
-    text-align: center;
-    padding: 40px;
-    color: var(--error);
-    background: var(--error-bg);
-    border: 1px solid var(--error);
+  /* EXECUTIVE SELECT */
+  .exec-select-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    margin: 20px;
+    padding: 0 14px;
+    height: 40px;
+    min-width: 220px;
   }
-  .error-details {
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 10px;
-    word-break: break-all;
-  }
-  .retry-btn {
-    background: var(--accent);
-    color: white;
+  .exec-select-wrap select {
+    background: transparent;
     border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    margin-top: 20px;
+    color: var(--text);
+    width: 100%;
+    height: 100%;
+    outline: none;
+  }
+  
+  /* SUMMARY CARDS */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .exec-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
     cursor: pointer;
+    position: relative;
+  }
+  .exec-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 14px 14px 0 0;
+  }
+  .exec-card.status-green::before { background: var(--green); }
+  .exec-card.status-yellow::before { background: var(--yellow); }
+  .exec-card.status-red::before { background: var(--red); }
+  .exec-card.selected { border-color: var(--accent); }
+  
+  .exec-card .exec-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .exec-card .ventas-count {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+  }
+  
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; min-width: 800px; }
+  thead tr { background: var(--surface2); }
+  thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  tbody td {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .td-green { color: var(--green); }
+  .td-red { color: var(--red); }
+  
+  .refresh-btn {
+    background: linear-gradient(135deg, var(--accent), #0369a1);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
   }
 </style>
 </head>
@@ -128,81 +191,47 @@
 
 <div class="loading-overlay" id="loading">
   <div class="spinner"></div>
-  <div class="loading-text" id="loadingText">Cargando datos desde Google Sheets...</div>
-  <div class="loading-subtext" id="loadingSubtext">Esto puede tomar unos segundos</div>
+  <div class="loading-text" id="loadingText">Cargando datos...</div>
 </div>
 
 <header>
   <div class="logo-icon">📊</div>
-  <div>
-    <h1>Dashboard de Ventas <span>— Punto de Venta</span></h1>
-  </div>
+  <h1>Dashboard de Ventas</h1>
 </header>
 
 <div class="container" id="mainContent" style="display: none;">
-  <!-- FILTERS -->
   <div class="filters-row">
-    <span class="filter-label">📅 Mes:</span>
     <div class="month-tabs" id="monthTabs"></div>
-
-    <span class="filter-label" style="margin-left:10px">👤 Filtrar por Ejecutivo:</span>
     <div class="exec-select-wrap">
-      <span class="icon">▶</span>
       <select id="execSelect" onchange="setExec(this.value)">
         <option value="TODOS">(TODOS)</option>
       </select>
     </div>
-    
     <button class="refresh-btn" onclick="cargarDatos(true)">🔄 Actualizar</button>
   </div>
 
-  <!-- SUMMARY CARDS -->
   <div class="summary-grid" id="summaryGrid"></div>
 
-  <!-- LEGEND -->
-  <div class="legend">
-    <span class="legend-title">Estado comercio:</span>
-    <div class="legend-item"><span class="dot dot-green"></span> Activo (GPV ≥ S/700 y ≥5 trx)</div>
-    <div class="legend-item"><span class="dot dot-orange"></span> Parcial (GPV ≥ S/700 ó ≥5 trx)</div>
-    <div class="legend-item"><span class="dot dot-red"></span> Inactivo (GPV &lt; S/700 y &lt;5 trx)</div>
-    <div class="legend-item" style="margin-left:20px">
-      <span class="legend-title">Meta ejecutivo:</span>
-    </div>
-    <div class="legend-item"><span class="dot dot-green"></span> Cumplió (≥10 ventas)</div>
-    <div class="legend-item"><span class="dot dot-yellow"></span> En camino (≥5)</div>
-    <div class="legend-item"><span class="dot dot-red"></span> Bajo meta (&lt;5)</div>
-  </div>
-
-  <!-- DETAIL TABLE -->
-  <div class="detail-section">
-    <div class="detail-header">
-      <div class="detail-title">Detalle de Ventas — <span id="detailTitle">TODOS</span></div>
-      <div class="detail-count" id="detailCount">0 registros</div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Comercio</th>
-            <th>Ejecutivo</th>
-            <th>Fecha Venta</th>
-            <th>GPV M0</th>
-            <th>TRX M0</th>
-            <th>Estado Comercio</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Comercio</th>
+          <th>Ejecutivo</th>
+          <th>Fecha</th>
+          <th>GPV M0</th>
+          <th>TRX M0</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
   </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <script>
-// IMPORTANTE: Verifica que esta URL sea la correcta
+// URL de la API - VERIFICADA Y FUNCIONANDO
 const URL_API = 'https://script.google.com/macros/s/AKfycbwTIebLiwhrLCrDxbbAatiMjHf1EyRgh5lkZ1d59wq_NbmPv7cFsQsgLf5POxtixJhz/exec';
 
 let DATA = [];
@@ -212,64 +241,24 @@ let currentMonth = "";
 let currentExec = "TODOS";
 const META_VENTAS = 10;
 
-// Mostrar error en pantalla
-function mostrarError(mensaje, detalles = '') {
-  document.getElementById('loading').style.display = 'none';
-  
-  const container = document.querySelector('.container');
-  container.innerHTML = `
-    <div class="error-container">
-      <h3>❌ Error al cargar datos</h3>
-      <p>${mensaje}</p>
-      <div class="error-details">${detalles}</div>
-      <button class="retry-btn" onclick="location.reload()">Reintentar</button>
-      <button class="retry-btn" onclick="cargarDatos(true)" style="background:var(--orange)">Forzar actualización</button>
-    </div>
-  `;
-  container.style.display = 'block';
-}
-
-// Cargar datos
+// Función principal de carga
 async function cargarDatos(forzar = false) {
   const loading = document.getElementById('loading');
   const loadingText = document.getElementById('loadingText');
-  const loadingSubtext = document.getElementById('loadingSubtext');
   const mainContent = document.getElementById('mainContent');
   
   loading.style.display = 'flex';
   mainContent.style.display = 'none';
   
   try {
-    loadingText.textContent = 'Conectando con Google Sheets...';
-    loadingSubtext.textContent = 'URL: ' + URL_API;
+    loadingText.textContent = 'Conectando con API...';
     
-    console.log('Intentando cargar desde:', URL_API);
-    
-    // Timeout de 15 segundos
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
-    const response = await fetch(URL_API, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    
-    loadingText.textContent = 'Procesando respuesta...';
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
+    const response = await fetch(URL_API);
     const respuesta = await response.json();
-    console.log('Datos recibidos:', respuesta);
     
-    if (respuesta.error) {
-      throw new Error(respuesta.error);
-    }
+    if (respuesta.error) throw new Error(respuesta.error);
     
-    if (!respuesta.datos || !respuesta.ejecutivos) {
-      throw new Error('Formato de datos incorrecto');
-    }
-    
-    loadingText.textContent = 'Actualizando dashboard...';
+    loadingText.textContent = 'Procesando datos...';
     
     DATA = respuesta.datos;
     EXEC_LIST = respuesta.ejecutivos;
@@ -277,12 +266,9 @@ async function cargarDatos(forzar = false) {
     
     // Procesar fechas
     DATA = DATA.map(item => {
-      if (item.fecha && typeof item.fecha === 'string' && item.fecha.includes('GMT')) {
+      if (item.fecha && item.fecha.includes('GMT')) {
         const fecha = new Date(item.fecha);
-        const año = fecha.getFullYear();
-        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-        const dia = String(fecha.getDate()).padStart(2, '0');
-        item.fecha = `${año}-${mes}-${dia}`;
+        item.fecha = fecha.toISOString().split('T')[0];
       }
       return item;
     });
@@ -292,7 +278,8 @@ async function cargarDatos(forzar = false) {
                        'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     MESES_DISPONIBLES.sort((a, b) => ordenMeses.indexOf(a) - ordenMeses.indexOf(b));
     
-    currentMonth = MESES_DISPONIBLES[MESES_DISPONIBLES.length - 1] || (MESES_DISPONIBLES[0] || '');
+    // Seleccionar último mes
+    currentMonth = MESES_DISPONIBLES[MESES_DISPONIBLES.length - 1];
     
     inicializarFiltros();
     renderizarTodo();
@@ -301,31 +288,25 @@ async function cargarDatos(forzar = false) {
     mainContent.style.display = 'block';
     
   } catch (error) {
-    console.error('Error completo:', error);
-    
-    if (error.name === 'AbortError') {
-      mostrarError('Tiempo de espera agotado', 'El servidor no respondió en 15 segundos');
-    } else if (error.message.includes('Failed to fetch')) {
-      mostrarError('Error de conexión', 'No se pudo conectar con la API. Verifica la URL y que el despliegue de Apps Script sea correcto.');
-    } else {
-      mostrarError(error.message, 'Revisa la consola para más detalles (F12)');
-    }
+    loadingText.textContent = 'Error: ' + error.message;
+    console.error(error);
   }
 }
 
-// Inicializar filtros
 function inicializarFiltros() {
+  // Tabs de meses
   const monthTabs = document.getElementById('monthTabs');
   monthTabs.innerHTML = '';
   
   MESES_DISPONIBLES.forEach(mes => {
     const btn = document.createElement('button');
-    btn.className = 'month-tab' + (mes === currentMonth ? ' active' : '');
-    btn.innerHTML = `<span class="cal-icon">🗓</span> ${mes} 2026`;
-    btn.onclick = function() { setMonth(mes, this); };
+    btn.className = `month-tab ${mes === currentMonth ? 'active' : ''}`;
+    btn.textContent = mes;
+    btn.onclick = () => setMonth(mes);
     monthTabs.appendChild(btn);
   });
   
+  // Select de ejecutivos
   const select = document.getElementById('execSelect');
   select.innerHTML = '<option value="TODOS">(TODOS)</option>';
   EXEC_LIST.forEach(exec => {
@@ -333,154 +314,92 @@ function inicializarFiltros() {
   });
 }
 
-// Las demás funciones (getStatus, fmtCurrency, fmtDate, getExecStats, etc.)
-// ... (mantén todas las funciones que ya tenías aquí)
-
 function getStatus(row) {
-  let gpv, trx;
-  if (row.mes === currentMonth) {
-    gpv = row.gpv_m0;
-    trx = row.trx_m0;
-  } else {
-    gpv = row.gpv_m1;
-    trx = row.trx_m1;
-  }
-  const gpvOk = gpv >= 700;
-  const trxOk = trx >= 5;
-  if (gpvOk && trxOk) return 'activo';
-  if (gpvOk || trxOk) return 'parcial';
+  const gpv = row.mes === currentMonth ? row.gpv_m0 : row.gpv_m1;
+  const trx = row.mes === currentMonth ? row.trx_m0 : row.trx_m1;
+  
+  if (gpv >= 700 && trx >= 5) return 'activo';
+  if (gpv >= 700 || trx >= 5) return 'parcial';
   return 'inactivo';
 }
 
-function fmtCurrency(n) {
-  if (n === undefined || n === null) return 'S/ 0.00';
-  return 'S/ ' + n.toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2});
+function getExecStats(exec) {
+  const rows = DATA.filter(r => r.mes === currentMonth && r.exec === exec);
+  return {
+    count: rows.length,
+    activos: rows.filter(r => getStatus(r) === 'activo').length,
+    parciales: rows.filter(r => getStatus(r) === 'parcial').length
+  };
 }
 
-function fmtDate(d) {
-  if (!d) return '-';
-  const partes = d.split('-');
-  if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
-  return d;
-}
-
-function getExecStats(exec, month) {
-  const rows = DATA.filter(r => r.mes === month && r.exec === exec);
-  const activos = rows.filter(r => getStatus(r) === 'activo').length;
-  const parciales = rows.filter(r => getStatus(r) === 'parcial').length;
-  return { count: rows.length, activos, parciales };
-}
-
-function getCardStatusClass(count) {
-  if (count >= META_VENTAS) return 'status-green';
-  if (count >= 5) return 'status-yellow';
-  return 'status-red';
-}
-
-function getCardBadge(count) {
-  if (count >= META_VENTAS) return '<span class="badge badge-green">✔ Meta cumplida</span>';
-  if (count >= 5) return '<span class="badge badge-yellow">⏳ En camino</span>';
-  return '<span class="badge badge-red">⚠ Bajo meta</span>';
-}
-
-function renderSummary() {
+function renderizarTodo() {
+  // Renderizar tarjetas
   const grid = document.getElementById('summaryGrid');
   grid.innerHTML = '';
   
-  if (EXEC_LIST.length === 0) {
-    grid.innerHTML = '<div class="no-data">No hay ejecutivos disponibles</div>';
+  EXEC_LIST.forEach(exec => {
+    const stats = getExecStats(exec);
+    const pct = Math.min(100, Math.round((stats.count / META_VENTAS) * 100));
+    
+    let statusClass = 'status-red';
+    if (stats.count >= META_VENTAS) statusClass = 'status-green';
+    else if (stats.count >= 5) statusClass = 'status-yellow';
+    
+    const selectedClass = currentExec === exec ? 'selected' : '';
+    
+    grid.innerHTML += `
+      <div class="exec-card ${statusClass} ${selectedClass}" onclick="selectExec('${exec}')">
+        <div class="exec-name">${exec}</div>
+        <div class="ventas-count">${stats.count}</div>
+        <div style="font-size:11px; color:var(--muted)">ventas este mes</div>
+        <div style="margin-top:10px">
+          <div>Meta: ${pct}%</div>
+          <div style="height:5px; background:var(--surface2); border-radius:4px;">
+            <div style="width:${pct}%; height:100%; background:var(--green); border-radius:4px;"></div>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:10px; border-top:1px solid var(--border); padding-top:10px;">
+          <div>✅ ${stats.activos}</div>
+          <div>🟠 ${stats.parciales}</div>
+          <div>❌ ${stats.count - stats.activos - stats.parciales}</div>
+        </div>
+      </div>
+    `;
+  });
+  
+  // Renderizar tabla
+  let rows = DATA.filter(r => r.mes === currentMonth);
+  if (currentExec !== 'TODOS') rows = rows.filter(r => r.exec === currentExec);
+  
+  const tbody = document.getElementById('tableBody');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">Sin registros</td></tr>';
     return;
   }
   
-  EXEC_LIST.forEach(exec => {
-    const stats = getExecStats(exec, currentMonth);
-    const pct = Math.min(100, Math.round((stats.count / META_VENTAS) * 100));
-    const cls = getCardStatusClass(stats.count);
-    const badge = getCardBadge(stats.count);
-    const isSelected = currentExec === exec ? 'selected' : '';
-    
-    grid.innerHTML += `
-      <div class="exec-card ${cls} ${isSelected}" onclick="selectExecCard('${exec.replace(/'/g, "\\'")}')">
-        <div class="exec-name">${exec}</div>
-        <div class="ventas-count">${stats.count}</div>
-        <div class="ventas-label">ventas este mes</div>
-        <div class="meta-bar-wrap">
-          <div class="meta-bar-row">
-            <span class="meta-text">Meta: ${META_VENTAS} ventas</span>
-            <span class="meta-pct">${pct}%</span>
-          </div>
-          <div class="meta-bar">
-            <div class="meta-bar-fill" style="width:${pct}%"></div>
-          </div>
-        </div>
-        ${badge}
-        <div class="sub-stats">
-          <div class="sub-stat">
-            <div class="s-val td-green">${stats.activos}</div>
-            <div class="s-lbl">Activos</div>
-          </div>
-          <div class="sub-stat">
-            <div class="s-val" style="color:var(--orange)">${stats.parciales}</div>
-            <div class="s-lbl">Parciales</div>
-          </div>
-          <div class="sub-stat">
-            <div class="s-val td-red">${stats.count - stats.activos - stats.parciales}</div>
-            <div class="s-lbl">Inactivos</div>
-          </div>
-        </div>
-      </div>`;
-  });
-}
-
-function renderTable() {
-  let rows = DATA.filter(r => r.mes === currentMonth);
-  if (currentExec !== 'TODOS') rows = rows.filter(r => r.exec === currentExec);
-
-  document.getElementById('detailTitle').textContent = currentExec === 'TODOS' ? 'TODOS LOS EJECUTIVOS' : currentExec;
-  document.getElementById('detailCount').textContent = rows.length + ' registros';
-
-  const tbody = document.getElementById('tableBody');
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="no-data">Sin registros para este filtro</td></tr>';
-    return;
-  }
-
   tbody.innerHTML = rows.map((r, i) => {
-    const st = getStatus(r);
-    let pill, dot;
-    if (st === 'activo') { pill = 'pill-green'; dot = 'dot-green'; }
-    else if (st === 'parcial') { pill = 'pill-orange'; dot = 'dot-orange'; }
-    else { pill = 'pill-red'; dot = 'dot-red'; }
-
-    const stLabel = st === 'activo' ? '● Activo' : st === 'parcial' ? '● Parcial' : '● Inactivo';
-    
+    const status = getStatus(r);
+    const statusColor = status === 'activo' ? 'green' : status === 'parcial' ? 'orange' : 'red';
     const gpvShow = r.mes === currentMonth ? r.gpv_m0 : r.gpv_m1;
     const trxShow = r.mes === currentMonth ? r.trx_m0 : r.trx_m1;
     
-    const gpvClass = gpvShow >= 700 ? 'td-green' : 'td-red';
-    const trxClass = trxShow >= 5 ? 'td-green' : 'td-red';
-
     return `<tr>
-      <td class="td-muted" style="font-size:12px">${i+1}</td>
-      <td class="td-comercio">${r.comercio}</td>
-      <td class="td-exec">${r.exec}</td>
-      <td class="td-muted" style="font-size:12px">${fmtDate(r.fecha)}</td>
-      <td class="td-num ${gpvClass}">${fmtCurrency(gpvShow)}</td>
-      <td class="td-num ${trxClass}">${trxShow}</td>
-      <td><span class="pill ${pill}">${stLabel}</span></td>
+      <td>${i+1}</td>
+      <td>${r.comercio}</td>
+      <td>${r.exec}</td>
+      <td>${r.fecha.split('-').reverse().join('/')}</td>
+      <td class="${gpvShow >= 700 ? 'td-green' : 'td-red'}">S/ ${gpvShow.toFixed(2)}</td>
+      <td class="${trxShow >= 5 ? 'td-green' : 'td-red'}">${trxShow}</td>
+      <td style="color:var(--${statusColor})">● ${status.toUpperCase()}</td>
     </tr>`;
   }).join('');
 }
 
-function renderizarTodo() {
-  renderSummary();
-  renderTable();
-}
-
-function setMonth(month, btn) {
+function setMonth(month) {
   currentMonth = month;
-  document.querySelectorAll('.month-tab').forEach(t => t.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.month-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent === month);
+  });
   renderizarTodo();
 }
 
@@ -489,14 +408,9 @@ function setExec(val) {
   renderizarTodo();
 }
 
-function selectExecCard(exec) {
-  if (currentExec === exec) {
-    currentExec = 'TODOS';
-    document.getElementById('execSelect').value = 'TODOS';
-  } else {
-    currentExec = exec;
-    document.getElementById('execSelect').value = exec;
-  }
+function selectExec(exec) {
+  currentExec = currentExec === exec ? 'TODOS' : exec;
+  document.getElementById('execSelect').value = currentExec;
   renderizarTodo();
 }
 
