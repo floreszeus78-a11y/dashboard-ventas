@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Dashboard de Ventas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0a0e1a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f172a, #0a1628);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #1e2d45;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #0ea5e9, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            background: #1a2332;
+            color: white;
+            border: 1px solid #2d3a4f;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .kpi-card {
+            background: #111827;
+            border-radius: 15px;
+            padding: 20px 15px;
+            border: 1px solid #1e2d45;
+            text-align: center;
+        }
+
+        .kpi-card .label {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .kpi-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0ea5e9;
+            margin-top: 5px;
+        }
+
+        .kpi-card .subvalue {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .tabla-container {
+            background: #111827;
+            border-radius: 15px;
+            border: 1px solid #1e2d45;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th {
+            background: #0f172a;
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 15px 10px;
+            text-align: left;
+            border-bottom: 2px solid #1e2d45;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #1e2d45;
+            color: #e2e8f0;
+            font-size: 13px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .cargando {
+            text-align: center;
+            padding: 50px;
+            color: #64748b;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #1e2d45;
+            border-top-color: #0ea5e9;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #2d1a1a;
+            border: 1px solid #991b1b;
+            color: #fecaca;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            color: #4b5563;
+            font-size: 12px;
+            margin-top: 30px;
+        }
+
+        .refresh-btn {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .total-registros {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 10px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Dashboard de Ventas</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div id="ultimaActualizacion" style="color: #64748b; font-size: 12px;"></div>
+            <button class="refresh-btn" onclick="cargarDatos()">↻ Actualizar</button>
+        </div>
+    </div>
+
+    <div class="filtros">
+        <select id="filtroEjecutivo" onchange="aplicarFiltros()">
+            <option value="todos">Todos los ejecutivos</option>
+        </select>
+        <select id="filtroMes" onchange="aplicarFiltros()">
+            <option value="todos">Todos los meses</option>
+        </select>
+    </div>
+
+    <div id="contenido">
+        <div class="cargando">
+            <div class="spinner"></div>
+            <p>Cargando datos del dashboard...</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        Actualizado: <span id="fechaActualizacion"></span> | 
+        <span id="totalRegistros" class="total-registros"></span>
+    </div>
+
+    <script>
+        // IMPORTANTE: Esta es tu NUEVA URL de Apps Script que ya probamos
+        const URL_API = 'https://script.google.com/macros/s/AKfycbwTIebLiwhrLCrDxbbAatiMjHf1EyRgh5lkZ1d59wq_NbmPv7cFsQsgLf5POxtixJhz/exec';
+        
+        let datosOriginales = [];
+        let ejecutivos = [];
+        let meses = [];
+
+        async function cargarDatos() {
+            try {
+                document.getElementById('contenido').innerHTML = `
+                    <div class="cargando">
+                        <div class="spinner"></div>
+                        <p>Cargando datos del dashboard...</p>
+                    </div>
+                `;
+
+                // Usar JSONP para máxima compatibilidad
+                const datos = await fetchJSONP(URL_API);
+                
+                if (datos.error) {
+                    throw new Error(datos.error);
+                }
+
+                datosOriginales = datos.datos || [];
+                ejecutivos = datos.ejecutivos || [];
+                meses = datos.meses || [];
+
+                // Actualizar filtros
+                actualizarFiltros();
+                
+                // Renderizar tabla
+                aplicarFiltros();
+                
+                // Actualizar fecha
+                const ahora = new Date();
+                document.getElementById('fechaActualizacion').textContent = ahora.toLocaleDateString('es-ES') + ' ' + ahora.toLocaleTimeString('es-ES');
+                document.getElementById('ultimaActualizacion').textContent = `Última actualización: ${ahora.toLocaleString('es-ES')}`;
+                document.getElementById('totalRegistros').textContent = `Total registros: ${datosOriginales.length}`;
+
+            } catch (error) {
+                document.getElementById('contenido').innerHTML = `
+                    <div class="error">
+                        <strong>Error al cargar datos:</strong><br>
+                        ${error.message}<br><br>
+                        <button onclick="cargarDatos()" style="background:#0ea5e9; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">Reintentar</button>
+                    </div>
+                `;
+            }
+        }
+
+        function fetchJSONP(url) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                window[callbackName] = function(data) {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    resolve(data);
+                };
+
+                const script = document.createElement('script');
+                script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+                script.onerror = function() {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    reject(new Error('Error de conexión - verifica la URL'));
+                };
+                document.body.appendChild(script);
+
+                setTimeout(() => {
+                    reject(new Error('Tiempo de espera agotado'));
+                }, 10000);
+            });
+        }
+
+        function actualizarFiltros() {
+            const selectEjecutivo = document.getElementById('filtroEjecutivo');
+            const selectMes = document.getElementById('filtroMes');
+            
+            selectEjecutivo.innerHTML = '<option value="todos">Todos los ejecutivos</option>' + 
+                ejecutivos.map(e => `<option value="${e}">${e}</option>`).join('');
+            
+            selectMes.innerHTML = '<option value="todos">Todos los meses</option>' + 
+                meses.map(m => `<option value="${m}">${m}</option>`).join('');
+        }
+
+        function aplicarFiltros() {
+            const ejecutivo = document.getElementById('filtroEjecutivo').value;
+            const mes = document.getElementById('filtroMes').value;
+            
+            let datosFiltrados = datosOriginales;
+            
+            if (ejecutivo !== 'todos') {
+                datosFiltrados = datosFiltrados.filter(d => d.exec === ejecutivo);
+            }
+            
+            if (mes !== 'todos') {
+                datosFiltrados = datosFiltrados.filter(d => d.mes === mes);
+            }
+            
+            // Calcular KPIs
+            const totalGPV = datosFiltrados.reduce((sum, d) => sum + (d.gpv_m0 || 0), 0);
+            const totalTRX = datosFiltrados.reduce((sum, d) => sum + (d.trx_m0 || 0), 0);
+            const ticketPromedio = totalTRX > 0 ? (totalGPV / totalTRX) : 0;
+            
+            // Renderizar KPIs
+            const kpisHTML = `
+                <div class="kpis">
+                    <div class="kpi-card">
+                        <div class="label">GPV Total</div>
+                        <div class="value">${formatNumber(totalGPV)}</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="label">Transacciones</div>
+                        <div class="value">${formatNumber(totalTRX)}</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="label">Ticket Promedio</div>
+                        <div class="value">${formatNumber(ticketPromedio)}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Renderizar tabla
+            let tablaHTML = `
+                <div class="tabla-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Mes</th>
+                                <th>Ejecutivo</th>
+                                <th>Comercio</th>
+                                <th>GPV M0</th>
+                                <th>TRX M0</th>
+                                <th>GPV M1</th>
+                                <th>TRX M1</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            if (datosFiltrados.length === 0) {
+                tablaHTML += `<tr><td colspan="8" style="text-align: center; padding: 30px;">No hay datos para los filtros seleccionados</td></tr>`;
+            } else {
+                datosFiltrados.forEach(row => {
+                    // Formatear fecha
+                    let fechaMostrar = row.fecha || '';
+                    if (fechaMostrar.includes('GMT')) {
+                        const fecha = new Date(fechaMostrar);
+                        fechaMostrar = fecha.toLocaleDateString('es-ES');
+                    }
+                    
+                    tablaHTML += `
+                        <tr>
+                            <td>${fechaMostrar}</td>
+                            <td>${row.mes || ''}</td>
+                            <td>${row.exec || ''}</td>
+                            <td>${row.comercio || ''}</td>
+                            <td>${formatNumber(row.gpv_m0)}</td>
+                            <td>${formatNumber(row.trx_m0)}</td>
+                            <td>${formatNumber(row.gpv_m1)}</td>
+                            <td>${formatNumber(row.trx_m1)}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tablaHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            document.getElementById('contenido').innerHTML = kpisHTML + tablaHTML;
+        }
+
+        function formatNumber(num) {
+            if (num === undefined || num === null) return '0';
+            return new Intl.NumberFormat('es-ES', { 
+                minimumFractionDigits: 0, 
+                maximumFractionDigits: 0 
+            }).format(num);
+        }
+
+        // Cargar datos al iniciar
+        window.addEventListener('load', cargarDatos);
+    </script>
+</body>
+</html>
