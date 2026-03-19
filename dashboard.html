@@ -2,656 +2,338 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-<title>Dashboard de Ventas — Evolución por Ejecutivo</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Ventas - Punto de Venta</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ===== VARIABLES ===== */
+  :root {
+    --fondo: #0a0e1a;
+    --superficie: #111827;
+    --superficie2: #1e293b;
+    --borde: #1e2d45;
+    --acento: #0ea5e9;
+    --texto: #e2e8f0;
+    --texto-suave: #94a3b8;
+    --verde: #22c55e;
+    --verde-bg: rgba(34,197,94,0.15);
+    --rojo: #ef4444;
+    --rojo-bg: rgba(239,68,68,0.15);
+    --naranja: #f97316;
+    --naranja-bg: rgba(249,115,22,0.15);
+    --sombra: 0 4px 20px rgba(0,0,0,0.5);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   
-  :root {
-    --bg: #0a0e1a;
-    --bg-gradient: linear-gradient(135deg, #0f172a, #0a1628);
-    --surface: #111827;
-    --surface-hover: #1a2236;
-    --surface2: #1e293b;
-    --border: #1e2d45;
-    --border-hover: #2d3a4f;
-    --accent: #0ea5e9;
-    --accent-gradient: linear-gradient(135deg, #0ea5e9, #7c3aed);
-    --accent2: #38bdf8;
-    --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --muted: #64748b;
-    --green: #22c55e;
-    --green-bg: rgba(34,197,94,0.15);
-    --yellow: #eab308;
-    --yellow-bg: rgba(234,179,8,0.15);
-    --red: #ef4444;
-    --red-bg: rgba(239,68,68,0.15);
-    --orange: #f97316;
-    --orange-bg: rgba(249,115,22,0.15);
-    --blue: #0ea5e9;
-    --blue-bg: rgba(14,165,233,0.15);
-    --purple: #a855f7;
-    --purple-bg: rgba(168,85,247,0.15);
-    --card-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    --transition: all 0.3s ease;
-  }
-
-  body.light-theme {
-    --bg: #f3f4f6;
-    --bg-gradient: linear-gradient(135deg, #ffffff, #f3f4f6);
-    --surface: #ffffff;
-    --surface-hover: #f8fafc;
-    --surface2: #e2e8f0;
-    --border: #cbd5e1;
-    --border-hover: #94a3b8;
-    --accent: #0284c7;
-    --accent-gradient: linear-gradient(135deg, #0284c7, #7c3aed);
-    --accent2: #0ea5e9;
-    --text: #0f172a;
-    --text-muted: #334155;
-    --muted: #64748b;
-    --green: #059669;
-    --green-bg: rgba(5,150,105,0.1);
-    --yellow: #b45309;
-    --yellow-bg: rgba(180,83,9,0.1);
-    --red: #b91c1c;
-    --red-bg: rgba(185,28,28,0.1);
-    --orange: #c2410c;
-    --orange-bg: rgba(194,65,12,0.1);
-    --blue: #0284c7;
-    --blue-bg: rgba(2,132,199,0.1);
-    --purple: #9333ea;
-    --purple-bg: rgba(147,51,234,0.1);
-    --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-  }
-
   body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
     min-height: 100vh;
-    transition: background-color 0.3s, color 0.3s;
   }
 
-  /* HEADER */
-  .header {
-    background: var(--bg-gradient);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 32px;
+  /* ===== HEADER ===== */
+  .cabecera {
+    background: linear-gradient(135deg, #0f172a, #0a1628);
+    border-bottom: 1px solid var(--borde);
+    padding: 20px 32px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     flex-wrap: wrap;
     gap: 16px;
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: blur(10px);
   }
 
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .logo {
-    width: 48px;
-    height: 48px;
-    background: var(--accent-gradient);
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    box-shadow: 0 4px 15px rgba(14,165,233,0.3);
-  }
-
-  .header-title h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 24px;
+  .titulo h1 {
+    font-size: 28px;
     font-weight: 800;
-    background: var(--accent-gradient);
+    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
   }
 
-  .header-title p {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 2px;
+  .titulo p {
+    color: var(--texto-suave);
+    font-size: 14px;
+    margin-top: 4px;
   }
 
-  .header-right {
+  .botones {
     display: flex;
-    align-items: center;
     gap: 12px;
     flex-wrap: wrap;
   }
 
-  /* BOTONES */
   .btn {
-    padding: 10px 20px;
-    border-radius: 12px;
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
+    padding: 12px 24px;
+    border-radius: 30px;
     font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
-    transition: var(--transition);
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: var(--card-shadow);
+    border: 1px solid var(--borde);
+    background: var(--superficie);
+    color: var(--texto);
+    transition: all 0.3s;
   }
 
   .btn:hover {
     transform: translateY(-2px);
-    border-color: var(--accent);
+    border-color: var(--acento);
     box-shadow: 0 8px 25px rgba(14,165,233,0.2);
   }
 
-  .btn-primary {
-    background: var(--accent-gradient);
+  .btn-primario {
+    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
     color: white;
     border: none;
   }
 
-  .btn-group {
-    display: flex;
-    gap: 8px;
-  }
-
-  /* CONTAINER */
-  .container {
+  /* ===== CONTENEDOR PRINCIPAL ===== */
+  .contenedor {
     max-width: 1600px;
     margin: 0 auto;
     padding: 24px 32px;
   }
 
-  /* LOADING */
-  .loading-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    gap: 24px;
-  }
-
-  .spinner {
-    width: 60px;
-    height: 60px;
-    border: 4px solid var(--surface2);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loading-text {
-    color: var(--muted);
-    font-size: 16px;
-    font-weight: 500;
-  }
-
-  /* FILTROS */
-  .filters-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
+  /* ===== FILTROS ===== */
+  .filtros {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
     border-radius: 20px;
     padding: 20px;
     margin-bottom: 30px;
-    box-shadow: var(--card-shadow);
+    box-shadow: var(--sombra);
   }
 
-  .filters-row {
+  .fila-filtros {
     display: flex;
-    align-items: center;
     gap: 20px;
+    align-items: center;
     flex-wrap: wrap;
   }
 
-  .filter-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
+  .etiqueta-filtro {
     font-weight: 700;
+    font-size: 12px;
     text-transform: uppercase;
+    color: var(--texto-suave);
     letter-spacing: 1px;
-    color: var(--muted);
   }
 
-  /* MONTH TABS */
-  .month-tabs {
+  .pestanas-mes {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
   }
 
-  .month-tab {
+  .pestana-mes {
     padding: 10px 24px;
     border-radius: 30px;
-    border: 1px solid var(--border);
-    background: var(--surface-hover);
-    color: var(--text-muted);
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
     font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s;
   }
 
-  .month-tab:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    transform: translateY(-2px);
+  .pestana-mes:hover {
+    border-color: var(--acento);
+    color: var(--acento);
   }
 
-  .month-tab.active {
-    background: var(--accent-gradient);
+  .pestana-mes.activo {
+    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
     color: white;
     border: none;
-    box-shadow: 0 4px 15px rgba(14,165,233,0.3);
   }
 
-  /* EXECUTIVE SELECT */
-  .exec-select {
+  .selector-ejecutivo {
     min-width: 250px;
     position: relative;
   }
 
-  .exec-select select {
+  .selector-ejecutivo select {
     width: 100%;
-    padding: 12px 20px;
+    padding: 12px 24px;
     border-radius: 30px;
-    border: 1px solid var(--border);
-    background: var(--surface-hover);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
     font-size: 14px;
-    font-weight: 500;
     cursor: pointer;
-    outline: none;
-    transition: var(--transition);
     appearance: none;
   }
 
-  .exec-select::after {
-    content: '▾';
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted);
-    pointer-events: none;
-  }
-
-  .exec-select select:hover {
-    border-color: var(--accent);
-  }
-
-  /* EVOLUTION CARDS */
-  .evolution-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-  }
-
-  .evolution-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 20px;
-    box-shadow: var(--card-shadow);
-  }
-
-  .evolution-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 16px;
-  }
-
-  .evolution-stats {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-
-  .evolution-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 28px;
-    font-weight: 800;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .evolution-badge {
-    padding: 6px 12px;
-    border-radius: 30px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .badge-positive {
-    background: var(--green-bg);
-    color: var(--green);
-  }
-
-  .badge-negative {
-    background: var(--red-bg);
-    color: var(--red);
-  }
-
-  .evolution-detail {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 16px;
-  }
-
-  .detail-item {
-    background: var(--surface2);
-    padding: 12px;
-    border-radius: 12px;
-    text-align: center;
-  }
-
-  .detail-label {
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
-
-  .detail-number {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  /* KPI CARDS */
-  .kpi-grid {
+  /* ===== TARJETAS RESUMEN ===== */
+  .grid-resumen {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
   }
 
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+  .tarjeta-resumen {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
     border-radius: 24px;
-    padding: 20px;
-    box-shadow: var(--card-shadow);
-    transition: var(--transition);
+    padding: 24px;
+    box-shadow: var(--sombra);
   }
 
-  .kpi-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--accent);
-  }
-
-  .kpi-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .tarjeta-resumen .titulo {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--texto-suave);
+    text-transform: uppercase;
     margin-bottom: 16px;
   }
 
-  .kpi-icon {
-    width: 48px;
-    height: 48px;
-    background: var(--blue-bg);
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-  }
-
-  .kpi-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .kpi-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 32px;
+  .tarjeta-resumen .valor {
+    font-size: 42px;
     font-weight: 800;
-    background: var(--accent-gradient);
+    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
   }
 
-  .kpi-subvalue {
-    color: var(--muted);
-    font-size: 13px;
+  .tarjeta-resumen .detalle {
+    color: var(--texto-suave);
+    font-size: 14px;
   }
 
-  /* EXECUTIVE CARDS */
-  .exec-grid {
+  /* ===== TARJETAS DE EJECUTIVOS ===== */
+  .grid-ejecutivos {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
   }
 
-  .exec-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+  .tarjeta-ejecutivo {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
     border-radius: 24px;
-    padding: 20px;
+    padding: 24px;
     cursor: pointer;
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--card-shadow);
+    transition: all 0.3s;
   }
 
-  .exec-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--accent-gradient);
-    opacity: 0;
-    transition: var(--transition);
-  }
-
-  .exec-card:hover {
+  .tarjeta-ejecutivo:hover {
     transform: translateY(-4px);
-    border-color: var(--accent);
+    border-color: var(--acento);
   }
 
-  .exec-card:hover::before {
-    opacity: 1;
+  .tarjeta-ejecutivo.seleccionado {
+    border: 2px solid var(--acento);
   }
 
-  .exec-card.selected {
-    border: 2px solid var(--accent);
-    box-shadow: 0 8px 30px rgba(14,165,233,0.3);
-  }
-
-  .exec-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
+  .nombre-ejecutivo {
+    font-size: 18px;
     font-weight: 700;
-    margin-bottom: 12px;
-    color: var(--text);
-  }
-
-  .exec-stats {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
     margin-bottom: 16px;
   }
 
-  .exec-count {
-    font-family: 'Syne', sans-serif;
-    font-size: 36px;
-    font-weight: 800;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    line-height: 1;
-  }
-
-  .exec-label {
-    color: var(--muted);
-    font-size: 14px;
-  }
-
-  .exec-metrics {
+  .metricas-rapidas {
     display: flex;
     justify-content: space-between;
     margin: 16px 0;
-    font-size: 13px;
   }
 
-  .metric {
+  .metrica {
     text-align: center;
   }
 
-  .metric-value {
+  .metrica .valor {
     font-weight: 700;
-    color: var(--text);
+    font-size: 16px;
   }
 
-  .metric-label {
-    color: var(--muted);
+  .metrica .etiqueta {
+    color: var(--texto-suave);
     font-size: 11px;
   }
 
-  /* PROGRESS BAR */
-  .progress-container {
+  .barra-progreso {
     margin: 16px 0;
   }
 
-  .progress-header {
+  .barra-progreso .encabezado {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
     font-size: 12px;
-    color: var(--muted);
+    margin-bottom: 8px;
   }
 
-  .progress-bar {
+  .barra {
     height: 8px;
-    background: var(--surface2);
+    background: var(--superficie2);
     border-radius: 4px;
     overflow: hidden;
   }
 
-  .progress-fill {
+  .barra .lleno {
     height: 100%;
-    background: var(--accent-gradient);
+    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
     border-radius: 4px;
-    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  /* STATUS BADGES */
-  .status-badges {
+  .insignias-estado {
     display: flex;
     gap: 8px;
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--borde);
   }
 
-  .badge {
+  .insignia {
     flex: 1;
     text-align: center;
-    padding: 8px 4px;
+    padding: 8px;
     border-radius: 12px;
     font-size: 11px;
     font-weight: 600;
   }
 
-  .badge-green {
-    background: var(--green-bg);
-    color: var(--green);
-  }
+  .insignia-verde { background: var(--verde-bg); color: var(--verde); }
+  .insignia-naranja { background: var(--naranja-bg); color: var(--naranja); }
+  .insignia-rojo { background: var(--rojo-bg); color: var(--rojo); }
 
-  .badge-orange {
-    background: var(--orange-bg);
-    color: var(--orange);
-  }
-
-  .badge-red {
-    background: var(--red-bg);
-    color: var(--red);
-  }
-
-  .badge-purple {
-    background: var(--purple-bg);
-    color: var(--purple);
-  }
-
-  /* TABLE SECTION */
-  .table-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
+  /* ===== TABLA ===== */
+  .seccion-tabla {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
     border-radius: 24px;
     padding: 24px;
-    box-shadow: var(--card-shadow);
-    margin-bottom: 30px;
   }
 
-  .table-header {
+  .encabezado-tabla {
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 16px;
   }
 
-  .table-title {
-    font-family: 'Syne', sans-serif;
+  .titulo-tabla {
     font-size: 20px;
     font-weight: 700;
   }
 
-  .table-title span {
-    color: var(--accent);
-  }
-
-  .table-count {
-    background: var(--surface2);
+  .contador {
+    background: var(--superficie2);
     padding: 8px 16px;
     border-radius: 30px;
     font-size: 14px;
-    color: var(--text-muted);
   }
 
-  .table-container {
+  .contenedor-tabla {
     overflow-x: auto;
-    border-radius: 16px;
   }
 
   table {
@@ -662,292 +344,166 @@
 
   th {
     text-align: left;
-    padding: 14px 12px;
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
+    padding: 16px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-    background: var(--surface2);
+    color: var(--texto-suave);
+    background: var(--superficie2);
   }
 
   td {
-    padding: 12px;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
+    padding: 16px;
+    border-bottom: 1px solid var(--borde);
+    font-size: 14px;
   }
 
   tr:hover td {
-    background: var(--surface-hover);
+    background: var(--superficie2);
   }
 
-  .status-indicator {
+  .estado {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 4px 12px;
     border-radius: 30px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
   }
 
-  .status-active {
-    background: var(--green-bg);
-    color: var(--green);
-  }
+  .estado-activo { background: var(--verde-bg); color: var(--verde); }
+  .estado-regular { background: var(--naranja-bg); color: var(--naranja); }
+  .estado-inactivo { background: var(--rojo-bg); color: var(--rojo); }
 
-  .status-inactive {
-    background: var(--red-bg);
-    color: var(--red);
-  }
-
-  .status-new {
-    background: var(--purple-bg);
-    color: var(--purple);
-  }
-
-  .dot {
+  .punto {
     width: 8px;
     height: 8px;
     border-radius: 50%;
   }
 
-  .dot-green { background: var(--green); }
-  .dot-red { background: var(--red); }
-  .dot-purple { background: var(--purple); }
+  .punto-verde { background: var(--verde); }
+  .punto-naranja { background: var(--naranja); }
+  .punto-rojo { background: var(--rojo); }
 
-  .amount {
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
+  .loading {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--fondo);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
   }
 
-  .amount-positive { color: var(--green); }
-  .amount-negative { color: var(--red); }
-
-  .date-cell {
-    font-family: monospace;
-    font-size: 12px;
+  .spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid var(--superficie2);
+    border-top-color: var(--acento);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
   }
 
-  /* FOOTER */
-  .footer {
-    text-align: center;
-    padding: 30px 0 20px;
-    color: var(--muted);
-    font-size: 13px;
-    border-top: 1px solid var(--border);
-  }
-
-  /* ANIMATIONS */
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .fade-in {
-    animation: slideUp 0.5s ease forwards;
-  }
-
-  /* TOOLTIP */
-  .tooltip {
-    position: relative;
-    display: inline-block;
-    cursor: help;
-  }
-
-  .tooltip .tooltip-text {
-    visibility: hidden;
-    width: 200px;
-    background: var(--surface2);
-    color: var(--text);
-    text-align: center;
-    padding: 8px;
-    border-radius: 8px;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -100px;
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 12px;
-    border: 1px solid var(--border);
-  }
-
-  .tooltip:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
-  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
-<div class="loading-overlay" id="loading">
+<div class="loading" id="loading">
   <div class="spinner"></div>
-  <div class="loading-text" id="loadingText">Cargando dashboard de evolución...</div>
+  <div style="margin-top: 20px; color: var(--texto-suave);" id="loadingText">Cargando dashboard...</div>
 </div>
 
-<!-- HEADER -->
-<header class="header">
-  <div class="header-left">
-    <div class="logo">📈</div>
-    <div class="header-title">
-      <h1>Evolución de Ventas</h1>
-      <p>Punto de Venta · Seguimiento temporal · Actualizado: 18/03/2026</p>
-    </div>
+<header class="cabecera">
+  <div class="titulo">
+    <h1>📊 Dashboard de Ventas</h1>
+    <p>Punto de Venta · Actualizado: 18/03/2026 · Cada fila = 1 equipo</p>
   </div>
-  
-  <div class="header-right">
-    <button class="btn" onclick="toggleTheme()" id="themeToggle">
-      <span>🌙</span> Modo Oscuro
-    </button>
-    
-    <div class="btn-group">
-      <button class="btn" onclick="exportarExcel()">
-        <span>📊</span> Excel
-      </button>
-      <button class="btn btn-primary" onclick="exportarPDF()">
-        <span>📄</span> PDF
-      </button>
-    </div>
-    
-    <button class="btn btn-primary" onclick="cargarDatos(true)">
-      <span>🔄</span> Actualizar
-    </button>
+  <div class="botones">
+    <button class="btn" onclick="exportarExcel()">📥 Exportar Excel</button>
+    <button class="btn btn-primario" onclick="cargarDatos(true)">🔄 Actualizar</button>
   </div>
 </header>
 
-<!-- MAIN CONTENT -->
-<div class="container" id="mainContent" style="display: none;">
+<main class="contenedor" id="mainContent" style="display: none;">
   
   <!-- FILTROS -->
-  <div class="filters-section fade-in">
-    <div class="filters-row">
-      <span class="filter-label">📅 Mes:</span>
-      <div class="month-tabs" id="monthTabs"></div>
+  <div class="filtros">
+    <div class="fila-filtros">
+      <span class="etiqueta-filtro">📅 Mes:</span>
+      <div class="pestanas-mes" id="monthTabs">
+        <button class="pestana-mes activo">TODOS</button>
+      </div>
       
-      <span class="filter-label">👤 Ejecutivo:</span>
-      <div class="exec-select">
-        <select id="execSelect" onchange="setExec(this.value)">
+      <span class="etiqueta-filtro">👤 Ejecutivo:</span>
+      <div class="selector-ejecutivo">
+        <select id="execSelect" onchange="cambiarEjecutivo(this.value)">
           <option value="TODOS">Todos los ejecutivos</option>
         </select>
       </div>
     </div>
   </div>
-  
-  <!-- TARJETAS DE EVOLUCIÓN (comparativa mes a mes) -->
-  <div class="evolution-grid" id="evolutionCards"></div>
-  
-  <!-- KPIs GENERALES -->
-  <div class="kpi-grid" id="kpiCards"></div>
-  
+
+  <!-- TARJETAS DE RESUMEN -->
+  <div class="grid-resumen" id="resumenCards"></div>
+
   <!-- TARJETAS DE EJECUTIVOS -->
-  <div style="margin-bottom: 16px;">
-    <h2 style="font-family: 'Syne', sans-serif; font-size: 18px;">👥 Rendimiento por Ejecutivo</h2>
-  </div>
-  <div class="exec-grid" id="execGrid"></div>
-  
-  <!-- TABLA DETALLADA -->
-  <div class="table-section fade-in">
-    <div class="table-header">
-      <div class="table-title">
-        Detalle de Comercios · <span id="detailTitle">TODOS</span>
+  <h2 style="margin: 30px 0 20px; font-size: 24px;">👥 Rendimiento por Ejecutivo</h2>
+  <div class="grid-ejecutivos" id="ejecutivosGrid"></div>
+
+  <!-- TABLA DE EQUIPOS -->
+  <div class="seccion-tabla">
+    <div class="encabezado-tabla">
+      <div class="titulo-tabla">
+        📋 Detalle de Equipos · <span id="detalleTitulo">TODOS</span>
       </div>
-      <div class="table-count" id="detailCount">0 registros</div>
+      <div class="contador" id="detalleContador">0 equipos</div>
     </div>
     
-    <div class="table-container">
+    <div class="contenedor-tabla">
       <table>
         <thead>
           <tr>
             <th>#</th>
-            <th>Comercio</th>
+            <th>Comercio / Serie</th>
             <th>Ejecutivo</th>
             <th>RUC</th>
             <th>Fecha Venta</th>
             <th>Día Prueba</th>
             <th>Día Activo</th>
             <th>Última TRX</th>
-            <th>Días Activo</th>
+            <th>Días</th>
             <th>GPV M0</th>
             <th>TRX M0</th>
             <th>Ticket M0</th>
             <th>GPV M1</th>
             <th>TRX M1</th>
-            <th>Var %</th>
+            <th>Variación</th>
             <th>Estado</th>
           </tr>
         </thead>
-        <tbody id="tableBody"></tbody>
+        <tbody id="tablaCuerpo"></tbody>
       </table>
     </div>
   </div>
-  
-  <!-- PIE DE PÁGINA -->
-  <div class="footer">
-    <p>© 2026 Dashboard de Evolución · Datos actualizados al 18 de marzo 2026 · Auto-refresh cada 5 minutos</p>
-  </div>
-</div>
-
-<!-- LIBRERÍAS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</main>
 
 <script>
-// ============================================
+// ============================================================
 // CONFIGURACIÓN
-// ============================================
-const URL_API = 'https://script.google.com/macros/s/AKfycbz7yPLUg4GrxVqWQmGt29BCL5WmyWqLr32xfPLhDJVMfUISslcja81CTUKwqUjX2wbd/exec';
+// ============================================================
+const URL_API = 'https://script.google.com/macros/s/AKfycbwrh_wqzIbzTMCg74VTmnQmc_S5goL8ZCrewEi0CLbBqgWXY-HT05VEEBg16fVkqS3K/exec'; // ⚠️ CAMBIA ESTO POR TU URL
 const META_VENTAS = 10;
-const FECHA_CORTE = '2026-03-18';
 
-let DATA = [];
-let EXEC_LIST = [];
-let MESES = [];
-let STATS_POR_MES = {};
-let EVOLUCION = {};
+let DATOS_COMPLETOS = null;
+let mesActual = 'TODOS';
+let ejecutivoActual = 'TODOS';
 
-let currentMonth = '';
-let currentExec = 'TODOS';
-let darkMode = true;
-
-// ============================================
-// TEMA (CLARO/OSCURO)
-// ============================================
-function toggleTheme() {
-  const body = document.body;
-  const themeBtn = document.getElementById('themeToggle');
-  
-  darkMode = !darkMode;
-  
-  if (darkMode) {
-    body.classList.remove('light-theme');
-    themeBtn.innerHTML = '<span>🌙</span> Modo Oscuro';
-  } else {
-    body.classList.add('light-theme');
-    themeBtn.innerHTML = '<span>☀️</span> Modo Claro';
-  }
-  
-  localStorage.setItem('darkMode', darkMode);
-}
-
-function cargarTema() {
-  const saved = localStorage.getItem('darkMode');
-  if (saved !== null) {
-    darkMode = saved === 'true';
-    if (!darkMode) {
-      document.body.classList.add('light-theme');
-      document.getElementById('themeToggle').innerHTML = '<span>☀️</span> Modo Claro';
-    }
-  }
-}
-
-// ============================================
+// ============================================================
 // CARGA DE DATOS
-// ============================================
+// ============================================================
 async function cargarDatos(forzar = false) {
   const loading = document.getElementById('loading');
   const loadingText = document.getElementById('loadingText');
@@ -957,47 +513,13 @@ async function cargarDatos(forzar = false) {
   mainContent.style.display = 'none';
   
   try {
-    loadingText.textContent = 'Conectando con Google Sheets...';
-    
+    loadingText.textContent = 'Conectando...';
     const response = await fetch(URL_API);
-    const respuesta = await response.json();
+    DATOS_COMPLETOS = await response.json();
     
-    if (respuesta.error) throw new Error(respuesta.error);
+    if (DATOS_COMPLETOS.error) throw new Error(DATOS_COMPLETOS.mensaje);
     
-    loadingText.textContent = 'Procesando datos de evolución...';
-    
-    DATA = respuesta.datos || [];
-    EXEC_LIST = respuesta.ejecutivos || [];
-    MESES = respuesta.meses || [];
-    STATS_POR_MES = respuesta.stats_por_mes || {};
-    EVOLUCION = respuesta.evolucion || {};
-    
-    // Procesar y normalizar datos
-    DATA = DATA.map(item => {
-      // Asegurar números
-      item.gpv_m0 = Number(item.gpv_m0 || 0);
-      item.trx_m0 = Number(item.trx_m0 || 0);
-      item.gpv_m1 = Number(item.gpv_m1 || 0);
-      item.trx_m1 = Number(item.trx_m1 || 0);
-      item.ticket_avg_m0 = Number(item.ticket_avg_m0 || 0);
-      item.ticket_avg_m1 = Number(item.ticket_avg_m1 || 0);
-      item.variacion_gpv = Number(item.variacion_gpv || 0);
-      
-      // Calcular días desde activo si no viene
-      if (item.dia_activo && !item.dias_desde_activo) {
-        const activo = new Date(item.dia_activo);
-        const hoy = new Date(FECHA_CORTE);
-        const diff = Math.ceil((hoy - activo) / (1000 * 60 * 60 * 24));
-        item.dias_desde_activo = diff;
-      }
-      
-      return item;
-    });
-    
-    // Si no hay mes seleccionado, usar el último
-    if (!currentMonth && MESES.length > 0) {
-      currentMonth = MESES[MESES.length - 1];
-    }
+    loadingText.textContent = 'Procesando datos...';
     
     inicializarFiltros();
     renderizarTodo();
@@ -1012,489 +534,226 @@ async function cargarDatos(forzar = false) {
 }
 
 function inicializarFiltros() {
-  // Tabs de meses
+  // Pestañas de meses (incluye TODOS)
   const monthTabs = document.getElementById('monthTabs');
-  monthTabs.innerHTML = '';
+  monthTabs.innerHTML = '<button class="pestana-mes activo" onclick="cambiarMes(\'TODOS\')">📅 TODOS</button>';
   
-  MESES.forEach(mes => {
-    const btn = document.createElement('button');
-    btn.className = `month-tab ${mes === currentMonth ? 'active' : ''}`;
-    btn.textContent = mes;
-    btn.onclick = () => setMonth(mes);
-    monthTabs.appendChild(btn);
+  DATOS_COMPLETOS.meses_disponibles.forEach(mes => {
+    monthTabs.innerHTML += `<button class="pestana-mes" onclick="cambiarMes('${mes}')">${mes}</button>`;
   });
   
   // Select de ejecutivos
   const select = document.getElementById('execSelect');
   select.innerHTML = '<option value="TODOS">Todos los ejecutivos</option>';
-  EXEC_LIST.forEach(exec => {
+  DATOS_COMPLETOS.ejecutivos.forEach(exec => {
     select.innerHTML += `<option value="${exec}">${exec}</option>`;
   });
-  select.value = currentExec;
 }
 
-// ============================================
-// FUNCIONES DE ESTADO Y CÁLCULO
-// ============================================
-function getStatus(row) {
-  if (!row.ultima_trx) return 'nuevo';
-  const diasSinVenta = row.dias_sin_venta || 999;
-  if (diasSinVenta <= 15) return 'activo';
-  if (diasSinVenta <= 30) return 'regular';
-  return 'inactivo';
-}
-
-function getExecStats(exec, mes) {
-  const rows = DATA.filter(r => r.mes_venta === mes && r.ejecutivo === exec);
-  
-  const activos = rows.filter(r => getStatus(r) === 'activo').length;
-  const regulares = rows.filter(r => getStatus(r) === 'regular').length;
-  const inactivos = rows.filter(r => getStatus(r) === 'inactivo').length;
-  const nuevos = rows.filter(r => getStatus(r) === 'nuevo').length;
-  
-  const totalGPV = rows.reduce((sum, r) => sum + r.gpv_m0, 0);
-  const totalTRX = rows.reduce((sum, r) => sum + r.trx_m0, 0);
-  const ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
-  
-  return {
-    count: rows.length,
-    activos,
-    regulares,
-    inactivos,
-    nuevos,
-    totalGPV,
-    totalTRX,
-    ticketPromedio
-  };
-}
-
-function calcularKPIs() {
-  let rows = DATA.filter(r => r.mes_venta === currentMonth);
-  if (currentExec !== 'TODOS') rows = rows.filter(r => r.ejecutivo === currentExec);
-  
-  const totalGPV = rows.reduce((sum, r) => sum + r.gpv_m0, 0);
-  const totalTRX = rows.reduce((sum, r) => sum + r.trx_m0, 0);
-  const ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
-  const ejecutivosUnicos = new Set(rows.map(r => r.ejecutivo)).size;
-  const comerciosActivos = rows.filter(r => getStatus(r) === 'activo').length;
-  
-  // Métricas de antigüedad
-  const diasActivoPromedio = rows.reduce((sum, r) => sum + (r.dias_desde_activo || 0), 0) / (rows.length || 1);
-  
-  return {
-    totalGPV,
-    totalTRX,
-    ticketPromedio,
-    ejecutivosUnicos,
-    comerciosActivos,
-    totalComercios: rows.length,
-    tasaActividad: rows.length > 0 ? (comerciosActivos / rows.length * 100).toFixed(1) : 0,
-    diasActivoPromedio: Math.round(diasActivoPromedio)
-  };
-}
-
-// ============================================
+// ============================================================
 // RENDERIZADO
-// ============================================
+// ============================================================
 function renderizarTodo() {
-  renderEvolutionCards();
-  renderKPIs();
-  renderExecCards();
-  renderTable();
+  renderizarResumen();
+  renderizarEjecutivos();
+  renderizarTabla();
 }
 
-function renderEvolutionCards() {
-  const container = document.getElementById('evolutionCards');
-  if (!container) return;
+function renderizarResumen() {
+  let equipos = DATOS_COMPLETOS.equipos;
   
-  let html = '';
-  
-  if (EVOLUCION[currentMonth]) {
-    const ev = EVOLUCION[currentMonth];
-    const crecimientoClass = ev.crecimiento_gpv >= 0 ? 'badge-positive' : 'badge-negative';
-    const crecimientoSigno = ev.crecimiento_gpv >= 0 ? '+' : '';
-    
-    html += `
-      <div class="evolution-card">
-        <div class="evolution-title">📈 Evolución ${currentMonth}</div>
-        <div class="evolution-stats">
-          <span class="evolution-value">${crecimientoSigno}${formatNumber(ev.crecimiento_porcentual, 1)}%</span>
-          <span class="evolution-badge ${crecimientoClass}">vs ${ev.vs_mes_anterior}</span>
-        </div>
-        <div class="evolution-detail">
-          <div class="detail-item">
-            <div class="detail-label">Nuevos</div>
-            <div class="detail-number">${ev.comercios_nuevos}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Recurrentes</div>
-            <div class="detail-number">${ev.comercios_recurrentes}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Perdidos</div>
-            <div class="detail-number">${ev.comercios_perdidos}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Retención</div>
-            <div class="detail-number">${ev.tasa_retencion.toFixed(1)}%</div>
-          </div>
-        </div>
-      </div>
-    `;
+  // Aplicar filtros
+  if (mesActual !== 'TODOS') {
+    equipos = equipos.filter(e => e.mes_venta === mesActual);
+  }
+  if (ejecutivoActual !== 'TODOS') {
+    equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
   }
   
-  // Stats del mes actual
-  if (STATS_POR_MES[currentMonth]) {
-    const stats = STATS_POR_MES[currentMonth];
-    html += `
-      <div class="evolution-card">
-        <div class="evolution-title">📊 Resumen ${currentMonth}</div>
-        <div class="evolution-stats">
-          <span class="evolution-value">S/ ${formatNumber(stats.total_gpv)}</span>
-        </div>
-        <div class="evolution-detail">
-          <div class="detail-item">
-            <div class="detail-label">GPV Total</div>
-            <div class="detail-number">S/ ${formatNumber(stats.total_gpv)}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Transacciones</div>
-            <div class="detail-number">${formatNumber(stats.total_trx)}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Comercios</div>
-            <div class="detail-number">${stats.num_comercios}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Ejecutivos</div>
-            <div class="detail-number">${stats.ejecutivos_activos}</div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  const totalGPV = equipos.reduce((sum, e) => sum + e.gpv_mes_actual, 0);
+  const totalTRX = equipos.reduce((sum, e) => sum + e.transacciones_mes_actual, 0);
+  const activos = equipos.filter(e => e.estado === 'ACTIVO').length;
   
-  container.innerHTML = html;
-}
-
-function renderKPIs() {
-  const kpis = calcularKPIs();
-  const grid = document.getElementById('kpiCards');
-  
-  grid.innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-header">
-        <div class="kpi-icon">💰</div>
-        <div class="kpi-title">GPV Total</div>
-      </div>
-      <div class="kpi-value">S/ ${formatNumber(kpis.totalGPV)}</div>
-      <div class="kpi-subvalue">${formatNumber(kpis.totalTRX)} transacciones</div>
+  document.getElementById('resumenCards').innerHTML = `
+    <div class="tarjeta-resumen">
+      <div class="titulo">💰 GPV TOTAL</div>
+      <div class="valor">S/ ${formatearNumero(totalGPV)}</div>
+      <div class="detalle">${equipos.length} equipos</div>
     </div>
-    
-    <div class="kpi-card">
-      <div class="kpi-header">
-        <div class="kpi-icon">🎫</div>
-        <div class="kpi-title">Ticket Promedio</div>
-      </div>
-      <div class="kpi-value">S/ ${formatNumber(kpis.ticketPromedio)}</div>
-      <div class="kpi-subvalue">por operación</div>
+    <div class="tarjeta-resumen">
+      <div class="titulo">🛒 TRANSACCIONES</div>
+      <div class="valor">${formatearNumero(totalTRX)}</div>
+      <div class="detalle">${formatearNumero(totalTRX / (equipos.length || 1), 1)} por equipo</div>
     </div>
-    
-    <div class="kpi-card">
-      <div class="kpi-header">
-        <div class="kpi-icon">✅</div>
-        <div class="kpi-title">Comercios Activos</div>
-      </div>
-      <div class="kpi-value">${kpis.comerciosActivos} / ${kpis.totalComercios}</div>
-      <div class="kpi-subvalue">${kpis.tasaActividad}% del total</div>
+    <div class="tarjeta-resumen">
+      <div class="titulo">🎫 TICKET PROMEDIO</div>
+      <div class="valor">S/ ${formatearNumero(totalTRX ? totalGPV / totalTRX : 0)}</div>
+      <div class="detalle">por transacción</div>
     </div>
-    
-    <div class="kpi-card">
-      <div class="kpi-header">
-        <div class="kpi-icon">📅</div>
-        <div class="kpi-title">Días Promedio</div>
-      </div>
-      <div class="kpi-value">${kpis.diasActivoPromedio}</div>
-      <div class="kpi-subvalue">desde activación</div>
+    <div class="tarjeta-resumen">
+      <div class="titulo">✅ EQUIPOS ACTIVOS</div>
+      <div class="valor">${activos}/${equipos.length}</div>
+      <div class="detalle">${Math.round(activos/equipos.length*100) || 0}% del total</div>
     </div>
   `;
 }
 
-function renderExecCards() {
-  const grid = document.getElementById('execGrid');
-  if (!grid) return;
-  
+function renderizarEjecutivos() {
+  const grid = document.getElementById('ejecutivosGrid');
   grid.innerHTML = '';
   
-  EXEC_LIST.forEach(exec => {
-    const stats = getExecStats(exec, currentMonth);
-    const pct = Math.min(100, Math.round((stats.count / META_VENTAS) * 100));
-    const selectedClass = currentExec === exec ? 'selected' : '';
+  DATOS_COMPLETOS.ejecutivos.forEach(exec => {
+    const stats = DATOS_COMPLETOS.desempeno_ejecutivos[exec];
+    if (!stats) return;
+    
+    const pct = Math.min(100, Math.round((stats.total_equipos / META_VENTAS) * 100));
+    const seleccionado = ejecutivoActual === exec ? 'seleccionado' : '';
     
     grid.innerHTML += `
-      <div class="exec-card ${selectedClass}" onclick="selectExec('${exec.replace(/'/g, "\\'")}')">
-        <div class="exec-name">${exec}</div>
-        <div class="exec-stats">
-          <span class="exec-count">${stats.count}</span>
-          <span class="exec-label">comercios</span>
+      <div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${exec}')">
+        <div class="nombre-ejecutivo">${exec}</div>
+        <div style="font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          ${stats.total_equipos}
+        </div>
+        <div style="color: var(--texto-suave); margin-bottom: 16px;">equipos vendidos</div>
+        
+        <div class="metricas-rapidas">
+          <div class="metrica">
+            <div class="valor">S/ ${formatearNumero(stats.gpv_total)}</div>
+            <div class="etiqueta">GPV</div>
+          </div>
+          <div class="metrica">
+            <div class="valor">${formatearNumero(stats.transacciones_total)}</div>
+            <div class="etiqueta">TRX</div>
+          </div>
+          <div class="metrica">
+            <div class="valor">S/ ${formatearNumero(stats.ticket_promedio)}</div>
+            <div class="etiqueta">Ticket</div>
+          </div>
         </div>
         
-        <div class="exec-metrics">
-          <div class="metric">
-            <div class="metric-value">S/ ${formatNumber(stats.totalGPV)}</div>
-            <div class="metric-label">GPV</div>
-          </div>
-          <div class="metric">
-            <div class="metric-value">${formatNumber(stats.totalTRX)}</div>
-            <div class="metric-label">TRX</div>
-          </div>
-          <div class="metric">
-            <div class="metric-value">S/ ${formatNumber(stats.ticketPromedio)}</div>
-            <div class="metric-label">Ticket</div>
-          </div>
-        </div>
-        
-        <div class="progress-container">
-          <div class="progress-header">
-            <span>Meta: ${META_VENTAS} comercios</span>
+        <div class="barra-progreso">
+          <div class="encabezado">
+            <span>Meta: ${META_VENTAS} equipos</span>
             <span>${pct}%</span>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${pct}%"></div>
+          <div class="barra">
+            <div class="lleno" style="width: ${pct}%"></div>
           </div>
         </div>
         
-        <div class="status-badges">
-          <div class="badge badge-green">✅ ${stats.activos}</div>
-          <div class="badge badge-orange">🟠 ${stats.regulares}</div>
-          <div class="badge badge-red">❌ ${stats.inactivos}</div>
-          <div class="badge badge-purple">🆕 ${stats.nuevos}</div>
+        <div class="insignias-estado">
+          <div class="insignia insignia-verde">✅ ${stats.activos}</div>
+          <div class="insignia insignia-naranja">🟠 ${stats.regulares}</div>
+          <div class="insignia insignia-rojo">❌ ${stats.inactivos}</div>
         </div>
       </div>
     `;
   });
 }
 
-function renderTable() {
-  let rows = DATA.filter(r => r.mes_venta === currentMonth);
-  if (currentExec !== 'TODOS') rows = rows.filter(r => r.ejecutivo === currentExec);
+function renderizarTabla() {
+  let equipos = DATOS_COMPLETOS.equipos;
   
-  document.getElementById('detailTitle').textContent = currentExec === 'TODOS' ? 'Todos los ejecutivos' : currentExec;
-  document.getElementById('detailCount').textContent = `${rows.length} comercios`;
+  if (mesActual !== 'TODOS') {
+    equipos = equipos.filter(e => e.mes_venta === mesActual);
+  }
+  if (ejecutivoActual !== 'TODOS') {
+    equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
+  }
   
-  const tbody = document.getElementById('tableBody');
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center; padding:40px;">No hay registros para mostrar</td></tr>';
+  document.getElementById('detalleTitulo').textContent = ejecutivoActual === 'TODOS' ? 'TODOS' : ejecutivoActual;
+  document.getElementById('detalleContador').textContent = `${equipos.length} equipos`;
+  
+  const tbody = document.getElementById('tablaCuerpo');
+  if (equipos.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center; padding:40px;">No hay equipos para mostrar</td></tr>';
     return;
   }
   
-  tbody.innerHTML = rows.map((r, i) => {
-    const status = getStatus(r);
-    const gpvClass = r.gpv_m0 >= 700 ? 'amount-positive' : 'amount-negative';
+  tbody.innerHTML = equipos.map((eq, i) => {
+    let claseEstado = 'estado-inactivo';
+    let puntoColor = 'punto-rojo';
     
-    let statusClass = 'status-inactive';
-    let statusDot = 'dot-red';
-    let statusText = 'INACTIVO';
-    
-    if (status === 'activo') {
-      statusClass = 'status-active';
-      statusDot = 'dot-green';
-      statusText = 'ACTIVO';
-    } else if (status === 'regular') {
-      statusClass = 'status-inactive';
-      statusDot = 'dot-red';
-      statusText = 'REGULAR';
-    } else if (status === 'nuevo') {
-      statusClass = 'status-new';
-      statusDot = 'dot-purple';
-      statusText = 'NUEVO';
+    if (eq.estado === 'ACTIVO') {
+      claseEstado = 'estado-activo';
+      puntoColor = 'punto-verde';
+    } else if (eq.estado === 'REGULAR') {
+      claseEstado = 'estado-regular';
+      puntoColor = 'punto-naranja';
     }
     
-    const varClass = r.variacion_gpv >= 0 ? 'amount-positive' : 'amount-negative';
-    const varSigno = r.variacion_gpv >= 0 ? '+' : '';
+    const varClass = eq.variacion_gpv >= 0 ? '' : 'amount-negative';
+    const varSigno = eq.variacion_gpv >= 0 ? '+' : '';
     
     return `<tr>
       <td>${i + 1}</td>
-      <td><strong>${r.comercio}</strong><br><small style="color:var(--muted)">${r.ruc || ''}</small></td>
-      <td>${r.ejecutivo}</td>
-      <td>${r.ruc || ''}</td>
-      <td class="date-cell">${formatearFecha(r.fecha_venta)}</td>
-      <td class="date-cell">${formatearFecha(r.dia_prueba) || '-'}</td>
-      <td class="date-cell">${formatearFecha(r.dia_activo) || '-'}</td>
-      <td class="date-cell">${formatearFecha(r.ultima_trx) || '-'}</td>
-      <td>${r.dias_desde_activo || '-'}</td>
-      <td class="amount ${gpvClass}">S/ ${formatNumber(r.gpv_m0)}</td>
-      <td class="amount">${formatNumber(r.trx_m0)}</td>
-      <td class="amount">S/ ${formatNumber(r.ticket_avg_m0)}</td>
-      <td class="amount">S/ ${formatNumber(r.gpv_m1)}</td>
-      <td class="amount">${formatNumber(r.trx_m1)}</td>
-      <td class="amount ${varClass}">${varSigno}${formatNumber(r.variacion_gpv, 1)}%</td>
-      <td><span class="status-indicator ${statusClass}"><span class="dot ${statusDot}"></span> ${statusText}</span></td>
+      <td>
+        <strong>${eq.comercio}</strong><br>
+        <small style="color:var(--texto-suave)">📟 ${eq.numero_serie}</small>
+      </td>
+      <td>${eq.responsable_real}</td>
+      <td>${eq.ruc || '-'}</td>
+      <td>${formatearFecha(eq.fecha_venta)}</td>
+      <td>${formatearFecha(eq.dia_prueba) || '-'}</td>
+      <td>${formatearFecha(eq.dia_activo) || '-'}</td>
+      <td>${formatearFecha(eq.ultima_transaccion) || '-'}</td>
+      <td>${eq.dias_desde_activo || '-'}</td>
+      <td class="amount">S/ ${formatearNumero(eq.gpv_mes_actual)}</td>
+      <td class="amount">${formatearNumero(eq.transacciones_mes_actual)}</td>
+      <td class="amount">S/ ${formatearNumero(eq.ticket_promedio_mes_actual)}</td>
+      <td class="amount">S/ ${formatearNumero(eq.gpv_mes_anterior)}</td>
+      <td class="amount">${formatearNumero(eq.transacciones_mes_anterior)}</td>
+      <td class="amount ${varClass}">${varSigno}${formatearNumero(eq.variacion_gpv, 1)}%</td>
+      <td><span class="estado ${claseEstado}"><span class="punto ${puntoColor}"></span> ${eq.estado}</span></td>
     </tr>`;
   }).join('');
 }
 
-// ============================================
+// ============================================================
 // UTILIDADES
-// ============================================
-function formatNumber(num, decimals = 2) {
+// ============================================================
+function formatearNumero(num, decimales = 2) {
   if (num === undefined || num === null) return '0';
-  return num.toLocaleString('es-PE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return num.toLocaleString('es-PE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
 }
 
-function formatearFecha(fechaStr) {
-  if (!fechaStr) return '';
-  if (fechaStr.includes('-')) {
-    const partes = fechaStr.split('-');
-    if (partes.length === 3) {
-      return `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
+function formatearFecha(fecha) {
+  if (!fecha) return '';
+  if (fecha.includes('-')) {
+    const partes = fecha.split('-');
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
   }
-  return fechaStr;
+  return fecha;
 }
 
-// ============================================
-// FILTROS
-// ============================================
-function setMonth(month) {
-  currentMonth = month;
-  document.querySelectorAll('.month-tab').forEach(t => {
-    t.classList.toggle('active', t.textContent === month);
+function cambiarMes(mes) {
+  mesActual = mes;
+  document.querySelectorAll('.pestana-mes').forEach(t => {
+    t.classList.toggle('activo', t.textContent.includes(mes));
   });
   renderizarTodo();
 }
 
-function setExec(val) {
-  currentExec = val;
+function cambiarEjecutivo(val) {
+  ejecutivoActual = val;
   renderizarTodo();
 }
 
-function selectExec(exec) {
-  currentExec = currentExec === exec ? 'TODOS' : exec;
-  document.getElementById('execSelect').value = currentExec;
+function seleccionarEjecutivo(exec) {
+  ejecutivoActual = ejecutivoActual === exec ? 'TODOS' : exec;
+  document.getElementById('execSelect').value = ejecutivoActual;
   renderizarTodo();
 }
 
-// ============================================
-// EXPORTACIONES
-// ============================================
 function exportarExcel() {
-  let rows = DATA.filter(r => r.mes_venta === currentMonth);
-  if (currentExec !== 'TODOS') rows = rows.filter(r => r.ejecutivo === currentExec);
-  
-  const excelData = rows.map((r, i) => ({
-    '#': i + 1,
-    'Comercio': r.comercio,
-    'RUC': r.ruc,
-    'Ejecutivo': r.ejecutivo,
-    'Fecha Venta': formatearFecha(r.fecha_venta),
-    'Día Prueba': formatearFecha(r.dia_prueba),
-    'Día Activo': formatearFecha(r.dia_activo),
-    'Última TRX': formatearFecha(r.ultima_trx),
-    'Días Activo': r.dias_desde_activo || '',
-    'GPV M0 (S/)': r.gpv_m0,
-    'TRX M0': r.trx_m0,
-    'Ticket M0 (S/)': r.ticket_avg_m0,
-    'GPV M1 (S/)': r.gpv_m1,
-    'TRX M1': r.trx_m1,
-    'Variación %': r.variacion_gpv.toFixed(1),
-    'Estado': getStatus(r).toUpperCase()
-  }));
-  
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(excelData);
-  
-  ws['!cols'] = [
-    { wch: 5 }, { wch: 35 }, { wch: 15 }, { wch: 25 },
-    { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-    { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 12 },
-    { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }
-  ];
-  
-  XLSX.utils.book_append_sheet(wb, ws, 'Evolucion Ventas');
-  
-  const fecha = new Date().toISOString().split('T')[0];
-  const ejecutivo = currentExec === 'TODOS' ? 'todos' : currentExec.replace(/\s+/g, '_');
-  XLSX.writeFile(wb, `evolucion_${currentMonth}_${ejecutivo}_${fecha}.xlsx`);
+  // Similar a la tabla pero con todos los datos
+  alert('Función de exportación a Excel - Implementar según necesidad');
 }
 
-function exportarPDF() {
-  let rows = DATA.filter(r => r.mes_venta === currentMonth);
-  if (currentExec !== 'TODOS') rows = rows.filter(r => r.ejecutivo === currentExec);
-  
-  const kpis = calcularKPIs();
-  
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('landscape');
-  
-  // Título
-  doc.setFontSize(20);
-  doc.setTextColor(14, 165, 233);
-  doc.text('Reporte de Evolución de Ventas', 14, 15);
-  
-  // Subtítulo
-  doc.setFontSize(12);
-  doc.setTextColor(100, 116, 139);
-  const titulo = currentExec === 'TODOS' ? 'Todos los ejecutivos' : currentExec;
-  doc.text(`${titulo} - ${currentMonth} 2026`, 14, 25);
-  
-  // Resumen
-  doc.setFontSize(9);
-  doc.setTextColor(0, 0, 0);
-  doc.text(`GPV Total: S/ ${formatNumber(kpis.totalGPV)}`, 14, 35);
-  doc.text(`Transacciones: ${formatNumber(kpis.totalTRX)}`, 14, 42);
-  doc.text(`Ticket Promedio: S/ ${formatNumber(kpis.ticketPromedio)}`, 14, 49);
-  doc.text(`Comercios Activos: ${kpis.comerciosActivos}/${kpis.totalComercios}`, 14, 56);
-  
-  // Fecha
-  doc.text(`Generado: ${new Date().toLocaleString('es-PE')}`, 14, 63);
-  
-  // Tabla
-  const tableData = rows.map((r, i) => [
-    i + 1,
-    r.comercio,
-    r.ejecutivo,
-    formatearFecha(r.fecha_venta),
-    formatearFecha(r.dia_activo) || '-',
-    `S/ ${r.gpv_m0.toFixed(2)}`,
-    r.trx_m0,
-    `${r.variacion_gpv.toFixed(1)}%`,
-    getStatus(r).toUpperCase()
-  ]);
-  
-  doc.autoTable({
-    startY: 70,
-    head: [['#', 'Comercio', 'Ejecutivo', 'Fecha', 'Activo', 'GPV M0', 'TRX', 'Var%', 'Estado']],
-    body: tableData,
-    theme: 'striped',
-    headStyles: { fillColor: [14, 165, 233] },
-    styles: { fontSize: 7 },
-    columnStyles: {
-      0: { cellWidth: 8 },
-      1: { cellWidth: 45 },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 20 },
-      4: { cellWidth: 18 },
-      5: { cellWidth: 20 },
-      6: { cellWidth: 12 },
-      7: { cellWidth: 12 },
-      8: { cellWidth: 18 }
-    }
-  });
-  
-  const ejecutivo = currentExec === 'TODOS' ? 'todos' : currentExec.replace(/\s+/g, '_');
-  doc.save(`evolucion_${currentMonth}_${ejecutivo}.pdf`);
-}
-
-// ============================================
-// INICIALIZACIÓN
-// ============================================
-window.onload = function() {
-  cargarTema();
+// Inicializar
+window.onload = () => {
   cargarDatos();
-  
-  // Auto-refresh cada 5 minutos
-  setInterval(() => cargarDatos(true), 300000);
 };
 </script>
 </body>
