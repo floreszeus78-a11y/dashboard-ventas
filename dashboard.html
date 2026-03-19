@@ -23,28 +23,9 @@
     --red-bg: rgba(239,68,68,0.12);
     --orange: #f97316;
     --orange-bg: rgba(249,115,22,0.12);
+    --error: #ef4444;
+    --error-bg: rgba(239,68,68,0.1);
   }
-
-  /* TEMA CLARO */
-  body.light-theme {
-    --bg: #f3f4f6;
-    --surface: #ffffff;
-    --surface2: #e5e7eb;
-    --border: #d1d5db;
-    --accent: #0ea5e9;
-    --accent2: #0284c7;
-    --text: #1f2937;
-    --muted: #6b7280;
-    --green: #059669;
-    --green-bg: rgba(5,150,105,0.1);
-    --yellow: #b45309;
-    --yellow-bg: rgba(180,83,9,0.1);
-    --red: #b91c1c;
-    --red-bg: rgba(185,28,28,0.1);
-    --orange: #c2410c;
-    --orange-bg: rgba(194,65,12,0.1);
-  }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'DM Sans', sans-serif;
@@ -52,34 +33,16 @@
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
-    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* HEADER */
   header {
     background: linear-gradient(135deg, #0f172a 0%, #0a1628 100%);
     border-bottom: 1px solid var(--border);
     padding: 20px 32px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
     gap: 16px;
   }
-  
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  
   header .logo-icon {
     width: 40px; height: 40px;
     background: linear-gradient(135deg, var(--accent), #7c3aed);
@@ -87,45 +50,16 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;
   }
-  
   header h1 {
     font-family: 'Syne', sans-serif;
     font-size: 20px;
     font-weight: 800;
     letter-spacing: -0.5px;
   }
-  
   header h1 span {
     font-size: 13px;
     color: var(--muted);
     margin-left: 4px;
-  }
-
-  /* BOTONES DE TEMA Y DESCARGA */
-  .theme-btn, .download-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  
-  .theme-btn:hover, .download-btn:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
-  
-  .download-group {
-    display: flex;
-    gap: 6px;
   }
 
   .container { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
@@ -155,320 +89,38 @@
     color: var(--muted);
     font-size: 14px;
   }
-
-  /* FILTERS ROW */
-  .filters-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-  }
-  .filter-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-
-  /* Month tabs */
-  .month-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-  .month-tab {
-    padding: 8px 20px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--muted);
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .month-tab:hover { border-color: var(--accent); color: var(--text); }
-  .month-tab.active {
-    background: linear-gradient(135deg, var(--accent), #0369a1);
-    border-color: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(14,165,233,0.3);
-  }
-  .month-tab .cal-icon { font-size: 14px; }
-
-  /* Executive select */
-  .exec-select-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0 14px;
-    height: 40px;
-    cursor: pointer;
-    position: relative;
-    min-width: 220px;
-  }
-  .exec-select-wrap:focus-within { border-color: var(--accent); }
-  .exec-select-wrap select {
-    background: transparent;
-    border: none;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    outline: none;
-    cursor: pointer;
-    width: 100%;
-    appearance: none;
-  }
-  .exec-select-wrap .icon { font-size: 14px; color: var(--accent); }
-  .exec-select-wrap::after {
-    content: '▾';
+  .loading-subtext {
     color: var(--muted);
     font-size: 12px;
-    pointer-events: none;
+    max-width: 300px;
+    text-align: center;
+    padding: 0 20px;
   }
-
-  /* SUMMARY CARDS */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 14px;
-    margin-bottom: 28px;
-  }
-  .exec-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px;
-    cursor: pointer;
-    transition: all 0.25s;
-    position: relative;
-    overflow: hidden;
-  }
-  .exec-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: 14px 14px 0 0;
-    transition: opacity 0.3s;
-  }
-  .exec-card.status-green::before { background: var(--green); }
-  .exec-card.status-yellow::before { background: var(--yellow); }
-  .exec-card.status-red::before { background: var(--red); }
-  .exec-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .exec-card.selected { border-color: var(--accent); background: var(--surface2); box-shadow: 0 0 0 1px var(--accent); }
-
-  .exec-card .exec-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-  .exec-card .ventas-count {
-    font-family: 'Syne', sans-serif;
-    font-size: 36px;
-    font-weight: 800;
-    line-height: 1;
-    margin-bottom: 2px;
-  }
-  .exec-card .ventas-label {
-    font-size: 11px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .exec-card .meta-bar-wrap {
-    margin-top: 14px;
-  }
-  .exec-card .meta-bar-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-  .exec-card .meta-text { font-size: 11px; color: var(--muted); }
-  .exec-card .meta-pct { font-size: 11px; font-weight: 700; }
-  .meta-bar {
-    height: 5px;
-    background: var(--surface2);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .meta-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(.34,1.56,.64,1); }
-  .status-green .meta-bar-fill { background: var(--green); }
-  .status-yellow .meta-bar-fill { background: var(--yellow); }
-  .status-red .meta-bar-fill { background: var(--red); }
-
-  .exec-card .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 10px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .badge-green { background: var(--green-bg); color: var(--green); }
-  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
-  .badge-red { background: var(--red-bg); color: var(--red); }
-
-  /* Sub-stats */
-  .exec-card .sub-stats {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-  }
-  .sub-stat { flex: 1; text-align: center; }
-  .sub-stat .s-val { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
-  .sub-stat .s-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-
-  /* DETAIL TABLE */
-  .detail-section { margin-top: 4px; }
-  .detail-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .detail-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 800;
-  }
-  .detail-title span { color: var(--accent); }
-  .detail-count {
-    font-size: 12px;
-    color: var(--muted);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 4px 12px;
-    border-radius: 20px;
-  }
-
-  .table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow-x: auto;
-  }
-  table { width: 100%; border-collapse: collapse; min-width: 800px; }
-  thead tr { background: var(--surface2); }
-  thead th {
-    padding: 12px 16px;
-    text-align: left;
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-  tbody tr {
-    border-top: 1px solid var(--border);
-    transition: background 0.15s;
-  }
-  tbody tr:hover { background: var(--surface2); }
-  tbody td {
-    padding: 12px 16px;
-    font-size: 13px;
-    vertical-align: middle;
-  }
-  .td-comercio { font-weight: 500; max-width: 220px; }
-  .td-exec { color: var(--muted); font-size: 12px; }
-  .td-num { font-family: 'Syne', sans-serif; font-weight: 600; }
-  .td-green { color: var(--green); }
-  .td-red { color: var(--red); }
-  .td-muted { color: var(--muted); }
-
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-  .pill-green { background: var(--green-bg); color: var(--green); }
-  .pill-orange { background: var(--orange-bg); color: var(--orange); }
-  .pill-red { background: var(--red-bg); color: var(--red); }
-  .pill-yellow { background: var(--yellow-bg); color: var(--yellow); }
-
-  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-  .dot-green { background: var(--green); }
-  .dot-orange { background: var(--orange); }
-  .dot-red { background: var(--red); }
-  .dot-yellow { background: var(--yellow); }
-
-  /* LEGEND */
-  .legend {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-    padding: 12px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-  }
-  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-  .legend-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-right: 4px;
-  }
-
-  .no-data {
+  
+  /* ERROR */
+  .error-container {
     text-align: center;
     padding: 40px;
+    color: var(--error);
+    background: var(--error-bg);
+    border: 1px solid var(--error);
+    border-radius: 10px;
+    margin: 20px;
+  }
+  .error-details {
     color: var(--muted);
-    font-size: 14px;
-  }
-
-  .refresh-btn {
-    background: linear-gradient(135deg, var(--accent), #0369a1);
-    border: none;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: 'Syne', sans-serif;
     font-size: 12px;
-    font-weight: 700;
-    transition: all 0.2s;
+    margin-top: 10px;
+    word-break: break-all;
   }
-  .refresh-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(14,165,233,0.3);
-  }
-
-  @media (max-width: 600px) {
-    .container { padding: 16px; }
-    header { padding: 16px; }
-    .filters-row { gap: 10px; }
-    .summary-grid { grid-template-columns: 1fr 1fr; }
+  .retry-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-top: 20px;
+    cursor: pointer;
   }
 </style>
 </head>
@@ -476,43 +128,22 @@
 
 <div class="loading-overlay" id="loading">
   <div class="spinner"></div>
-  <div class="loading-text">Cargando datos desde Google Sheets...</div>
+  <div class="loading-text" id="loadingText">Cargando datos desde Google Sheets...</div>
+  <div class="loading-subtext" id="loadingSubtext">Esto puede tomar unos segundos</div>
 </div>
 
 <header>
-  <div class="header-left">
-    <div class="logo-icon">📊</div>
-    <div>
-      <h1>Dashboard de Ventas <span>— Punto de Venta</span></h1>
-    </div>
-  </div>
-  
-  <div class="header-right">
-    <button class="theme-btn" onclick="toggleTheme()" id="themeToggle">
-      <span>🌙</span> <span>Modo Oscuro</span>
-    </button>
-    
-    <div class="download-group">
-      <button class="download-btn" onclick="descargarExcel()">
-        <span>📊</span> Excel
-      </button>
-      <button class="download-btn" onclick="descargarPDF()">
-        <span>📄</span> PDF
-      </button>
-    </div>
-    
-    <button class="refresh-btn" onclick="cargarDatos()">🔄 Actualizar</button>
+  <div class="logo-icon">📊</div>
+  <div>
+    <h1>Dashboard de Ventas <span>— Punto de Venta</span></h1>
   </div>
 </header>
 
-<div class="container">
-
+<div class="container" id="mainContent" style="display: none;">
   <!-- FILTERS -->
   <div class="filters-row">
     <span class="filter-label">📅 Mes:</span>
-    <div class="month-tabs" id="monthTabs">
-      <!-- Se genera dinámicamente -->
-    </div>
+    <div class="month-tabs" id="monthTabs"></div>
 
     <span class="filter-label" style="margin-left:10px">👤 Filtrar por Ejecutivo:</span>
     <div class="exec-select-wrap">
@@ -521,6 +152,8 @@
         <option value="TODOS">(TODOS)</option>
       </select>
     </div>
+    
+    <button class="refresh-btn" onclick="cargarDatos(true)">🔄 Actualizar</button>
   </div>
 
   <!-- SUMMARY CARDS -->
@@ -547,7 +180,7 @@
       <div class="detail-count" id="detailCount">0 registros</div>
     </div>
     <div class="table-wrap">
-      <table id="dataTable">
+      <table>
         <thead>
           <tr>
             <th>#</th>
@@ -556,8 +189,6 @@
             <th>Fecha Venta</th>
             <th>GPV M0</th>
             <th>TRX M0</th>
-            <th>GPV M1</th>
-            <th>TRX M1</th>
             <th>Estado Comercio</th>
           </tr>
         </thead>
@@ -565,16 +196,13 @@
       </table>
     </div>
   </div>
-
 </div>
 
-<!-- Scripts para descargas -->
+<!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-// IMPORTANTE: Usamos la URL de tu API JSON
+// IMPORTANTE: Verifica que esta URL sea la correcta
 const URL_API = 'https://script.google.com/macros/s/AKfycbwTIebLiwhrLCrDxbbAatiMjHf1EyRgh5lkZ1d59wq_NbmPv7cFsQsgLf5POxtixJhz/exec';
 
 let DATA = [];
@@ -584,170 +212,296 @@ let currentMonth = "";
 let currentExec = "TODOS";
 const META_VENTAS = 10;
 
-// Tema actual
-let darkMode = true;
-
-// Función para cambiar tema
-function toggleTheme() {
-  const body = document.body;
-  const themeBtn = document.getElementById('themeToggle');
+// Mostrar error en pantalla
+function mostrarError(mensaje, detalles = '') {
+  document.getElementById('loading').style.display = 'none';
   
-  if (darkMode) {
-    body.classList.add('light-theme');
-    themeBtn.innerHTML = '<span>☀️</span> <span>Modo Claro</span>';
-  } else {
-    body.classList.remove('light-theme');
-    themeBtn.innerHTML = '<span>🌙</span> <span>Modo Oscuro</span>';
-  }
-  
-  darkMode = !darkMode;
-  // Guardar preferencia
-  localStorage.setItem('darkMode', darkMode);
+  const container = document.querySelector('.container');
+  container.innerHTML = `
+    <div class="error-container">
+      <h3>❌ Error al cargar datos</h3>
+      <p>${mensaje}</p>
+      <div class="error-details">${detalles}</div>
+      <button class="retry-btn" onclick="location.reload()">Reintentar</button>
+      <button class="retry-btn" onclick="cargarDatos(true)" style="background:var(--orange)">Forzar actualización</button>
+    </div>
+  `;
+  container.style.display = 'block';
 }
 
-// Cargar preferencia de tema al iniciar
-function cargarTema() {
-  const savedTheme = localStorage.getItem('darkMode');
-  if (savedTheme !== null) {
-    darkMode = savedTheme === 'true';
-    if (!darkMode) {
-      document.body.classList.add('light-theme');
-      document.getElementById('themeToggle').innerHTML = '<span>☀️</span> <span>Modo Claro</span>';
+// Cargar datos
+async function cargarDatos(forzar = false) {
+  const loading = document.getElementById('loading');
+  const loadingText = document.getElementById('loadingText');
+  const loadingSubtext = document.getElementById('loadingSubtext');
+  const mainContent = document.getElementById('mainContent');
+  
+  loading.style.display = 'flex';
+  mainContent.style.display = 'none';
+  
+  try {
+    loadingText.textContent = 'Conectando con Google Sheets...';
+    loadingSubtext.textContent = 'URL: ' + URL_API;
+    
+    console.log('Intentando cargar desde:', URL_API);
+    
+    // Timeout de 15 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    const response = await fetch(URL_API, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    loadingText.textContent = 'Procesando respuesta...';
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const respuesta = await response.json();
+    console.log('Datos recibidos:', respuesta);
+    
+    if (respuesta.error) {
+      throw new Error(respuesta.error);
+    }
+    
+    if (!respuesta.datos || !respuesta.ejecutivos) {
+      throw new Error('Formato de datos incorrecto');
+    }
+    
+    loadingText.textContent = 'Actualizando dashboard...';
+    
+    DATA = respuesta.datos;
+    EXEC_LIST = respuesta.ejecutivos;
+    MESES_DISPONIBLES = respuesta.meses;
+    
+    // Procesar fechas
+    DATA = DATA.map(item => {
+      if (item.fecha && typeof item.fecha === 'string' && item.fecha.includes('GMT')) {
+        const fecha = new Date(item.fecha);
+        const año = fecha.getFullYear();
+        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+        const dia = String(fecha.getDate()).padStart(2, '0');
+        item.fecha = `${año}-${mes}-${dia}`;
+      }
+      return item;
+    });
+    
+    // Ordenar meses
+    const ordenMeses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 
+                       'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+    MESES_DISPONIBLES.sort((a, b) => ordenMeses.indexOf(a) - ordenMeses.indexOf(b));
+    
+    currentMonth = MESES_DISPONIBLES[MESES_DISPONIBLES.length - 1] || (MESES_DISPONIBLES[0] || '');
+    
+    inicializarFiltros();
+    renderizarTodo();
+    
+    loading.style.display = 'none';
+    mainContent.style.display = 'block';
+    
+  } catch (error) {
+    console.error('Error completo:', error);
+    
+    if (error.name === 'AbortError') {
+      mostrarError('Tiempo de espera agotado', 'El servidor no respondió en 15 segundos');
+    } else if (error.message.includes('Failed to fetch')) {
+      mostrarError('Error de conexión', 'No se pudo conectar con la API. Verifica la URL y que el despliegue de Apps Script sea correcto.');
+    } else {
+      mostrarError(error.message, 'Revisa la consola para más detalles (F12)');
     }
   }
 }
 
-// Función para descargar Excel
-function descargarExcel() {
-  // Obtener datos filtrados actuales
-  let rows = DATA.filter(r => r.mes === currentMonth);
-  if (currentExec !== 'TODOS') rows = rows.filter(r => r.exec === currentExec);
+// Inicializar filtros
+function inicializarFiltros() {
+  const monthTabs = document.getElementById('monthTabs');
+  monthTabs.innerHTML = '';
   
-  // Preparar datos para Excel
-  const excelData = rows.map((r, index) => ({
-    '#': index + 1,
-    'Comercio': r.comercio,
-    'Ejecutivo': r.exec,
-    'Fecha Venta': fmtDate(r.fecha),
-    'GPV M0 (S/)': r.gpv_m0,
-    'TRX M0': r.trx_m0,
-    'GPV M1 (S/)': r.gpv_m1 || 0,
-    'TRX M1': r.trx_m1 || 0,
-    'Estado': getStatus(r) === 'activo' ? 'Activo' : getStatus(r) === 'parcial' ? 'Parcial' : 'Inactivo'
-  }));
-  
-  // Crear libro de Excel
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(excelData);
-  
-  // Agregar metadatos
-  ws['!cols'] = [
-    { wch: 5 },   // #
-    { wch: 40 },  // Comercio
-    { wch: 30 },  // Ejecutivo
-    { wch: 15 },  // Fecha
-    { wch: 15 },  // GPV M0
-    { wch: 10 },  // TRX M0
-    { wch: 15 },  // GPV M1
-    { wch: 10 },  // TRX M1
-    { wch: 15 }   // Estado
-  ];
-  
-  XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
-  
-  // Nombre del archivo
-  const fecha = new Date().toISOString().split('T')[0];
-  const ejecutivo = currentExec === 'TODOS' ? 'todos' : currentExec.replace(/\s+/g, '_');
-  const nombreArchivo = `ventas_${currentMonth}_${ejecutivo}_${fecha}.xlsx`;
-  
-  // Descargar
-  XLSX.writeFile(wb, nombreArchivo);
-}
-
-// Función para descargar PDF
-function descargarPDF() {
-  // Obtener datos filtrados actuales
-  let rows = DATA.filter(r => r.mes === currentMonth);
-  if (currentExec !== 'TODOS') rows = rows.filter(r => r.exec === currentExec);
-  
-  // Calcular resumen
-  const totalGPV = rows.reduce((sum, r) => sum + (r.gpv_m0 || 0), 0);
-  const totalTRX = rows.reduce((sum, r) => sum + (r.trx_m0 || 0), 0);
-  const ticketPromedio = totalTRX > 0 ? (totalGPV / totalTRX) : 0;
-  
-  // Crear PDF
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  
-  // Título
-  doc.setFontSize(18);
-  doc.setTextColor(14, 165, 233);
-  doc.text('Reporte de Ventas', 14, 20);
-  
-  // Subtítulo
-  doc.setFontSize(12);
-  doc.setTextColor(100, 116, 139);
-  const titulo = currentExec === 'TODOS' ? 'Todos los ejecutivos' : currentExec;
-  doc.text(`${titulo} - ${currentMonth} 2026`, 14, 30);
-  
-  // Resumen
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.text(`GPV Total: S/ ${totalGPV.toFixed(2)}`, 14, 40);
-  doc.text(`Transacciones: ${totalTRX}`, 14, 46);
-  doc.text(`Ticket Promedio: S/ ${ticketPromedio.toFixed(2)}`, 14, 52);
-  doc.text(`Registros: ${rows.length}`, 14, 58);
-  
-  // Fecha de generación
-  const fechaGen = new Date().toLocaleString('es-PE');
-  doc.text(`Generado: ${fechaGen}`, 14, 64);
-  
-  // Tabla de datos
-  const tableData = rows.map((r, i) => [
-    i + 1,
-    r.comercio,
-    r.exec,
-    fmtDate(r.fecha),
-    `S/ ${r.gpv_m0.toFixed(2)}`,
-    r.trx_m0,
-    getStatus(r) === 'activo' ? 'Activo' : getStatus(r) === 'parcial' ? 'Parcial' : 'Inactivo'
-  ]);
-  
-  doc.autoTable({
-    startY: 70,
-    head: [['#', 'Comercio', 'Ejecutivo', 'Fecha', 'GPV M0', 'TRX M0', 'Estado']],
-    body: tableData,
-    theme: 'striped',
-    headStyles: { fillColor: [14, 165, 233] },
-    styles: { fontSize: 8 },
-    columnStyles: {
-      0: { cellWidth: 10 },
-      1: { cellWidth: 50 },
-      2: { cellWidth: 40 },
-      3: { cellWidth: 25 },
-      4: { cellWidth: 25 },
-      5: { cellWidth: 20 },
-      6: { cellWidth: 25 }
-    }
+  MESES_DISPONIBLES.forEach(mes => {
+    const btn = document.createElement('button');
+    btn.className = 'month-tab' + (mes === currentMonth ? ' active' : '');
+    btn.innerHTML = `<span class="cal-icon">🗓</span> ${mes} 2026`;
+    btn.onclick = function() { setMonth(mes, this); };
+    monthTabs.appendChild(btn);
   });
   
-  // Guardar PDF
-  const ejecutivo = currentExec === 'TODOS' ? 'todos' : currentExec.replace(/\s+/g, '_');
-  const fecha = new Date().toISOString().split('T')[0];
-  doc.save(`ventas_${currentMonth}_${ejecutivo}_${fecha}.pdf`);
+  const select = document.getElementById('execSelect');
+  select.innerHTML = '<option value="TODOS">(TODOS)</option>';
+  EXEC_LIST.forEach(exec => {
+    select.innerHTML += `<option value="${exec}">${exec}</option>`;
+  });
 }
 
-// Las funciones existentes se mantienen igual...
-// [Todas las funciones que ya tenías: cargarDatos, inicializarFiltros, getStatus, fmtCurrency, fmtDate, getExecStats, getCardStatusClass, getCardBadge, renderSummary, renderTable, renderizarTodo, setMonth, setExec, selectExecCard]
+// Las demás funciones (getStatus, fmtCurrency, fmtDate, getExecStats, etc.)
+// ... (mantén todas las funciones que ya tenías aquí)
 
-// IMPORTANTE: Copia aquí TODAS las funciones que ya tenías en tu script original
-// (desde "async function cargarDatos()" hasta el final)
+function getStatus(row) {
+  let gpv, trx;
+  if (row.mes === currentMonth) {
+    gpv = row.gpv_m0;
+    trx = row.trx_m0;
+  } else {
+    gpv = row.gpv_m1;
+    trx = row.trx_m1;
+  }
+  const gpvOk = gpv >= 700;
+  const trxOk = trx >= 5;
+  if (gpvOk && trxOk) return 'activo';
+  if (gpvOk || trxOk) return 'parcial';
+  return 'inactivo';
+}
 
-// Solo asegúrate de que al final tengas:
-window.onload = function() {
-  cargarTema();
-  cargarDatos();
-};
+function fmtCurrency(n) {
+  if (n === undefined || n === null) return 'S/ 0.00';
+  return 'S/ ' + n.toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function fmtDate(d) {
+  if (!d) return '-';
+  const partes = d.split('-');
+  if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  return d;
+}
+
+function getExecStats(exec, month) {
+  const rows = DATA.filter(r => r.mes === month && r.exec === exec);
+  const activos = rows.filter(r => getStatus(r) === 'activo').length;
+  const parciales = rows.filter(r => getStatus(r) === 'parcial').length;
+  return { count: rows.length, activos, parciales };
+}
+
+function getCardStatusClass(count) {
+  if (count >= META_VENTAS) return 'status-green';
+  if (count >= 5) return 'status-yellow';
+  return 'status-red';
+}
+
+function getCardBadge(count) {
+  if (count >= META_VENTAS) return '<span class="badge badge-green">✔ Meta cumplida</span>';
+  if (count >= 5) return '<span class="badge badge-yellow">⏳ En camino</span>';
+  return '<span class="badge badge-red">⚠ Bajo meta</span>';
+}
+
+function renderSummary() {
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = '';
+  
+  if (EXEC_LIST.length === 0) {
+    grid.innerHTML = '<div class="no-data">No hay ejecutivos disponibles</div>';
+    return;
+  }
+  
+  EXEC_LIST.forEach(exec => {
+    const stats = getExecStats(exec, currentMonth);
+    const pct = Math.min(100, Math.round((stats.count / META_VENTAS) * 100));
+    const cls = getCardStatusClass(stats.count);
+    const badge = getCardBadge(stats.count);
+    const isSelected = currentExec === exec ? 'selected' : '';
+    
+    grid.innerHTML += `
+      <div class="exec-card ${cls} ${isSelected}" onclick="selectExecCard('${exec.replace(/'/g, "\\'")}')">
+        <div class="exec-name">${exec}</div>
+        <div class="ventas-count">${stats.count}</div>
+        <div class="ventas-label">ventas este mes</div>
+        <div class="meta-bar-wrap">
+          <div class="meta-bar-row">
+            <span class="meta-text">Meta: ${META_VENTAS} ventas</span>
+            <span class="meta-pct">${pct}%</span>
+          </div>
+          <div class="meta-bar">
+            <div class="meta-bar-fill" style="width:${pct}%"></div>
+          </div>
+        </div>
+        ${badge}
+        <div class="sub-stats">
+          <div class="sub-stat">
+            <div class="s-val td-green">${stats.activos}</div>
+            <div class="s-lbl">Activos</div>
+          </div>
+          <div class="sub-stat">
+            <div class="s-val" style="color:var(--orange)">${stats.parciales}</div>
+            <div class="s-lbl">Parciales</div>
+          </div>
+          <div class="sub-stat">
+            <div class="s-val td-red">${stats.count - stats.activos - stats.parciales}</div>
+            <div class="s-lbl">Inactivos</div>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
+function renderTable() {
+  let rows = DATA.filter(r => r.mes === currentMonth);
+  if (currentExec !== 'TODOS') rows = rows.filter(r => r.exec === currentExec);
+
+  document.getElementById('detailTitle').textContent = currentExec === 'TODOS' ? 'TODOS LOS EJECUTIVOS' : currentExec;
+  document.getElementById('detailCount').textContent = rows.length + ' registros';
+
+  const tbody = document.getElementById('tableBody');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="no-data">Sin registros para este filtro</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const st = getStatus(r);
+    let pill, dot;
+    if (st === 'activo') { pill = 'pill-green'; dot = 'dot-green'; }
+    else if (st === 'parcial') { pill = 'pill-orange'; dot = 'dot-orange'; }
+    else { pill = 'pill-red'; dot = 'dot-red'; }
+
+    const stLabel = st === 'activo' ? '● Activo' : st === 'parcial' ? '● Parcial' : '● Inactivo';
+    
+    const gpvShow = r.mes === currentMonth ? r.gpv_m0 : r.gpv_m1;
+    const trxShow = r.mes === currentMonth ? r.trx_m0 : r.trx_m1;
+    
+    const gpvClass = gpvShow >= 700 ? 'td-green' : 'td-red';
+    const trxClass = trxShow >= 5 ? 'td-green' : 'td-red';
+
+    return `<tr>
+      <td class="td-muted" style="font-size:12px">${i+1}</td>
+      <td class="td-comercio">${r.comercio}</td>
+      <td class="td-exec">${r.exec}</td>
+      <td class="td-muted" style="font-size:12px">${fmtDate(r.fecha)}</td>
+      <td class="td-num ${gpvClass}">${fmtCurrency(gpvShow)}</td>
+      <td class="td-num ${trxClass}">${trxShow}</td>
+      <td><span class="pill ${pill}">${stLabel}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderizarTodo() {
+  renderSummary();
+  renderTable();
+}
+
+function setMonth(month, btn) {
+  currentMonth = month;
+  document.querySelectorAll('.month-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderizarTodo();
+}
+
+function setExec(val) {
+  currentExec = val;
+  renderizarTodo();
+}
+
+function selectExecCard(exec) {
+  if (currentExec === exec) {
+    currentExec = 'TODOS';
+    document.getElementById('execSelect').value = 'TODOS';
+  } else {
+    currentExec = exec;
+    document.getElementById('execSelect').value = exec;
+  }
+  renderizarTodo();
+}
+
+// Iniciar
+window.onload = () => cargarDatos();
 </script>
 </body>
 </html>
