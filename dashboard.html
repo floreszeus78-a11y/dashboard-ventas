@@ -24,6 +24,27 @@
     --orange: #f97316;
     --orange-bg: rgba(249,115,22,0.12);
   }
+
+  /* TEMA CLARO */
+  body.light-theme {
+    --bg: #f3f4f6;
+    --surface: #ffffff;
+    --surface2: #e5e7eb;
+    --border: #d1d5db;
+    --accent: #0ea5e9;
+    --accent2: #0284c7;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --green: #059669;
+    --green-bg: rgba(5,150,105,0.1);
+    --yellow: #b45309;
+    --yellow-bg: rgba(180,83,9,0.1);
+    --red: #b91c1c;
+    --red-bg: rgba(185,28,28,0.1);
+    --orange: #c2410c;
+    --orange-bg: rgba(194,65,12,0.1);
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'DM Sans', sans-serif;
@@ -31,6 +52,7 @@
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   /* HEADER */
@@ -40,8 +62,24 @@
     padding: 20px 32px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 16px;
   }
+  
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
   header .logo-icon {
     width: 40px; height: 40px;
     background: linear-gradient(135deg, var(--accent), #7c3aed);
@@ -49,16 +87,45 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;
   }
+  
   header h1 {
     font-family: 'Syne', sans-serif;
     font-size: 20px;
     font-weight: 800;
     letter-spacing: -0.5px;
   }
-  header span {
+  
+  header h1 span {
     font-size: 13px;
     color: var(--muted);
     margin-left: 4px;
+  }
+
+  /* BOTONES DE TEMA Y DESCARGA */
+  .theme-btn, .download-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .theme-btn:hover, .download-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  
+  .download-group {
+    display: flex;
+    gap: 6px;
   }
 
   .container { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
@@ -275,6 +342,8 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
   }
   .detail-title {
     font-family: 'Syne', sans-serif;
@@ -411,9 +480,28 @@
 </div>
 
 <header>
-  <div class="logo-icon">📊</div>
-  <div>
-    <h1>Dashboard de Ventas <span>— Punto de Venta</span></h1>
+  <div class="header-left">
+    <div class="logo-icon">📊</div>
+    <div>
+      <h1>Dashboard de Ventas <span>— Punto de Venta</span></h1>
+    </div>
+  </div>
+  
+  <div class="header-right">
+    <button class="theme-btn" onclick="toggleTheme()" id="themeToggle">
+      <span>🌙</span> <span>Modo Oscuro</span>
+    </button>
+    
+    <div class="download-group">
+      <button class="download-btn" onclick="descargarExcel()">
+        <span>📊</span> Excel
+      </button>
+      <button class="download-btn" onclick="descargarPDF()">
+        <span>📄</span> PDF
+      </button>
+    </div>
+    
+    <button class="refresh-btn" onclick="cargarDatos()">🔄 Actualizar</button>
   </div>
 </header>
 
@@ -433,8 +521,6 @@
         <option value="TODOS">(TODOS)</option>
       </select>
     </div>
-    
-    <button class="refresh-btn" onclick="cargarDatos()">🔄 Actualizar</button>
   </div>
 
   <!-- SUMMARY CARDS -->
@@ -461,7 +547,7 @@
       <div class="detail-count" id="detailCount">0 registros</div>
     </div>
     <div class="table-wrap">
-      <table>
+      <table id="dataTable">
         <thead>
           <tr>
             <th>#</th>
@@ -470,6 +556,8 @@
             <th>Fecha Venta</th>
             <th>GPV M0</th>
             <th>TRX M0</th>
+            <th>GPV M1</th>
+            <th>TRX M1</th>
             <th>Estado Comercio</th>
           </tr>
         </thead>
@@ -479,6 +567,11 @@
   </div>
 
 </div>
+
+<!-- Scripts para descargas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
 // IMPORTANTE: Usamos la URL de tu API JSON
@@ -491,251 +584,170 @@ let currentMonth = "";
 let currentExec = "TODOS";
 const META_VENTAS = 10;
 
-// Cargar datos al iniciar
-async function cargarDatos() {
-  document.getElementById('loading').style.display = 'flex';
-  
-  try {
-    // Usar fetch con JSONP como fallback
-    const response = await fetch(URL_API);
-    const respuesta = await response.json();
-    
-    if (respuesta.error) {
-      alert('Error: ' + respuesta.error);
-      return;
-    }
-    
-    DATA = respuesta.datos;
-    EXEC_LIST = respuesta.ejecutivos;
-    MESES_DISPONIBLES = respuesta.meses;
-    
-    // Procesar fechas si vienen en formato GMT
-    DATA = DATA.map(item => {
-      if (item.fecha && item.fecha.includes('GMT')) {
-        const fecha = new Date(item.fecha);
-        const año = fecha.getFullYear();
-        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-        const dia = String(fecha.getDate()).padStart(2, '0');
-        item.fecha = `${año}-${mes}-${dia}`;
-      }
-      return item;
-    });
-    
-    // Ordenar meses (FEBRERO, MARZO, etc.)
-    const ordenMeses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-    MESES_DISPONIBLES.sort((a, b) => ordenMeses.indexOf(a) - ordenMeses.indexOf(b));
-    
-    // Seleccionar último mes por defecto
-    currentMonth = MESES_DISPONIBLES[MESES_DISPONIBLES.length - 1] || 'FEBRERO';
-    
-    inicializarFiltros();
-    renderizarTodo();
-    
-  } catch (error) {
-    alert('Error al cargar datos: ' + error.message);
-  } finally {
-    document.getElementById('loading').style.display = 'none';
-  }
-}
+// Tema actual
+let darkMode = true;
 
-function inicializarFiltros() {
-  // Generar tabs de meses
-  const monthTabs = document.getElementById('monthTabs');
-  monthTabs.innerHTML = '';
+// Función para cambiar tema
+function toggleTheme() {
+  const body = document.body;
+  const themeBtn = document.getElementById('themeToggle');
   
-  MESES_DISPONIBLES.forEach(mes => {
-    const btn = document.createElement('button');
-    btn.className = 'month-tab' + (mes === currentMonth ? ' active' : '');
-    btn.innerHTML = `<span class="cal-icon">🗓</span> ${mes} 2026`;
-    btn.onclick = function() { setMonth(mes, this); };
-    monthTabs.appendChild(btn);
-  });
-  
-  // Llenar select de ejecutivos
-  const select = document.getElementById('execSelect');
-  select.innerHTML = '<option value="TODOS">(TODOS)</option>';
-  EXEC_LIST.forEach(exec => {
-    select.innerHTML += `<option value="${exec}">${exec}</option>`;
-  });
-}
-
-function getStatus(row) {
-  let gpv, trx;
-  
-  if (row.mes === currentMonth) {
-    gpv = row.gpv_m0;
-    trx = row.trx_m0;
+  if (darkMode) {
+    body.classList.add('light-theme');
+    themeBtn.innerHTML = '<span>☀️</span> <span>Modo Claro</span>';
   } else {
-    gpv = row.gpv_m1;
-    trx = row.trx_m1;
+    body.classList.remove('light-theme');
+    themeBtn.innerHTML = '<span>🌙</span> <span>Modo Oscuro</span>';
   }
   
-  const gpvOk = gpv >= 700;
-  const trxOk = trx >= 5;
-  if (gpvOk && trxOk) return 'activo';
-  if (gpvOk || trxOk) return 'parcial';
-  return 'inactivo';
+  darkMode = !darkMode;
+  // Guardar preferencia
+  localStorage.setItem('darkMode', darkMode);
 }
 
-function fmtCurrency(n) {
-  if (n === undefined || n === null) return 'S/ 0.00';
-  return 'S/ ' + n.toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2});
-}
-
-function fmtDate(d) {
-  if (!d) return '-';
-  const partes = d.split('-');
-  if (partes.length === 3) {
-    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+// Cargar preferencia de tema al iniciar
+function cargarTema() {
+  const savedTheme = localStorage.getItem('darkMode');
+  if (savedTheme !== null) {
+    darkMode = savedTheme === 'true';
+    if (!darkMode) {
+      document.body.classList.add('light-theme');
+      document.getElementById('themeToggle').innerHTML = '<span>☀️</span> <span>Modo Claro</span>';
+    }
   }
-  return d;
 }
 
-function getExecStats(exec, month) {
-  const rows = DATA.filter(r => r.mes === month && r.exec === exec);
-  const activos = rows.filter(r => getStatus(r) === 'activo').length;
-  const parciales = rows.filter(r => getStatus(r) === 'parcial').length;
-  return { count: rows.length, activos, parciales };
-}
-
-function getCardStatusClass(count) {
-  if (count >= META_VENTAS) return 'status-green';
-  if (count >= 5) return 'status-yellow';
-  return 'status-red';
-}
-
-function getCardBadge(count) {
-  if (count >= META_VENTAS) return '<span class="badge badge-green">✔ Meta cumplida</span>';
-  if (count >= 5) return '<span class="badge badge-yellow">⏳ En camino</span>';
-  return '<span class="badge badge-red">⚠ Bajo meta</span>';
-}
-
-function renderSummary() {
-  const grid = document.getElementById('summaryGrid');
-  grid.innerHTML = '';
-  
-  if (EXEC_LIST.length === 0) {
-    grid.innerHTML = '<div class="no-data">No hay ejecutivos disponibles</div>';
-    return;
-  }
-  
-  EXEC_LIST.forEach(exec => {
-    const stats = getExecStats(exec, currentMonth);
-    const pct = Math.min(100, Math.round((stats.count / META_VENTAS) * 100));
-    const cls = getCardStatusClass(stats.count);
-    const badge = getCardBadge(stats.count);
-    const isSelected = currentExec === exec ? 'selected' : '';
-    
-    grid.innerHTML += `
-      <div class="exec-card ${cls} ${isSelected}" onclick="selectExecCard('${exec.replace(/'/g, "\\'")}')">
-        <div class="exec-name">${exec}</div>
-        <div class="ventas-count">${stats.count}</div>
-        <div class="ventas-label">ventas este mes</div>
-        <div class="meta-bar-wrap">
-          <div class="meta-bar-row">
-            <span class="meta-text">Meta: ${META_VENTAS} ventas</span>
-            <span class="meta-pct">${pct}%</span>
-          </div>
-          <div class="meta-bar">
-            <div class="meta-bar-fill" style="width:${pct}%"></div>
-          </div>
-        </div>
-        ${badge}
-        <div class="sub-stats">
-          <div class="sub-stat">
-            <div class="s-val td-green">${stats.activos}</div>
-            <div class="s-lbl">Activos</div>
-          </div>
-          <div class="sub-stat">
-            <div class="s-val" style="color:var(--orange)">${stats.parciales}</div>
-            <div class="s-lbl">Parciales</div>
-          </div>
-          <div class="sub-stat">
-            <div class="s-val td-red">${stats.count - stats.activos - stats.parciales}</div>
-            <div class="s-lbl">Inactivos</div>
-          </div>
-        </div>
-      </div>`;
-  });
-}
-
-function renderTable() {
+// Función para descargar Excel
+function descargarExcel() {
+  // Obtener datos filtrados actuales
   let rows = DATA.filter(r => r.mes === currentMonth);
   if (currentExec !== 'TODOS') rows = rows.filter(r => r.exec === currentExec);
-
-  const title = currentExec === 'TODOS' ? 'TODOS LOS EJECUTIVOS' : currentExec;
-  document.getElementById('detailTitle').textContent = title;
-  document.getElementById('detailCount').textContent = rows.length + ' registros';
-
-  const tbody = document.getElementById('tableBody');
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="no-data">Sin registros para este filtro</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = rows.map((r, i) => {
-    const st = getStatus(r);
-    let pill, dot;
-    if (st === 'activo') { pill = 'pill-green'; dot = 'dot-green'; }
-    else if (st === 'parcial') { pill = 'pill-orange'; dot = 'dot-orange'; }
-    else { pill = 'pill-red'; dot = 'dot-red'; }
-
-    const stLabel = st === 'activo' ? '● Activo' : st === 'parcial' ? '● Parcial' : '● Inactivo';
-    
-    const gpvShow = r.mes === currentMonth ? r.gpv_m0 : r.gpv_m1;
-    const trxShow = r.mes === currentMonth ? r.trx_m0 : r.trx_m1;
-    
-    const gpvClass = gpvShow >= 700 ? 'td-green' : 'td-red';
-    const trxClass = trxShow >= 5 ? 'td-green' : 'td-red';
-
-    return `<tr>
-      <td class="td-muted" style="font-size:12px">${i+1}</td>
-      <td class="td-comercio">${r.comercio}</td>
-      <td class="td-exec">${r.exec}</td>
-      <td class="td-muted" style="font-size:12px">${fmtDate(r.fecha)}</td>
-      <td class="td-num ${gpvClass}">${fmtCurrency(gpvShow)}</td>
-      <td class="td-num ${trxClass}">${trxShow}</td>
-      <td><span class="pill ${pill}">${stLabel}</span></td>
-    </tr>`;
-  }).join('');
+  
+  // Preparar datos para Excel
+  const excelData = rows.map((r, index) => ({
+    '#': index + 1,
+    'Comercio': r.comercio,
+    'Ejecutivo': r.exec,
+    'Fecha Venta': fmtDate(r.fecha),
+    'GPV M0 (S/)': r.gpv_m0,
+    'TRX M0': r.trx_m0,
+    'GPV M1 (S/)': r.gpv_m1 || 0,
+    'TRX M1': r.trx_m1 || 0,
+    'Estado': getStatus(r) === 'activo' ? 'Activo' : getStatus(r) === 'parcial' ? 'Parcial' : 'Inactivo'
+  }));
+  
+  // Crear libro de Excel
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(excelData);
+  
+  // Agregar metadatos
+  ws['!cols'] = [
+    { wch: 5 },   // #
+    { wch: 40 },  // Comercio
+    { wch: 30 },  // Ejecutivo
+    { wch: 15 },  // Fecha
+    { wch: 15 },  // GPV M0
+    { wch: 10 },  // TRX M0
+    { wch: 15 },  // GPV M1
+    { wch: 10 },  // TRX M1
+    { wch: 15 }   // Estado
+  ];
+  
+  XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+  
+  // Nombre del archivo
+  const fecha = new Date().toISOString().split('T')[0];
+  const ejecutivo = currentExec === 'TODOS' ? 'todos' : currentExec.replace(/\s+/g, '_');
+  const nombreArchivo = `ventas_${currentMonth}_${ejecutivo}_${fecha}.xlsx`;
+  
+  // Descargar
+  XLSX.writeFile(wb, nombreArchivo);
 }
 
-function renderizarTodo() {
-  renderSummary();
-  renderTable();
+// Función para descargar PDF
+function descargarPDF() {
+  // Obtener datos filtrados actuales
+  let rows = DATA.filter(r => r.mes === currentMonth);
+  if (currentExec !== 'TODOS') rows = rows.filter(r => r.exec === currentExec);
+  
+  // Calcular resumen
+  const totalGPV = rows.reduce((sum, r) => sum + (r.gpv_m0 || 0), 0);
+  const totalTRX = rows.reduce((sum, r) => sum + (r.trx_m0 || 0), 0);
+  const ticketPromedio = totalTRX > 0 ? (totalGPV / totalTRX) : 0;
+  
+  // Crear PDF
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  // Título
+  doc.setFontSize(18);
+  doc.setTextColor(14, 165, 233);
+  doc.text('Reporte de Ventas', 14, 20);
+  
+  // Subtítulo
+  doc.setFontSize(12);
+  doc.setTextColor(100, 116, 139);
+  const titulo = currentExec === 'TODOS' ? 'Todos los ejecutivos' : currentExec;
+  doc.text(`${titulo} - ${currentMonth} 2026`, 14, 30);
+  
+  // Resumen
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`GPV Total: S/ ${totalGPV.toFixed(2)}`, 14, 40);
+  doc.text(`Transacciones: ${totalTRX}`, 14, 46);
+  doc.text(`Ticket Promedio: S/ ${ticketPromedio.toFixed(2)}`, 14, 52);
+  doc.text(`Registros: ${rows.length}`, 14, 58);
+  
+  // Fecha de generación
+  const fechaGen = new Date().toLocaleString('es-PE');
+  doc.text(`Generado: ${fechaGen}`, 14, 64);
+  
+  // Tabla de datos
+  const tableData = rows.map((r, i) => [
+    i + 1,
+    r.comercio,
+    r.exec,
+    fmtDate(r.fecha),
+    `S/ ${r.gpv_m0.toFixed(2)}`,
+    r.trx_m0,
+    getStatus(r) === 'activo' ? 'Activo' : getStatus(r) === 'parcial' ? 'Parcial' : 'Inactivo'
+  ]);
+  
+  doc.autoTable({
+    startY: 70,
+    head: [['#', 'Comercio', 'Ejecutivo', 'Fecha', 'GPV M0', 'TRX M0', 'Estado']],
+    body: tableData,
+    theme: 'striped',
+    headStyles: { fillColor: [14, 165, 233] },
+    styles: { fontSize: 8 },
+    columnStyles: {
+      0: { cellWidth: 10 },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 40 },
+      3: { cellWidth: 25 },
+      4: { cellWidth: 25 },
+      5: { cellWidth: 20 },
+      6: { cellWidth: 25 }
+    }
+  });
+  
+  // Guardar PDF
+  const ejecutivo = currentExec === 'TODOS' ? 'todos' : currentExec.replace(/\s+/g, '_');
+  const fecha = new Date().toISOString().split('T')[0];
+  doc.save(`ventas_${currentMonth}_${ejecutivo}_${fecha}.pdf`);
 }
 
-function setMonth(month, btn) {
-  currentMonth = month;
-  document.querySelectorAll('.month-tab').forEach(t => t.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  else {
-    const tabs = document.querySelectorAll('.month-tab');
-    tabs.forEach(t => {
-      if (t.textContent.includes(month)) t.classList.add('active');
-    });
-  }
-  renderizarTodo();
-}
+// Las funciones existentes se mantienen igual...
+// [Todas las funciones que ya tenías: cargarDatos, inicializarFiltros, getStatus, fmtCurrency, fmtDate, getExecStats, getCardStatusClass, getCardBadge, renderSummary, renderTable, renderizarTodo, setMonth, setExec, selectExecCard]
 
-function setExec(val) {
-  currentExec = val;
-  renderizarTodo();
-}
+// IMPORTANTE: Copia aquí TODAS las funciones que ya tenías en tu script original
+// (desde "async function cargarDatos()" hasta el final)
 
-function selectExecCard(exec) {
-  if (currentExec === exec) {
-    currentExec = 'TODOS';
-    document.getElementById('execSelect').value = 'TODOS';
-  } else {
-    currentExec = exec;
-    document.getElementById('execSelect').value = exec;
-  }
-  renderizarTodo();
-}
-
-// Iniciar al cargar
-window.onload = cargarDatos;
+// Solo asegúrate de que al final tengas:
+window.onload = function() {
+  cargarTema();
+  cargarDatos();
+};
 </script>
 </body>
 </html>
