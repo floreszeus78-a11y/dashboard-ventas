@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard con Menú</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0a0e1a;
+    color: #e2e8f0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px;
+    background: #111827;
+    border-right: 1px solid #1e2d45;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s;
+  }
+
+  .sidebar-header {
+    padding: 24px;
+    border-bottom: 1px solid #1e2d45;
+  }
+
+  .sidebar-header h2 {
+    font-size: 20px;
+    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .nav-menu {
+    flex: 1;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+  }
+
+  .nav-item:hover {
+    background: #1e293b;
+    color: #0ea5e9;
+  }
+
+  .nav-item.active {
+    background: rgba(14, 165, 233, 0.15);
+    color: #0ea5e9;
+  }
+
+  .nav-icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+  }
+
+  .sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid #1e2d45;
+    font-size: 12px;
+    color: #64748b;
+    text-align: center;
+  }
+
+  /* Contenido principal */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header móvil */
+  .mobile-header {
+    display: none;
+    padding: 16px;
+    background: #111827;
+    border-bottom: 1px solid #1e2d45;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .menu-toggle {
+    background: none;
+    border: none;
+    color: #e2e8f0;
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  /* Iframe container */
+  .content-frame {
+    flex: 1;
+    border: none;
+    width: 100%;
+    height: 100%;
+    background: #0a0e1a;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed;
+      left: -260px;
+      height: 100vh;
+      z-index: 1000;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+    }
+    
+    .sidebar.open {
+      left: 0;
+    }
+    
+    .mobile-header {
+      display: flex;
+    }
+    
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+    
+    .overlay.active {
+      display: block;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Overlay para móvil -->
+<div class="overlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar / Menú lateral -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>📊 Panel Ventas</h2>
+    <p style="font-size: 12px; color: #64748b; margin-top: 4px;">v2.0 - Punto de Venta</p>
+  </div>
+  
+  <nav class="nav-menu">
+    <button class="nav-item active" onclick="cargarSeccion('dashboard.html')">
+      <span class="nav-icon">📈</span>
+      <span>Dashboard</span>
+    </button>
+    
+    <button class="nav-item" onclick="cargarSeccion('ejecutivos.html')">
+      <span class="nav-icon">👥</span>
+      <span>Ejecutivos</span>
+    </button>
+    
+    <button class="nav-item" onclick="cargarSeccion('comercios.html')">
+      <span class="nav-icon">🏪</span>
+      <span>Comercios</span>
+    </button>
+    
+    <button class="nav-item" onclick="cargarSeccion('mapa.html')">
+      <span class="nav-icon">🗺️</span>
+      <span>Mapa</span>
+    </button>
+    
+    <button class="nav-item" onclick="cargarSeccion('reportes.html')">
+      <span class="nav-icon">📑</span>
+      <span>Reportes</span>
+    </button>
+    
+    <button class="nav-item" onclick="cargarSeccion('config.html')">
+      <span class="nav-icon">⚙️</span>
+      <span>Configuración</span>
+    </button>
+  </nav>
+  
+  <div class="sidebar-footer">
+    <div id="userInfo">Usuario: Admin</div>
+    <div style="margin-top: 4px;">© 2026</div>
+  </div>
+</aside>
+
+<!-- Contenido Principal -->
+<div class="main-content">
+  <!-- Header móvil -->
+  <div class="mobile-header">
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    <h2 style="font-size: 18px;">Panel de Ventas</h2>
+  </div>
+  
+  <!-- Aquí carga el dashboard existente -->
+  <iframe src="dashboard.html" class="content-frame" id="mainFrame"></iframe>
+</div>
+
+<script>
+// Toggle sidebar en móvil
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.querySelector('.overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+}
+
+// Cambiar sección (cuando crees las otras páginas)
+function cargarSeccion(url) {
+  const frame = document.getElementById('mainFrame');
+  
+  // Si la página no existe aún, muestra un mensaje
+  fetch(url, { method: 'HEAD' })
+    .then(response => {
+      if (response.ok) {
+        frame.src = url;
+      } else {
+        // Si no existe el archivo, muestra mensaje dentro del iframe
+        frame.srcdoc = `
+          <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0a0e1a; color: #e2e8f0; font-family: sans-serif; flex-direction: column; gap: 20px;">
+            <div style="font-size: 48px;">🚧</div>
+            <h2>Módulo en construcción</h2>
+            <p style="color: #64748b;">La página ${url} aún no existe en tu repositorio.</p>
+            <button onclick="history.back()" style="padding: 12px 24px; background: #0ea5e9; color: white; border: none; border-radius: 8px; cursor: pointer;">Volver</button>
+          </div>
+        `;
+      }
+    })
+    .catch(() => {
+      frame.src = url; // Intenta cargar igual
+    });
+  
+  // Actualizar botón activo
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.textContent.includes(url.replace('.html', '').replace('-', ' '))) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // Cerrar menú en móvil
+  if (window.innerWidth <= 768) {
+    toggleSidebar();
+  }
+}
+
+// Cerrar sidebar al hacer clic fuera en móvil
+document.addEventListener('click', (e) => {
+  const sidebar = document.getElementById('sidebar');
+  if (window.innerWidth <= 768 && 
+      !sidebar.contains(e.target) && 
+      !e.target.classList.contains('menu-toggle')) {
+    sidebar.classList.remove('open');
+    document.querySelector('.overlay').classList.remove('active');
+  }
+});
+</script>
+
+</body>
+</html>
