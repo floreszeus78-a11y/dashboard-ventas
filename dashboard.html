@@ -6,7 +6,6 @@
 <title>Dashboard de Ventas - Punto de Venta</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* ===== VARIABLES ===== */
   :root {
     --fondo: #0a0e1a;
     --superficie: #111827;
@@ -528,14 +527,12 @@ async function cargarDatos(forzar = false) {
     
     loadingText.textContent = 'Procesando ' + DATOS_COMPLETOS.resumen.total_equipos + ' equipos...';
     
-    // Debug: Ver cuántos equipos de Market hoy hay
-    const marketHoyEquipos = DATOS_COMPLETOS.equipos.filter(e => e.comercio && e.comercio.includes('Market'));
-    console.log('Market hoy equipos encontrados:', marketHoyEquipos.length);
-    if (marketHoyEquipos.length > 0) {
-      marketHoyEquipos.forEach((eq, idx) => {
-        console.log(`  Equipo ${idx + 1}: Serie=${eq.numero_serie}, GPV=${eq.gpv_mes_actual}`);
-      });
-    }
+    // DEBUG: Verificar los equipos de Market hoy
+    const marketHoyEquipos = DATOS_COMPLETOS.equipos.filter(e => e.comercio && e.comercio === 'Market hoy');
+    console.log('🔍 EQUIPOS DE MARKET HOY ENCONTRADOS:', marketHoyEquipos.length);
+    marketHoyEquipos.forEach((eq, idx) => {
+      console.log(`  Equipo ${idx + 1}: Serie=${eq.numero_serie}, GPV=${eq.gpv_mes_actual}, Ejecutivo=${eq.responsable_real}`);
+    });
     
     inicializarFiltros();
     renderizarTodo();
@@ -756,27 +753,32 @@ function renderizarTabla() {
     const varClass = variacion >= 0 ? '' : 'amount-negative';
     const varSigno = variacion >= 0 ? '+' : '';
     
-    return `<tr>
-      <td>${i + 1}</td>
-      <td>
-        <strong>${eq.comercio || 'SIN NOMBRE'}</strong><br>
-        <small style="color:var(--texto-suave)">📟 ${eq.numero_serie || 'N/A'}</small>
-      </td>
-      <td>${eq.responsable_real || 'SIN ASIGNAR'}</td>
-      <td>${eq.ruc || '-'}</td>
-      <td>${formatearFecha(eq.fecha_venta)}</td>
-      <td>${formatearFecha(eq.dia_prueba) || '-'}</td>
-      <td>${formatearFecha(eq.dia_activo) || '-'}</td>
-      <td>${formatearFecha(eq.ultima_transaccion) || '-'}</td>
-      <td>${eq.dias_desde_activo || '-'}</td>
-      <td class="amount">S/ ${formatearNumero(eq.gpv_mes_actual || 0)}</td>
-      <td class="amount">${formatearNumero(eq.transacciones_mes_actual || 0, 0)}</td>
-      <td class="amount">S/ ${formatearNumero(eq.ticket_promedio_mes_actual || 0)}</td>
-      <td class="amount">S/ ${formatearNumero(eq.gpv_mes_anterior || 0)}</td>
-      <td class="amount">${formatearNumero(eq.transacciones_mes_anterior || 0, 0)}</td>
-      <td class="amount ${varClass}">${varSigno}${formatearNumero(variacion, 1)}%</td>
-      <td><span class="estado ${claseEstado}"><span class="punto ${puntoColor}"></span> ${eq.estado || 'SIN DATOS'}</span></td>
-    </tr>`;
+    // Mostrar el nombre del comercio exactamente como viene, sin modificar
+    const nombreComercio = eq.comercio || 'SIN NOMBRE';
+    
+    return `
+      <tr>
+        <td>${i + 1}</td>
+        <td>
+          <strong>${nombreComercio}</strong><br>
+          <small style="color:var(--texto-suave)">📟 ${eq.numero_serie || 'N/A'}</small>
+        </td>
+        <td>${eq.responsable_real || 'SIN ASIGNAR'}</td>
+        <td>${eq.ruc || '-'}</td>
+        <td>${formatearFecha(eq.fecha_venta)}</td>
+        <td>${formatearFecha(eq.dia_prueba) || '-'}</td>
+        <td>${formatearFecha(eq.dia_activo) || '-'}</td>
+        <td>${formatearFecha(eq.ultima_transaccion) || '-'}</td>
+        <td>${eq.dias_desde_activo || '-'}</td>
+        <td class="amount">S/ ${formatearNumero(eq.gpv_mes_actual || 0)}</td>
+        <td class="amount">${formatearNumero(eq.transacciones_mes_actual || 0, 0)}</td>
+        <td class="amount">S/ ${formatearNumero(eq.ticket_promedio_mes_actual || 0)}</td>
+        <td class="amount">S/ ${formatearNumero(eq.gpv_mes_anterior || 0)}</td>
+        <td class="amount">${formatearNumero(eq.transacciones_mes_anterior || 0, 0)}</td>
+        <td class="amount ${varClass}">${varSigno}${formatearNumero(variacion, 1)}%</td>
+        <td><span class="estado ${claseEstado}"><span class="punto ${puntoColor}"></span> ${eq.estado || 'SIN DATOS'}</span></td>
+      </tr>
+    `;
   }).join('');
 }
 
