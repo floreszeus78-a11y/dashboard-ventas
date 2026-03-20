@@ -33,7 +33,6 @@
     min-height: 100vh;
   }
 
-  /* ===== HEADER ===== */
   .cabecera {
     background: linear-gradient(135deg, #0f172a, #0a1628);
     border-bottom: 1px solid var(--borde);
@@ -92,14 +91,12 @@
     border: none;
   }
 
-  /* ===== CONTENEDOR PRINCIPAL ===== */
   .contenedor {
     max-width: 1600px;
     margin: 0 auto;
     padding: 24px 32px;
   }
 
-  /* ===== FILTROS ===== */
   .filtros {
     background: var(--superficie);
     border: 1px solid var(--borde);
@@ -169,7 +166,6 @@
     appearance: none;
   }
 
-  /* ===== TARJETAS RESUMEN ===== */
   .grid-resumen {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -208,7 +204,6 @@
     font-size: 14px;
   }
 
-  /* ===== TARJETAS DE EJECUTIVOS ===== */
   .grid-ejecutivos {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -305,7 +300,6 @@
   .insignia-naranja { background: var(--naranja-bg); color: var(--naranja); }
   .insignia-rojo { background: var(--rojo-bg); color: var(--rojo); }
 
-  /* ===== TABLA ===== */
   .seccion-tabla {
     background: var(--superficie);
     border: 1px solid var(--borde);
@@ -438,7 +432,6 @@
 
 <main class="contenedor" id="mainContent" style="display: none;">
   
-  <!-- FILTROS -->
   <div class="filtros">
     <div class="fila-filtros">
       <span class="etiqueta-filtro">📅 Mes:</span>
@@ -455,14 +448,11 @@
     </div>
   </div>
 
-  <!-- TARJETAS DE RESUMEN -->
   <div class="grid-resumen" id="resumenCards"></div>
 
-  <!-- TARJETAS DE EJECUTIVOS -->
   <h2 style="margin: 30px 0 20px; font-size: 24px;">👥 Rendimiento por Ejecutivo</h2>
   <div class="grid-ejecutivos" id="ejecutivosGrid"></div>
 
-  <!-- TABLA DE EQUIPOS -->
   <div class="seccion-tabla">
     <div class="encabezado-tabla">
       <div class="titulo-tabla">
@@ -501,10 +491,9 @@
 
 <script>
 // ============================================================
-// CONFIGURACIÓN
+// CONFIGURACIÓN - URL CORRECTA DE LA API
 // ============================================================
-// ⚠️ REEMPLAZA ESTA URL CON LA DE TU PROYECTO DE GOOGLE APPS SCRIPT
-const URL_API = 'https://script.google.com/macros/s/AKfycbwAqGP5KwWBbScy2kyjDuczcRgr_D6_HgnVDVndMx2stgblNELzCOv3pvbGM51zCGJs/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbw9CQsQnuUHb5YWQXkgCw7S3bkEXTijeYGvd024NNR1xJjpKkgIC1vtYYH4XHZuqFjZ/exec';
 
 const META_VENTAS = 10;
 
@@ -539,6 +528,15 @@ async function cargarDatos(forzar = false) {
     
     loadingText.textContent = 'Procesando ' + DATOS_COMPLETOS.resumen.total_equipos + ' equipos...';
     
+    // Debug: Ver cuántos equipos de Market hoy hay
+    const marketHoyEquipos = DATOS_COMPLETOS.equipos.filter(e => e.comercio && e.comercio.includes('Market'));
+    console.log('Market hoy equipos encontrados:', marketHoyEquipos.length);
+    if (marketHoyEquipos.length > 0) {
+      marketHoyEquipos.forEach((eq, idx) => {
+        console.log(`  Equipo ${idx + 1}: Serie=${eq.numero_serie}, GPV=${eq.gpv_mes_actual}`);
+      });
+    }
+    
     inicializarFiltros();
     renderizarTodo();
     
@@ -553,7 +551,6 @@ async function cargarDatos(forzar = false) {
 }
 
 function inicializarFiltros() {
-  // Pestañas de meses
   const monthTabs = document.getElementById('monthTabs');
   monthTabs.innerHTML = '<button class="pestana-mes activo" onclick="cambiarMes(\'TODOS\')">📅 TODOS</button>';
   
@@ -563,7 +560,6 @@ function inicializarFiltros() {
     });
   }
   
-  // Select de ejecutivos
   const select = document.getElementById('execSelect');
   select.innerHTML = '<option value="TODOS">Todos los ejecutivos</option>';
   
@@ -574,19 +570,15 @@ function inicializarFiltros() {
   }
 }
 
-// ============================================================
-// RENDERIZADO
-// ============================================================
 function renderizarTodo() {
   renderizarResumen();
-  renderizarEjecutivos();  // Ahora se recalcula según el mes seleccionado
+  renderizarEjecutivos();
   renderizarTabla();
 }
 
 function renderizarResumen() {
   let equipos = DATOS_COMPLETOS.equipos || [];
   
-  // Aplicar filtros
   if (mesActual !== 'TODOS') {
     equipos = equipos.filter(e => e.mes_venta === mesActual);
   }
@@ -627,21 +619,17 @@ function renderizarEjecutivos() {
   const grid = document.getElementById('ejecutivosGrid');
   grid.innerHTML = '';
   
-  // Obtener equipos filtrados por MES (pero NO por ejecutivo para mostrar todos)
   let equiposFiltrados = DATOS_COMPLETOS.equipos || [];
   
-  // Aplicar filtro de MES para los ejecutivos
   if (mesActual !== 'TODOS') {
     equiposFiltrados = equiposFiltrados.filter(e => e.mes_venta === mesActual);
   }
   
-  // Si no hay equipos en el mes seleccionado
   if (equiposFiltrados.length === 0) {
     grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay equipos vendidos en este mes</div>';
     return;
   }
   
-  // Agrupar por ejecutivo usando SOLO los equipos filtrados por mes
   const ejecutivosMap = new Map();
   
   equiposFiltrados.forEach(eq => {
@@ -662,13 +650,11 @@ function renderizarEjecutivos() {
     stats.gpv_total += eq.gpv_mes_actual || 0;
     stats.transacciones_total += eq.transacciones_mes_actual || 0;
     
-    // Estados
     if (eq.estado === 'ACTIVO') stats.activos++;
     else if (eq.estado === 'REGULAR') stats.regulares++;
     else if (eq.estado === 'INACTIVO') stats.inactivos++;
   });
   
-  // Calcular ticket promedio para cada ejecutivo y convertir a array
   const ejecutivosArray = Array.from(ejecutivosMap.entries()).map(([nombre, stats]) => {
     const ticketPromedio = stats.transacciones_total > 0 ? stats.gpv_total / stats.transacciones_total : 0;
     return {
@@ -683,18 +669,13 @@ function renderizarEjecutivos() {
     };
   });
   
-  // Ordenar por cantidad de equipos (mayor a menor)
   ejecutivosArray.sort((a, b) => b.total_equipos - a.total_equipos);
   
-  // Texto para el subtítulo según el mes seleccionado
   const textoPeriodo = mesActual === 'TODOS' ? 'total' : mesActual;
   
-  // Renderizar cada tarjeta
   ejecutivosArray.forEach(exec => {
     const pct = Math.min(100, Math.round((exec.total_equipos / META_VENTAS) * 100));
     const seleccionado = ejecutivoActual === exec.nombre ? 'seleccionado' : '';
-    
-    // Escapar nombre para evitar problemas con comillas
     const nombreEscapado = exec.nombre.replace(/'/g, "\\'");
     
     grid.innerHTML += `
@@ -799,19 +780,10 @@ function renderizarTabla() {
   }).join('');
 }
 
-// ============================================================
-// UTILIDADES CORREGIDAS
-// ============================================================
 function formatearNumero(num, decimales = 2) {
-  // Manejar casos extremos
   if (num === undefined || num === null || num === '' || isNaN(num)) return decimales === 0 ? '0' : '0.00';
-  
-  // Convertir a número si viene como string
   const n = typeof num === 'string' ? parseFloat(num) : Number(num);
-  
   if (isNaN(n)) return decimales === 0 ? '0' : '0.00';
-  
-  // Usar formato peruano
   return n.toLocaleString('es-PE', { 
     minimumFractionDigits: decimales, 
     maximumFractionDigits: decimales 
@@ -820,38 +792,26 @@ function formatearNumero(num, decimales = 2) {
 
 function formatearFecha(fecha) {
   if (!fecha || fecha === 'Invalid Date') return '';
-  
-  // Si ya tiene formato DD/MM/YYYY o similar
-  if (typeof fecha === 'string') {
-    if (fecha.includes('-')) {
-      const partes = fecha.split('-');
-      if (partes.length === 3) {
-        // YYYY-MM-DD → DD/MM/YYYY
-        return `${partes[2]}/${partes[1]}/${partes[0]}`;
-      }
+  if (typeof fecha === 'string' && fecha.includes('-')) {
+    const partes = fecha.split('-');
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
-    return fecha;
   }
-  
-  // Si es objeto Date
   if (fecha instanceof Date) {
     const dia = fecha.getDate().toString().padStart(2, '0');
     const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
     const anio = fecha.getFullYear();
     return `${dia}/${mes}/${anio}`;
   }
-  
   return fecha.toString();
 }
 
 function cambiarMes(mes) {
   mesActual = mes;
-  
-  // Resetear filtro de ejecutivo al cambiar de mes para mejor experiencia
   ejecutivoActual = 'TODOS';
   document.getElementById('execSelect').value = 'TODOS';
   
-  // Actualizar clases de pestañas
   document.querySelectorAll('.pestana-mes').forEach(t => {
     const texto = t.textContent.trim();
     const esActivo = (mes === 'TODOS' && texto.includes('TODOS')) || texto === mes;
@@ -873,7 +833,6 @@ function seleccionarEjecutivo(exec) {
 }
 
 function exportarExcel() {
-  // Crear CSV con los datos filtrados actuales
   let equipos = DATOS_COMPLETOS.equipos || [];
   
   if (mesActual !== 'TODOS') {
@@ -888,14 +847,12 @@ function exportarExcel() {
     return;
   }
   
-  // Cabeceras CSV
   const headers = [
     'N°', 'Comercio', 'Serie', 'Ejecutivo', 'RUC', 'Fecha Venta', 
     'Día Prueba', 'Día Activo', 'Última TRX', 'Estado',
     'GPV M0', 'TRX M0', 'Ticket M0', 'GPV M1', 'TRX M1', 'Variación %'
   ];
   
-  // Filas de datos
   const rows = equipos.map((eq, i) => [
     i + 1,
     `"${(eq.comercio || '').replace(/"/g, '""')}"`,
@@ -915,13 +872,11 @@ function exportarExcel() {
     eq.variacion_gpv || 0
   ]);
   
-  // Unir todo
   const csvContent = [
     headers.join(','),
     ...rows.map(r => r.join(','))
   ].join('\n');
   
-  // Descargar
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
@@ -935,7 +890,6 @@ function exportarExcel() {
   document.body.removeChild(link);
 }
 
-// Inicializar al cargar la página
 window.onload = () => {
   cargarDatos();
 };
