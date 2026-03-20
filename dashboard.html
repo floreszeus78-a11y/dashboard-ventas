@@ -1,485 +1,557 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard de Ventas - Punto de Venta</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
-    --fondo: #0a0e1a;
-    --superficie: #111827;
-    --superficie2: #1e293b;
-    --borde: #1e2d45;
-    --acento: #0ea5e9;
-    --texto: #e2e8f0;
-    --texto-suave: #94a3b8;
-    --verde: #22c55e;
-    --verde-bg: rgba(34,197,94,0.15);
-    --rojo: #ef4444;
-    --rojo-bg: rgba(239,68,68,0.15);
-    --naranja: #f97316;
-    --naranja-bg: rgba(249,115,22,0.15);
-    --sombra: 0 4px 20px rgba(0,0,0,0.5);
+    /* Tema Oscuro (Default) */
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1e293b;
+    --border: #1e2d45;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --accent: #0ea5e9;
+    --accent-gradient: linear-gradient(135deg, #0ea5e9, #7c3aed);
+    
+    /* Estados GPV */
+    --gpv-excelente: #22c55e;
+    --gpv-bueno: #f97316;
+    --gpv-bajo: #64748b;
+    --gpv-inactivo: #ef4444;
+    
+    /* Sombras */
+    --shadow: 0 4px 20px rgba(0,0,0,0.5);
+    --shadow-lg: 0 10px 40px rgba(0,0,0,0.6);
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [data-theme="light"] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --accent: #0284c7;
+    --accent-gradient: linear-gradient(135deg, #0284c7, #6d28d9);
+    --shadow: 0 4px 20px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 40px rgba(0,0,0,0.15);
+    
+    --gpv-excelente: #16a34a;
+    --gpv-bueno: #ea580c;
+    --gpv-bajo: #475569;
+    --gpv-inactivo: #dc2626;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; transition: background-color 0.3s, color 0.3s; }
   
   body {
     font-family: 'Inter', sans-serif;
-    background: var(--fondo);
-    color: var(--texto);
+    background: var(--bg-primary);
+    color: var(--text-primary);
     min-height: 100vh;
   }
 
-  .cabecera {
-    background: linear-gradient(135deg, #0f172a, #0a1628);
-    border-bottom: 1px solid var(--borde);
+  /* Header */
+  .header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
     padding: 20px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
     position: sticky;
     top: 0;
     z-index: 100;
+    box-shadow: var(--shadow);
   }
 
-  .titulo h1 {
-    font-size: 28px;
+  .brand h1 {
+    font-size: 26px;
     font-weight: 800;
-    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+    background: var(--accent-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
   }
 
-  .titulo p {
-    color: var(--texto-suave);
-    font-size: 14px;
-    margin-top: 4px;
+  .brand p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
   }
 
-  .botones {
+  .controls {
     display: flex;
     gap: 12px;
-    flex-wrap: wrap;
+    align-items: center;
   }
 
   .btn {
-    padding: 12px 24px;
-    border-radius: 30px;
+    padding: 10px 20px;
+    border-radius: 12px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    border: 1px solid var(--borde);
-    background: var(--superficie);
-    color: var(--texto);
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .btn:hover {
     transform: translateY(-2px);
-    border-color: var(--acento);
-    box-shadow: 0 8px 25px rgba(14,165,233,0.2);
+    box-shadow: var(--shadow);
+    border-color: var(--accent);
   }
 
-  .btn-primario {
-    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+  .btn-primary {
+    background: var(--accent-gradient);
     color: white;
     border: none;
   }
 
-  .contenedor {
-    max-width: 1600px;
+  .theme-toggle {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  /* Layout */
+  .container {
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 24px 32px;
+    padding: 24px;
   }
 
-  .filtros {
-    background: var(--superficie);
-    border: 1px solid var(--borde);
-    border-radius: 20px;
+  /* Filtros */
+  .filters-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
     padding: 20px;
-    margin-bottom: 30px;
-    box-shadow: var(--sombra);
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
   }
 
-  .fila-filtros {
+  .filters-row {
     display: flex;
     gap: 20px;
     align-items: center;
     flex-wrap: wrap;
   }
 
-  .etiqueta-filtro {
-    font-weight: 700;
-    font-size: 12px;
-    text-transform: uppercase;
-    color: var(--texto-suave);
-    letter-spacing: 1px;
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
-  .pestanas-mes {
+  .filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+  }
+
+  .filter-tabs {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
   }
 
-  .pestana-mes {
-    padding: 10px 24px;
-    border-radius: 30px;
-    border: 1px solid var(--borde);
-    background: var(--superficie2);
+  .tab {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
   }
 
-  .pestana-mes:hover {
-    border-color: var(--acento);
-    color: var(--acento);
+  .tab:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
-  .pestana-mes.activo {
-    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+  .tab.active {
+    background: var(--accent-gradient);
     color: white;
     border: none;
   }
 
-  .selector-ejecutivo {
-    min-width: 250px;
+  select {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    min-width: 200px;
+  }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
     position: relative;
-  }
-
-  .selector-ejecutivo select {
-    width: 100%;
-    padding: 12px 24px;
-    border-radius: 30px;
-    border: 1px solid var(--borde);
-    background: var(--superficie2);
-    color: var(--texto);
-    font-size: 14px;
-    cursor: pointer;
-    appearance: none;
-  }
-
-  .grid-resumen {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-  }
-
-  .tarjeta-resumen {
-    background: var(--superficie);
-    border: 1px solid var(--borde);
-    border-radius: 24px;
-    padding: 24px;
-    box-shadow: var(--sombra);
-  }
-
-  .tarjeta-resumen .titulo {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--texto-suave);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-
-  .tarjeta-resumen .valor {
-    font-size: 42px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-
-  .tarjeta-resumen .detalle {
-    color: var(--texto-suave);
-    font-size: 14px;
-  }
-
-  .grid-ejecutivos {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-  }
-
-  .tarjeta-ejecutivo {
-    background: var(--superficie);
-    border: 1px solid var(--borde);
-    border-radius: 24px;
-    padding: 24px;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-
-  .tarjeta-ejecutivo:hover {
-    transform: translateY(-4px);
-    border-color: var(--acento);
-  }
-
-  .tarjeta-ejecutivo.seleccionado {
-    border: 2px solid var(--acento);
-  }
-
-  .nombre-ejecutivo {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 16px;
-  }
-
-  .metricas-rapidas {
-    display: flex;
-    justify-content: space-between;
-    margin: 16px 0;
-  }
-
-  .metrica {
-    text-align: center;
-  }
-
-  .metrica .valor {
-    font-weight: 700;
-    font-size: 16px;
-  }
-
-  .metrica .etiqueta {
-    color: var(--texto-suave);
-    font-size: 11px;
-  }
-
-  .barra-progreso {
-    margin: 16px 0;
-  }
-
-  .barra-progreso .encabezado {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    margin-bottom: 8px;
-  }
-
-  .barra {
-    height: 8px;
-    background: var(--superficie2);
-    border-radius: 4px;
     overflow: hidden;
   }
 
-  .barra .lleno {
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
     height: 100%;
-    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
-    border-radius: 4px;
+    background: var(--accent-gradient);
   }
 
-  .insignias-estado {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--borde);
-  }
-
-  .insignia {
-    flex: 1;
-    text-align: center;
-    padding: 8px;
-    border-radius: 12px;
-    font-size: 11px;
+  .kpi-label {
+    font-size: 12px;
     font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 8px;
   }
 
-  .insignia-verde { background: var(--verde-bg); color: var(--verde); }
-  .insignia-naranja { background: var(--naranja-bg); color: var(--naranja); }
-  .insignia-rojo { background: var(--rojo-bg); color: var(--rojo); }
-
-  .seccion-tabla {
-    background: var(--superficie);
-    border: 1px solid var(--borde);
-    border-radius: 24px;
-    padding: 24px;
+  .kpi-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 4px;
   }
 
-  .encabezado-tabla {
+  .kpi-detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* Charts Section */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .chart-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .chart-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+  }
+
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+
+  /* Tabla Mejorada */
+  .table-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .table-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
-  .titulo-tabla {
-    font-size: 20px;
+  .table-title {
+    font-size: 18px;
     font-weight: 700;
   }
 
-  .contador {
-    background: var(--superficie2);
-    padding: 8px 16px;
-    border-radius: 30px;
-    font-size: 14px;
+  .search-box {
+    padding: 10px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    width: 300px;
+    font-size: 13px;
   }
 
-  .contenedor-tabla {
+  .search-box::placeholder {
+    color: var(--text-secondary);
+  }
+
+  .table-container {
     overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 1400px;
+    font-size: 13px;
+  }
+
+  thead {
+    background: var(--bg-tertiary);
   }
 
   th {
+    padding: 14px 16px;
     text-align: left;
-    padding: 16px;
-    font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    color: var(--texto-suave);
-    background: var(--superficie2);
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
   }
 
   td {
-    padding: 16px;
-    border-bottom: 1px solid var(--borde);
-    font-size: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
   }
 
   tr:hover td {
-    background: var(--superficie2);
+    background: var(--bg-tertiary);
   }
 
-  .estado {
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Badges y Colores GPV */
+  .badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 12px;
-    border-radius: 30px;
+    padding: 6px 12px;
+    border-radius: 20px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
   }
 
-  .estado-activo { background: var(--verde-bg); color: var(--verde); }
-  .estado-regular { background: var(--naranja-bg); color: var(--naranja); }
-  .estado-inactivo { background: var(--rojo-bg); color: var(--rojo); }
+  .badge-estado-activo { background: rgba(34,197,94,0.15); color: var(--gpv-excelente); }
+  .badge-estado-regular { background: rgba(249,115,22,0.15); color: var(--gpv-bueno); }
+  .badge-estado-inactivo { background: rgba(239,68,68,0.15); color: var(--gpv-inactivo); }
 
-  .punto {
+  /* Color coding GPV */
+  .gpv-excelente { color: var(--gpv-excelente); font-weight: 700; }
+  .gpv-bueno { color: var(--gpv-bueno); font-weight: 700; }
+  .gpv-bajo { color: var(--gpv-bajo); font-weight: 600; }
+  .gpv-inactivo { color: var(--gpv-inactivo); font-weight: 700; }
+
+  .gpv-cell {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+  }
+
+  .dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    display: inline-block;
   }
 
-  .punto-verde { background: var(--verde); }
-  .punto-naranja { background: var(--naranja); }
-  .punto-rojo { background: var(--rojo); }
+  .dot-green { background: var(--gpv-excelente); }
+  .dot-orange { background: var(--gpv-bueno); }
+  .dot-gray { background: var(--gpv-bajo); }
+  .dot-red { background: var(--gpv-inactivo); }
 
-  .amount {
-    font-family: 'Courier New', monospace;
-    font-weight: 600;
+  /* Info del comercio */
+  .comercio-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
-  .amount-negative {
-    color: var(--rojo);
+  .comercio-nombre {
+    font-weight: 700;
+    color: var(--text-primary);
   }
 
+  .comercio-serie {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-family: monospace;
+  }
+
+  .multi-equipo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--accent-gradient);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+
+  /* Loading */
   .loading {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: var(--fondo);
+    background: var(--bg-primary);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    gap: 20px;
   }
 
   .spinner {
-    width: 60px;
-    height: 60px;
-    border: 4px solid var(--superficie2);
-    border-top-color: var(--acento);
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--border);
+    border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .filters-row { flex-direction: column; align-items: stretch; }
+    .search-box { width: 100%; }
+    .header { flex-direction: column; gap: 16px; }
+  }
 </style>
 </head>
 <body>
 
 <div class="loading" id="loading">
   <div class="spinner"></div>
-  <div style="margin-top: 20px; color: var(--texto-suave);" id="loadingText">Cargando dashboard...</div>
+  <div style="color: var(--text-secondary); font-weight: 500;">Cargando dashboard...</div>
 </div>
 
-<header class="cabecera">
-  <div class="titulo">
+<header class="header">
+  <div class="brand">
     <h1>📊 Dashboard de Ventas</h1>
-    <p>Punto de Venta · Actualizado: 18/03/2026 · Cada fila = 1 equipo</p>
+    <p>Punto de Venta · Cada fila = 1 equipo</p>
   </div>
-  <div class="botones">
-    <button class="btn" onclick="exportarExcel()">📥 Exportar Excel</button>
-    <button class="btn btn-primario" onclick="cargarDatos(true)">🔄 Actualizar</button>
+  <div class="controls">
+    <button class="btn" onclick="exportarExcel()">📥 Exportar</button>
+    <button class="btn btn-primary" onclick="cargarDatos(true)">🔄 Actualizar</button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">🌓</button>
   </div>
 </header>
 
-<main class="contenedor" id="mainContent" style="display: none;">
+<main class="container" id="mainContent" style="display: none;">
   
-  <div class="filtros">
-    <div class="fila-filtros">
-      <span class="etiqueta-filtro">📅 Mes:</span>
-      <div class="pestanas-mes" id="monthTabs">
-        <button class="pestana-mes activo" onclick="cambiarMes('TODOS')">📅 TODOS</button>
+  <!-- Filtros -->
+  <div class="filters-card">
+    <div class="filters-row">
+      <div class="filter-group">
+        <span class="filter-label">📅 Período</span>
+        <div class="filter-tabs" id="monthTabs">
+          <button class="tab active" onclick="cambiarMes('TODOS')">Todos</button>
+        </div>
       </div>
       
-      <span class="etiqueta-filtro">👤 Ejecutivo:</span>
-      <div class="selector-ejecutivo">
+      <div class="filter-group">
+        <span class="filter-label">👤 Ejecutivo</span>
         <select id="execSelect" onchange="cambiarEjecutivo(this.value)">
           <option value="TODOS">Todos los ejecutivos</option>
         </select>
       </div>
+
+      <div class="filter-group">
+        <span class="filter-label">🎨 Estado GPV</span>
+        <div style="display: flex; gap: 12px; font-size: 12px;">
+          <span style="display: flex; align-items: center; gap: 4px;"><span class="dot dot-green"></span> ≥700</span>
+          <span style="display: flex; align-items: center; gap: 4px;"><span class="dot dot-orange"></span> 400-699</span>
+          <span style="display: flex; align-items: center; gap: 4px;"><span class="dot dot-gray"></span> 1-399</span>
+          <span style="display: flex; align-items: center; gap: 4px;"><span class="dot dot-red"></span> 0</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="grid-resumen" id="resumenCards"></div>
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpiGrid"></div>
 
-  <h2 style="margin: 30px 0 20px; font-size: 24px;">👥 Rendimiento por Ejecutivo</h2>
-  <div class="grid-ejecutivos" id="ejecutivosGrid"></div>
-
-  <div class="seccion-tabla">
-    <div class="encabezado-tabla">
-      <div class="titulo-tabla">
-        📋 Detalle de Equipos · <span id="detalleTitulo">TODOS</span>
+  <!-- Gráficas -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">📈 GPV por Ejecutivo</div>
+      <div class="chart-container">
+        <canvas id="chartEjecutivos"></canvas>
       </div>
-      <div class="contador" id="detalleContador">0 equipos</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🎯 Distribución por Rangos GPV</div>
+      <div class="chart-container">
+        <canvas id="chartDistribucion"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla Simplificada -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">📋 Detalle de Equipos <span id="countBadge" style="background: var(--bg-tertiary); padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-left: 8px;">0</span></div>
+      <input type="text" class="search-box" id="searchInput" placeholder="🔍 Buscar comercio, serie o RUC..." onkeyup="filtrarTabla()">
     </div>
     
-    <div class="contenedor-tabla">
+    <div class="table-container">
       <table>
         <thead>
           <tr>
-            <th>#</th>
-            <th>Comercio / Serie</th>
+            <th>Comercio</th>
             <th>Ejecutivo</th>
-            <th>RUC</th>
-            <th>Fecha Venta</th>
-            <th>Día Prueba</th>
-            <th>Día Activo</th>
-            <th>Última TRX</th>
-            <th>Días</th>
-            <th>GPV M0</th>
-            <th>TRX M0</th>
-            <th>Ticket M0</th>
-            <th>GPV M1</th>
-            <th>TRX M1</th>
-            <th>Variación</th>
-            <th>Estado</th>
+            <th style="text-align: right;">GPV M0</th>
+            <th style="text-align: center;">TRX</th>
+            <th>Última Transacción</th>
+            <th style="text-align: center;">Estado</th>
           </tr>
         </thead>
         <tbody id="tablaCuerpo"></tbody>
@@ -489,337 +561,298 @@
 </main>
 
 <script>
-// ============================================================
-// CONFIGURACIÓN - URL CORRECTA DE LA API
-// ============================================================
+// Configuración
 const URL_API = 'https://script.google.com/macros/s/AKfycbwD_CP5UvEQiF5nPU2TTmHDrqwQ5xo6TkeaOsrS9XByeThAm6M6pxsZgQuLb0EfYyKW/exec';
-
-const META_VENTAS = 10;
-
 let DATOS_COMPLETOS = null;
 let mesActual = 'TODOS';
 let ejecutivoActual = 'TODOS';
+let chartEjecutivos = null;
+let chartDistribucion = null;
 
-// ============================================================
-// CARGA DE DATOS
-// ============================================================
+// Tema
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+}
+
+// Cargar tema guardado
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
+// Color coding GPV
+function getGPVClass(gpv) {
+  if (!gpv || gpv === 0) return 'gpv-inactivo';
+  if (gpv >= 700) return 'gpv-excelente';
+  if (gpv >= 400) return 'gpv-bueno';
+  return 'gpv-bajo';
+}
+
+function getGPVDot(gpv) {
+  if (!gpv || gpv === 0) return 'dot-red';
+  if (gpv >= 700) return 'dot-green';
+  if (gpv >= 400) return 'dot-orange';
+  return 'dot-gray';
+}
+
+// Carga de datos
 async function cargarDatos(forzar = false) {
   const loading = document.getElementById('loading');
-  const loadingText = document.getElementById('loadingText');
-  const mainContent = document.getElementById('mainContent');
+  const main = document.getElementById('mainContent');
   
   loading.style.display = 'flex';
-  mainContent.style.display = 'none';
+  main.style.display = 'none';
   
   try {
-    loadingText.textContent = 'Conectando con Google Sheets...';
-    const response = await fetch(URL_API);
+    const res = await fetch(URL_API);
+    DATOS_COMPLETOS = await res.json();
     
-    if (!response.ok) {
-      throw new Error('Error HTTP: ' + response.status);
-    }
-    
-    DATOS_COMPLETOS = await response.json();
-    
-    if (DATOS_COMPLETOS.error) {
-      throw new Error(DATOS_COMPLETOS.mensaje || 'Error desconocido del servidor');
-    }
-    
-    loadingText.textContent = 'Procesando ' + DATOS_COMPLETOS.resumen.total_equipos + ' equipos...';
-    
-    // DEBUG: Verificar los equipos de Market hoy
-    const marketHoyEquipos = DATOS_COMPLETOS.equipos.filter(e => e.comercio && e.comercio === 'Market hoy');
-    console.log('🔍 EQUIPOS DE MARKET HOY ENCONTRADOS:', marketHoyEquipos.length);
-    marketHoyEquipos.forEach((eq, idx) => {
-      console.log(`  Equipo ${idx + 1}: Serie=${eq.numero_serie}, GPV=${eq.gpv_mes_actual}, Ejecutivo=${eq.responsable_real}`);
-    });
+    if (DATOS_COMPLETOS.error) throw new Error(DATOS_COMPLETOS.mensaje);
     
     inicializarFiltros();
     renderizarTodo();
     
     loading.style.display = 'none';
-    mainContent.style.display = 'block';
+    main.style.display = 'block';
     
-  } catch (error) {
-    loadingText.innerHTML = '❌ Error: ' + error.message + '<br><br>Verifica que la URL de la API sea correcta y que el proyecto de Apps Script esté desplegado.';
-    loadingText.style.color = '#ef4444';
-    console.error('Error completo:', error);
+  } catch (err) {
+    document.getElementById('loading').innerHTML = `
+      <div style="color: var(--gpv-inactivo); text-align: center; padding: 20px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+        <div style="font-weight: 700; margin-bottom: 8px;">Error al cargar</div>
+        <div style="color: var(--text-secondary);">${err.message}</div>
+      </div>`;
   }
 }
 
 function inicializarFiltros() {
-  const monthTabs = document.getElementById('monthTabs');
-  monthTabs.innerHTML = '<button class="pestana-mes activo" onclick="cambiarMes(\'TODOS\')">📅 TODOS</button>';
+  // Meses
+  const tabs = document.getElementById('monthTabs');
+  tabs.innerHTML = '<button class="tab active" onclick="cambiarMes(\'TODOS\')">Todos</button>';
+  DATOS_COMPLETOS.meses_disponibles?.forEach(mes => {
+    tabs.innerHTML += `<button class="tab" onclick="cambiarMes('${mes}')">${mes}</button>`;
+  });
   
-  if (DATOS_COMPLETOS.meses_disponibles && DATOS_COMPLETOS.meses_disponibles.length > 0) {
-    DATOS_COMPLETOS.meses_disponibles.forEach(mes => {
-      monthTabs.innerHTML += `<button class="pestana-mes" onclick="cambiarMes('${mes}')">${mes}</button>`;
-    });
-  }
-  
+  // Ejecutivos
   const select = document.getElementById('execSelect');
   select.innerHTML = '<option value="TODOS">Todos los ejecutivos</option>';
-  
-  if (DATOS_COMPLETOS.ejecutivos && DATOS_COMPLETOS.ejecutivos.length > 0) {
-    DATOS_COMPLETOS.ejecutivos.forEach(exec => {
-      select.innerHTML += `<option value="${exec}">${exec}</option>`;
-    });
-  }
+  DATOS_COMPLETOS.ejecutivos?.forEach(exec => {
+    select.innerHTML += `<option value="${exec}">${exec}</option>`;
+  });
 }
 
 function renderizarTodo() {
-  renderizarResumen();
-  renderizarEjecutivos();
+  renderizarKPIs();
+  renderizarGraficas();
   renderizarTabla();
 }
 
-function renderizarResumen() {
-  let equipos = DATOS_COMPLETOS.equipos || [];
-  
-  if (mesActual !== 'TODOS') {
-    equipos = equipos.filter(e => e.mes_venta === mesActual);
-  }
-  if (ejecutivoActual !== 'TODOS') {
-    equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
-  }
+function renderizarKPIs() {
+  let equipos = getEquiposFiltrados();
   
   const totalGPV = equipos.reduce((sum, e) => sum + (e.gpv_mes_actual || 0), 0);
   const totalTRX = equipos.reduce((sum, e) => sum + (e.transacciones_mes_actual || 0), 0);
-  const activos = equipos.filter(e => e.estado === 'ACTIVO').length;
-  const ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
   
-  document.getElementById('resumenCards').innerHTML = `
-    <div class="tarjeta-resumen">
-      <div class="titulo">💰 GPV TOTAL</div>
-      <div class="valor">S/ ${formatearNumero(totalGPV)}</div>
-      <div class="detalle">${equipos.length} equipos</div>
+  const rangos = {
+    excelente: equipos.filter(e => (e.gpv_mes_actual || 0) >= 700).length,
+    bueno: equipos.filter(e => { const g = e.gpv_mes_actual || 0; return g >= 400 && g < 700 }).length,
+    bajo: equipos.filter(e => { const g = e.gpv_mes_actual || 0; return g > 0 && g < 400 }).length,
+    inactivo: equipos.filter(e => !e.gpv_mes_actual || e.gpv_mes_actual === 0).length
+  };
+  
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total Equipos</div>
+      <div class="kpi-value">${equipos.length}</div>
+      <div class="kpi-detail">Equipos activos en período</div>
     </div>
-    <div class="tarjeta-resumen">
-      <div class="titulo">🛒 TRANSACCIONES</div>
-      <div class="valor">${formatearNumero(totalTRX, 0)}</div>
-      <div class="detalle">${equipos.length > 0 ? (totalTRX / equipos.length).toFixed(1) : '0'} por equipo</div>
+    <div class="kpi-card">
+      <div class="kpi-label">GPV Total</div>
+      <div class="kpi-value">S/ ${formatearNumero(totalGPV)}</div>
+      <div class="kpi-detail">Generado este mes</div>
     </div>
-    <div class="tarjeta-resumen">
-      <div class="titulo">🎫 TICKET PROMEDIO</div>
-      <div class="valor">S/ ${formatearNumero(ticketPromedio)}</div>
-      <div class="detalle">por transacción</div>
+    <div class="kpi-card">
+      <div class="kpi-label">Transacciones</div>
+      <div class="kpi-value">${formatearNumero(totalTRX, 0)}</div>
+      <div class="kpi-detail">Ticket promedio: S/ ${totalTRX > 0 ? formatearNumero(totalGPV/totalTRX) : '0.00'}</div>
     </div>
-    <div class="tarjeta-resumen">
-      <div class="titulo">✅ EQUIPOS ACTIVOS</div>
-      <div class="valor">${activos}/${equipos.length}</div>
-      <div class="detalle">${equipos.length > 0 ? Math.round(activos/equipos.length*100) : 0}% del total</div>
+    <div class="kpi-card">
+      <div class="kpi-label">Rendimiento</div>
+      <div class="kpi-value" style="color: var(--gpv-excelente);">${rangos.excelente}</div>
+      <div class="kpi-detail">Equipos ≥ S/ 700</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Atención</div>
+      <div class="kpi-value" style="color: var(--gpv-inactivo);">${rangos.inactivo}</div>
+      <div class="kpi-detail">Equipos sin ventas (0 GPV)</div>
     </div>
   `;
 }
 
-function renderizarEjecutivos() {
-  const grid = document.getElementById('ejecutivosGrid');
-  grid.innerHTML = '';
+function renderizarGraficas() {
+  const equipos = getEquiposFiltrados();
   
-  let equiposFiltrados = DATOS_COMPLETOS.equipos || [];
+  // Datos por ejecutivo
+  const porEjecutivo = {};
+  equipos.forEach(e => {
+    const exec = e.responsable_real || 'Sin asignar';
+    if (!porEjecutivo[exec]) porEjecutivo[exec] = 0;
+    porEjecutivo[exec] += e.gpv_mes_actual || 0;
+  });
   
-  if (mesActual !== 'TODOS') {
-    equiposFiltrados = equiposFiltrados.filter(e => e.mes_venta === mesActual);
-  }
+  // Destruir gráficas anteriores
+  if (chartEjecutivos) chartEjecutivos.destroy();
+  if (chartDistribucion) chartDistribucion.destroy();
   
-  if (equiposFiltrados.length === 0) {
-    grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay equipos vendidos en este mes</div>';
-    return;
-  }
-  
-  const ejecutivosMap = new Map();
-  
-  equiposFiltrados.forEach(eq => {
-    const exec = eq.responsable_real || 'SIN ASIGNAR';
-    if (!ejecutivosMap.has(exec)) {
-      ejecutivosMap.set(exec, {
-        total_equipos: 0,
-        gpv_total: 0,
-        transacciones_total: 0,
-        activos: 0,
-        regulares: 0,
-        inactivos: 0
-      });
+  // Gráfica 1: GPV por Ejecutivo
+  const ctx1 = document.getElementById('chartEjecutivos').getContext('2d');
+  chartEjecutivos = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(porEjecutivo),
+      datasets: [{
+        label: 'GPV (S/)',
+        data: Object.values(porEjecutivo),
+        backgroundColor: 'rgba(14, 165, 233, 0.8)',
+        borderRadius: 8,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(148, 163, 184, 0.1)' },
+          ticks: { color: 'var(--text-secondary)' }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: 'var(--text-secondary)' }
+        }
+      }
     }
-    
-    const stats = ejecutivosMap.get(exec);
-    stats.total_equipos++;
-    stats.gpv_total += eq.gpv_mes_actual || 0;
-    stats.transacciones_total += eq.transacciones_mes_actual || 0;
-    
-    if (eq.estado === 'ACTIVO') stats.activos++;
-    else if (eq.estado === 'REGULAR') stats.regulares++;
-    else if (eq.estado === 'INACTIVO') stats.inactivos++;
   });
   
-  const ejecutivosArray = Array.from(ejecutivosMap.entries()).map(([nombre, stats]) => {
-    const ticketPromedio = stats.transacciones_total > 0 ? stats.gpv_total / stats.transacciones_total : 0;
-    return {
-      nombre: nombre,
-      total_equipos: stats.total_equipos,
-      gpv_total: stats.gpv_total,
-      transacciones_total: stats.transacciones_total,
-      ticket_promedio: ticketPromedio,
-      activos: stats.activos,
-      regulares: stats.regulares,
-      inactivos: stats.inactivos
-    };
-  });
+  // Gráfica 2: Distribución por rangos
+  const rangos = [
+    equipos.filter(e => (e.gpv_mes_actual || 0) >= 700).length,
+    equipos.filter(e => { const g = e.gpv_mes_actual || 0; return g >= 400 && g < 700 }).length,
+    equipos.filter(e => { const g = e.gpv_mes_actual || 0; return g > 0 && g < 400 }).length,
+    equipos.filter(e => !e.gpv_mes_actual || e.gpv_mes_actual === 0).length
+  ];
   
-  ejecutivosArray.sort((a, b) => b.total_equipos - a.total_equipos);
-  
-  const textoPeriodo = mesActual === 'TODOS' ? 'total' : mesActual;
-  
-  ejecutivosArray.forEach(exec => {
-    const pct = Math.min(100, Math.round((exec.total_equipos / META_VENTAS) * 100));
-    const seleccionado = ejecutivoActual === exec.nombre ? 'seleccionado' : '';
-    const nombreEscapado = exec.nombre.replace(/'/g, "\\'");
-    
-    grid.innerHTML += `
-      <div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${nombreEscapado}')">
-        <div class="nombre-ejecutivo">${exec.nombre}</div>
-        <div style="font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-          ${exec.total_equipos}
-        </div>
-        <div style="color: var(--texto-suave); margin-bottom: 16px;">equipos vendidos en ${textoPeriodo}</div>
-        
-        <div class="metricas-rapidas">
-          <div class="metrica">
-            <div class="valor">S/ ${formatearNumero(exec.gpv_total)}</div>
-            <div class="etiqueta">GPV</div>
-          </div>
-          <div class="metrica">
-            <div class="valor">${formatearNumero(exec.transacciones_total, 0)}</div>
-            <div class="etiqueta">TRX</div>
-          </div>
-          <div class="metrica">
-            <div class="valor">S/ ${formatearNumero(exec.ticket_promedio)}</div>
-            <div class="etiqueta">Ticket</div>
-          </div>
-        </div>
-        
-        <div class="barra-progreso">
-          <div class="encabezado">
-            <span>Meta: ${META_VENTAS} equipos</span>
-            <span>${pct}%</span>
-          </div>
-          <div class="barra">
-            <div class="lleno" style="width: ${pct}%"></div>
-          </div>
-        </div>
-        
-        <div class="insignias-estado">
-          <div class="insignia insignia-verde">✅ ${exec.activos || 0}</div>
-          <div class="insignia insignia-naranja">🟠 ${exec.regulares || 0}</div>
-          <div class="insignia insignia-rojo">❌ ${exec.inactivos || 0}</div>
-        </div>
-      </div>
-    `;
+  const ctx2 = document.getElementById('chartDistribucion').getContext('2d');
+  chartDistribucion = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['≥ S/ 700 (Excelente)', 'S/ 400-699 (Bueno)', 'S/ 1-399 (Bajo)', 'S/ 0 (Inactivo)'],
+      datasets: [{
+        data: rangos,
+        backgroundColor: [
+          'var(--gpv-excelente)',
+          'var(--gpv-bueno)',
+          'var(--gpv-bajo)',
+          'var(--gpv-inactivo)'
+        ],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: 'var(--text-secondary)', padding: 20 }
+        }
+      }
+    }
   });
 }
 
 function renderizarTabla() {
-  let equipos = DATOS_COMPLETOS.equipos || [];
+  let equipos = getEquiposFiltrados();
   
-  if (mesActual !== 'TODOS') {
-    equipos = equipos.filter(e => e.mes_venta === mesActual);
-  }
-  if (ejecutivoActual !== 'TODOS') {
-    equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
-  }
-  
-  document.getElementById('detalleTitulo').textContent = ejecutivoActual === 'TODOS' ? 'TODOS' : ejecutivoActual;
-  document.getElementById('detalleContador').textContent = `${equipos.length} equipos`;
+  // Buscar comercios con múltiples equipos para marcarlos
+  const comerciosCount = {};
+  equipos.forEach(e => {
+    const key = `${e.ruc}_${e.comercio}`;
+    comerciosCount[key] = (comerciosCount[key] || 0) + 1;
+  });
   
   const tbody = document.getElementById('tablaCuerpo');
+  document.getElementById('countBadge').textContent = equipos.length;
+  
   if (equipos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center; padding:40px;">No hay equipos para mostrar</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">No hay equipos para mostrar</td></tr>';
     return;
   }
   
-  tbody.innerHTML = equipos.map((eq, i) => {
-    let claseEstado = 'estado-inactivo';
-    let puntoColor = 'punto-rojo';
+  tbody.innerHTML = equipos.map(eq => {
+    const gpv = eq.gpv_mes_actual || 0;
+    const gpvClass = getGPVClass(gpv);
+    const gpvDot = getGPVDot(gpv);
+    const esMulti = comerciosCount[`${eq.ruc}_${eq.comercio}`] > 1;
     
-    if (eq.estado === 'ACTIVO') {
-      claseEstado = 'estado-activo';
-      puntoColor = 'punto-verde';
-    } else if (eq.estado === 'REGULAR') {
-      claseEstado = 'estado-regular';
-      puntoColor = 'punto-naranja';
-    }
-    
-    const variacion = eq.variacion_gpv || 0;
-    const varClass = variacion >= 0 ? '' : 'amount-negative';
-    const varSigno = variacion >= 0 ? '+' : '';
-    
-    // Mostrar el nombre del comercio exactamente como viene, sin modificar
-    const nombreComercio = eq.comercio || 'SIN NOMBRE';
+    // Badge de estado basado en última transacción
+    let estadoBadge = '<span class="badge badge-estado-inactivo">● Sin datos</span>';
+    if (eq.estado === 'ACTIVO') estadoBadge = '<span class="badge badge-estado-activo">● Activo</span>';
+    else if (eq.estado === 'REGULAR') estadoBadge = '<span class="badge badge-estado-regular">● Regular</span>';
+    else if (eq.estado === 'INACTIVO') estadoBadge = '<span class="badge badge-estado-inactivo">● Inactivo</span>';
     
     return `
       <tr>
-        <td>${i + 1}</td>
         <td>
-          <strong>${nombreComercio}</strong><br>
-          <small style="color:var(--texto-suave)">📟 ${eq.numero_serie || 'N/A'}</small>
+          <div class="comercio-info">
+            <div class="comercio-nombre">
+              ${eq.comercio || 'Sin nombre'}
+              ${esMulti ? '<span class="multi-equipo" title="Comercio con múltiples equipos">+' + (comerciosCount[`${eq.ruc}_${eq.comercio}`] - 1) + '</span>' : ''}
+            </div>
+            <div class="comercio-serie">${eq.numero_serie || 'N/A'}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">RUC: ${eq.ruc || '-'}</div>
+          </div>
         </td>
-        <td>${eq.responsable_real || 'SIN ASIGNAR'}</td>
-        <td>${eq.ruc || '-'}</td>
-        <td>${formatearFecha(eq.fecha_venta)}</td>
-        <td>${formatearFecha(eq.dia_prueba) || '-'}</td>
-        <td>${formatearFecha(eq.dia_activo) || '-'}</td>
+        <td>${eq.responsable_real || 'Sin asignar'}</td>
+        <td style="text-align: right;" class="gpv-cell ${gpvClass}">
+          <span class="dot ${gpvDot}" style="margin-right: 6px;"></span>
+          S/ ${formatearNumero(gpv)}
+        </td>
+        <td style="text-align: center;">${eq.transacciones_mes_actual || 0}</td>
         <td>${formatearFecha(eq.ultima_transaccion) || '-'}</td>
-        <td>${eq.dias_desde_activo || '-'}</td>
-        <td class="amount">S/ ${formatearNumero(eq.gpv_mes_actual || 0)}</td>
-        <td class="amount">${formatearNumero(eq.transacciones_mes_actual || 0, 0)}</td>
-        <td class="amount">S/ ${formatearNumero(eq.ticket_promedio_mes_actual || 0)}</td>
-        <td class="amount">S/ ${formatearNumero(eq.gpv_mes_anterior || 0)}</td>
-        <td class="amount">${formatearNumero(eq.transacciones_mes_anterior || 0, 0)}</td>
-        <td class="amount ${varClass}">${varSigno}${formatearNumero(variacion, 1)}%</td>
-        <td><span class="estado ${claseEstado}"><span class="punto ${puntoColor}"></span> ${eq.estado || 'SIN DATOS'}</span></td>
+        <td style="text-align: center;">${estadoBadge}</td>
       </tr>
     `;
   }).join('');
 }
 
-function formatearNumero(num, decimales = 2) {
-  if (num === undefined || num === null || num === '' || isNaN(num)) return decimales === 0 ? '0' : '0.00';
-  const n = typeof num === 'string' ? parseFloat(num) : Number(num);
-  if (isNaN(n)) return decimales === 0 ? '0' : '0.00';
-  return n.toLocaleString('es-PE', { 
-    minimumFractionDigits: decimales, 
-    maximumFractionDigits: decimales 
-  });
+function getEquiposFiltrados() {
+  let equipos = DATOS_COMPLETOS?.equipos || [];
+  if (mesActual !== 'TODOS') equipos = equipos.filter(e => e.mes_venta === mesActual);
+  if (ejecutivoActual !== 'TODOS') equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
+  return equipos;
 }
 
-function formatearFecha(fecha) {
-  if (!fecha || fecha === 'Invalid Date') return '';
-  if (typeof fecha === 'string' && fecha.includes('-')) {
-    const partes = fecha.split('-');
-    if (partes.length === 3) {
-      return `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
-  }
-  if (fecha instanceof Date) {
-    const dia = fecha.getDate().toString().padStart(2, '0');
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const anio = fecha.getFullYear();
-    return `${dia}/${mes}/${anio}`;
-  }
-  return fecha.toString();
+function filtrarTabla() {
+  const texto = document.getElementById('searchInput').value.toLowerCase();
+  const filas = document.querySelectorAll('#tablaCuerpo tr');
+  
+  filas.forEach(fila => {
+    const contenido = fila.textContent.toLowerCase();
+    fila.style.display = contenido.includes(texto) ? '' : 'none';
+  });
 }
 
 function cambiarMes(mes) {
   mesActual = mes;
-  ejecutivoActual = 'TODOS';
-  document.getElementById('execSelect').value = 'TODOS';
-  
-  document.querySelectorAll('.pestana-mes').forEach(t => {
-    const texto = t.textContent.trim();
-    const esActivo = (mes === 'TODOS' && texto.includes('TODOS')) || texto === mes;
-    t.classList.toggle('activo', esActivo);
-  });
-  
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
   renderizarTodo();
 }
 
@@ -828,73 +861,46 @@ function cambiarEjecutivo(val) {
   renderizarTodo();
 }
 
-function seleccionarEjecutivo(exec) {
-  ejecutivoActual = ejecutivoActual === exec ? 'TODOS' : exec;
-  document.getElementById('execSelect').value = ejecutivoActual;
-  renderizarTodo();
+function formatearNumero(num, dec = 2) {
+  if (!num || isNaN(num)) return dec === 0 ? '0' : '0.00';
+  return Number(num).toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function formatearFecha(fecha) {
+  if (!fecha) return '';
+  if (typeof fecha === 'string' && fecha.includes('-')) {
+    const p = fecha.split('-');
+    return `${p[2]}/${p[1]}/${p[0]}`;
+  }
+  return fecha;
 }
 
 function exportarExcel() {
-  let equipos = DATOS_COMPLETOS.equipos || [];
+  const equipos = getEquiposFiltrados();
+  if (equipos.length === 0) return alert('No hay datos');
   
-  if (mesActual !== 'TODOS') {
-    equipos = equipos.filter(e => e.mes_venta === mesActual);
-  }
-  if (ejecutivoActual !== 'TODOS') {
-    equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
-  }
-  
-  if (equipos.length === 0) {
-    alert('No hay datos para exportar');
-    return;
-  }
-  
-  const headers = [
-    'N°', 'Comercio', 'Serie', 'Ejecutivo', 'RUC', 'Fecha Venta', 
-    'Día Prueba', 'Día Activo', 'Última TRX', 'Estado',
-    'GPV M0', 'TRX M0', 'Ticket M0', 'GPV M1', 'TRX M1', 'Variación %'
-  ];
-  
-  const rows = equipos.map((eq, i) => [
-    i + 1,
-    `"${(eq.comercio || '').replace(/"/g, '""')}"`,
-    eq.numero_serie || '',
-    eq.responsable_real || '',
-    eq.ruc || '',
-    eq.fecha_venta || '',
-    eq.dia_prueba || '',
-    eq.dia_activo || '',
-    eq.ultima_transaccion || '',
-    eq.estado || '',
-    eq.gpv_mes_actual || 0,
-    eq.transacciones_mes_actual || 0,
-    eq.ticket_promedio_mes_actual || 0,
-    eq.gpv_mes_anterior || 0,
-    eq.transacciones_mes_anterior || 0,
-    eq.variacion_gpv || 0
-  ]);
-  
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(r => r.join(','))
+  const csv = [
+    ['Comercio', 'Serie', 'Ejecutivo', 'RUC', 'GPV M0', 'TRX M0', 'Última TRX', 'Estado'].join(','),
+    ...equipos.map(e => [
+      `"${(e.comercio || '').replace(/"/g, '""')}"`,
+      e.numero_serie,
+      e.responsable_real,
+      e.ruc,
+      e.gpv_mes_actual || 0,
+      e.transacciones_mes_actual || 0,
+      e.ultima_transaccion || '',
+      e.estado || 'SIN_DATOS'
+    ].join(','))
   ].join('\n');
   
-  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv' });
   const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  
-  link.setAttribute('href', url);
-  link.setAttribute('download', `dashboard_ventas_${new Date().toISOString().split('T')[0]}.csv`);
-  link.style.visibility = 'hidden';
-  
-  document.body.appendChild(link);
+  link.href = URL.createObjectURL(blob);
+  link.download = `dashboard_ventas_${new Date().toISOString().split('T')[0]}.csv`;
   link.click();
-  document.body.removeChild(link);
 }
 
-window.onload = () => {
-  cargarDatos();
-};
+window.onload = () => cargarDatos();
 </script>
 </body>
 </html>
