@@ -3,47 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard con Menú</title>
+<title>Panel de Ventas - Menú</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   
   body {
-    font-family: 'Inter', sans-serif;
-    background: #0a0e1a;
-    color: #e2e8f0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     display: flex;
     height: 100vh;
     overflow: hidden;
+    background: #0a0e1a;
   }
 
   /* Sidebar */
   .sidebar {
     width: 260px;
     background: #111827;
-    border-right: 1px solid #1e2d45;
+    border-right: 1px solid #1e293b;
     display: flex;
     flex-direction: column;
-    transition: all 0.3s;
+    z-index: 100;
   }
 
   .sidebar-header {
-    padding: 24px;
-    border-bottom: 1px solid #1e2d45;
+    padding: 24px 20px;
+    border-bottom: 1px solid #1e293b;
   }
 
-  .sidebar-header h2 {
+  .sidebar-header h1 {
     font-size: 20px;
     background: linear-gradient(135deg, #0ea5e9, #7c3aed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+
+  .sidebar-header p {
+    font-size: 12px;
+    color: #64748b;
   }
 
   .nav-menu {
     flex: 1;
-    padding: 20px 12px;
+    padding: 16px 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
   }
 
   .nav-item {
@@ -51,11 +56,11 @@
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    border-radius: 12px;
+    border-radius: 10px;
     color: #94a3b8;
     text-decoration: none;
-    font-weight: 600;
     font-size: 14px;
+    font-weight: 600;
     transition: all 0.2s;
     cursor: pointer;
     border: none;
@@ -66,7 +71,7 @@
 
   .nav-item:hover {
     background: #1e293b;
-    color: #0ea5e9;
+    color: #e2e8f0;
   }
 
   .nav-item.active {
@@ -82,26 +87,25 @@
 
   .sidebar-footer {
     padding: 20px;
-    border-top: 1px solid #1e2d45;
-    font-size: 12px;
+    border-top: 1px solid #1e293b;
     color: #64748b;
+    font-size: 12px;
     text-align: center;
   }
 
-  /* Contenido principal */
+  /* Contenido Principal */
   .main-content {
     flex: 1;
+    position: relative;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
   }
 
-  /* Header móvil */
   .mobile-header {
     display: none;
     padding: 16px;
     background: #111827;
-    border-bottom: 1px solid #1e2d45;
+    border-bottom: 1px solid #1e293b;
     align-items: center;
     gap: 16px;
   }
@@ -112,15 +116,39 @@
     color: #e2e8f0;
     font-size: 24px;
     cursor: pointer;
+    padding: 4px;
   }
 
-  /* Iframe container */
-  .content-frame {
+  /* Iframe Container */
+  .iframe-container {
     flex: 1;
-    border: none;
+    position: relative;
+    background: #0a0e1a;
+  }
+
+  iframe {
     width: 100%;
     height: 100%;
-    background: #0a0e1a;
+    border: none;
+    display: block;
+  }
+
+  /* Mensaje de error */
+  .error-msg {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #94a3b8;
+    padding: 20px;
+  }
+
+  .error-msg a {
+    color: #0ea5e9;
+    text-decoration: none;
+    font-weight: 600;
   }
 
   /* Responsive */
@@ -129,7 +157,7 @@
       position: fixed;
       left: -260px;
       height: 100vh;
-      z-index: 1000;
+      transition: left 0.3s;
       box-shadow: 4px 0 20px rgba(0,0,0,0.5);
     }
     
@@ -146,7 +174,7 @@
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.5);
-      z-index: 999;
+      z-index: 99;
     }
     
     .overlay.active {
@@ -157,124 +185,142 @@
 </head>
 <body>
 
-<!-- Overlay para móvil -->
-<div class="overlay" onclick="toggleSidebar()"></div>
+<!-- Overlay móvil -->
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
-<!-- Sidebar / Menú lateral -->
+<!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <h2>📊 Panel Ventas</h2>
-    <p style="font-size: 12px; color: #64748b; margin-top: 4px;">v2.0 - Punto de Venta</p>
+    <h1>📊 Panel Ventas</h1>
+    <p>Punto de Venta</p>
   </div>
   
   <nav class="nav-menu">
-    <button class="nav-item active" onclick="cargarSeccion('dashboard.html')">
+    <button class="nav-item active" onclick="loadPage('dashboard.html', this)">
       <span class="nav-icon">📈</span>
       <span>Dashboard</span>
     </button>
     
-    <button class="nav-item" onclick="cargarSeccion('ejecutivos.html')">
+    <button class="nav-item" onclick="loadPage('ejecutivos.html', this)">
       <span class="nav-icon">👥</span>
       <span>Ejecutivos</span>
     </button>
     
-    <button class="nav-item" onclick="cargarSeccion('comercios.html')">
+    <button class="nav-item" onclick="loadPage('comercios.html', this)">
       <span class="nav-icon">🏪</span>
       <span>Comercios</span>
     </button>
     
-    <button class="nav-item" onclick="cargarSeccion('mapa.html')">
+    <button class="nav-item" onclick="loadPage('mapa.html', this)">
       <span class="nav-icon">🗺️</span>
       <span>Mapa</span>
     </button>
     
-    <button class="nav-item" onclick="cargarSeccion('reportes.html')">
+    <button class="nav-item" onclick="loadPage('reportes.html', this)">
       <span class="nav-icon">📑</span>
       <span>Reportes</span>
     </button>
     
-    <button class="nav-item" onclick="cargarSeccion('config.html')">
-      <span class="nav-icon">⚙️</span>
-      <span>Configuración</span>
-    </button>
+    <div style="margin-top: auto; border-top: 1px solid #1e293b; padding-top: 16px;">
+      <button class="nav-item" onclick="alert('Configuración - Próximamente')">
+        <span class="nav-icon">⚙️</span>
+        <span>Configuración</span>
+      </button>
+    </div>
   </nav>
   
   <div class="sidebar-footer">
-    <div id="userInfo">Usuario: Admin</div>
-    <div style="margin-top: 4px;">© 2026</div>
+    <div>v2.0 · GitHub Pages</div>
   </div>
 </aside>
 
-<!-- Contenido Principal -->
+<!-- Main Content -->
 <div class="main-content">
-  <!-- Header móvil -->
   <div class="mobile-header">
-    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-    <h2 style="font-size: 18px;">Panel de Ventas</h2>
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+    <h2 style="color: #e2e8f0; font-size: 18px;">Panel de Ventas</h2>
   </div>
   
-  <!-- Aquí carga el dashboard existente -->
-  <iframe src="dashboard.html" class="content-frame" id="mainFrame"></iframe>
+  <div class="iframe-container">
+    <iframe id="contentFrame" src="dashboard.html" onload="onFrameLoad()" onerror="onFrameError()"></iframe>
+    
+    <div class="error-msg" id="errorMsg">
+      <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+      <h3 style="color: #e2e8f0; margin-bottom: 8px;">No se pudo cargar</h3>
+      <p>Verifica que el archivo <code>dashboard.html</code> esté en la misma carpeta.</p>
+      <p style="margin-top: 12px;">
+        <a href="dashboard.html" target="_blank">Abrir Dashboard directamente →</a>
+      </p>
+    </div>
+  </div>
 </div>
 
 <script>
-// Toggle sidebar en móvil
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.querySelector('.overlay');
-  sidebar.classList.toggle('open');
-  overlay.classList.toggle('active');
+let currentPage = 'dashboard.html';
+
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('active');
 }
 
-// Cambiar sección (cuando crees las otras páginas)
-function cargarSeccion(url) {
-  const frame = document.getElementById('mainFrame');
+function loadPage(url, btn) {
+  // Si el archivo no existe, muestra mensaje
+  if (url !== 'dashboard.html') {
+    // Por ahora solo dashboard existe, los otros muestran alerta
+    alert('🚧 Módulo "' + url.replace('.html', '') + '" en construcción.\n\nCrea el archivo ' + url + ' en tu repositorio para habilitarlo.');
+    return;
+  }
   
-  // Si la página no existe aún, muestra un mensaje
-  fetch(url, { method: 'HEAD' })
-    .then(response => {
-      if (response.ok) {
-        frame.src = url;
-      } else {
-        // Si no existe el archivo, muestra mensaje dentro del iframe
-        frame.srcdoc = `
-          <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0a0e1a; color: #e2e8f0; font-family: sans-serif; flex-direction: column; gap: 20px;">
-            <div style="font-size: 48px;">🚧</div>
-            <h2>Módulo en construcción</h2>
-            <p style="color: #64748b;">La página ${url} aún no existe en tu repositorio.</p>
-            <button onclick="history.back()" style="padding: 12px 24px; background: #0ea5e9; color: white; border: none; border-radius: 8px; cursor: pointer;">Volver</button>
-          </div>
-        `;
-      }
-    })
-    .catch(() => {
-      frame.src = url; // Intenta cargar igual
-    });
+  currentPage = url;
+  const frame = document.getElementById('contentFrame');
+  const errorMsg = document.getElementById('errorMsg');
+  
+  // Reset
+  errorMsg.style.display = 'none';
+  frame.style.display = 'block';
+  
+  // Cargar
+  frame.src = url;
   
   // Actualizar botón activo
-  document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.textContent.includes(url.replace('.html', '').replace('-', ' '))) {
-      btn.classList.add('active');
-    }
-  });
+  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+  if (btn) btn.classList.add('active');
   
   // Cerrar menú en móvil
   if (window.innerWidth <= 768) {
-    toggleSidebar();
+    toggleMenu();
   }
 }
 
-// Cerrar sidebar al hacer clic fuera en móvil
-document.addEventListener('click', (e) => {
-  const sidebar = document.getElementById('sidebar');
-  if (window.innerWidth <= 768 && 
-      !sidebar.contains(e.target) && 
-      !e.target.classList.contains('menu-toggle')) {
-    sidebar.classList.remove('open');
-    document.querySelector('.overlay').classList.remove('active');
+function onFrameLoad() {
+  console.log('✅ Dashboard cargado correctamente');
+  // Ocultar error si estaba visible
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+function onFrameError() {
+  console.error('❌ Error al cargar iframe');
+  document.getElementById('errorMsg').style.display = 'block';
+}
+
+// Verificar si carga después de 3 segundos
+setTimeout(() => {
+  try {
+    const frame = document.getElementById('contentFrame');
+    // Si el iframe está vacío o no accesible
+    if (!frame.contentWindow || !frame.contentWindow.document) {
+      console.warn('⚠️ Posible problema de carga');
+    }
+  } catch(e) {
+    // Error de cross-origin es normal si el contenido es de otro dominio
+    // pero como es el mismo repo, no debería pasar
   }
-});
+}, 3000);
+
+// Responsive check
+if (window.innerWidth <= 768) {
+  document.body.classList.add('mobile');
+}
 </script>
 
 </body>
