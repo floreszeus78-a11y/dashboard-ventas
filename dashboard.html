@@ -386,6 +386,15 @@
   .punto-naranja { background: var(--naranja); }
   .punto-rojo { background: var(--rojo); }
 
+  .amount {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+  }
+
+  .amount-negative {
+    color: var(--rojo);
+  }
+
   .loading {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -434,7 +443,7 @@
     <div class="fila-filtros">
       <span class="etiqueta-filtro">📅 Mes:</span>
       <div class="pestanas-mes" id="monthTabs">
-        <button class="pestana-mes activo">TODOS</button>
+        <button class="pestana-mes activo" onclick="cambiarMes('TODOS')">📅 TODOS</button>
       </div>
       
       <span class="etiqueta-filtro">👤 Ejecutivo:</span>
@@ -494,7 +503,9 @@
 // ============================================================
 // CONFIGURACIÓN
 // ============================================================
-const URL_API = 'https://script.google.com/macros/s/AKfycbwrh_wqzIbzTMCg74VTmnQmc_S5goL8ZCrewEi0CLbBqgWXY-HT05VEEBg16fVkqS3K/exec'; // ⚠️ CAMBIA ESTO POR TU URL
+// ⚠️ REEMPLAZA ESTA URL CON LA DE TU PROYECTO DE GOOGLE APPS SCRIPT
+const URL_API = 'https://script.google.com/macros/s/AKfycbwrh_wqzIbzTMCg74VTmnQmc_S5goL8ZCrewEi0CLbBqgWXY-HT05VEEBg16fVkqS3K/exec';
+
 const META_VENTAS = 10;
 
 let DATOS_COMPLETOS = null;
@@ -513,13 +524,20 @@ async function cargarDatos(forzar = false) {
   mainContent.style.display = 'none';
   
   try {
-    loadingText.textContent = 'Conectando...';
+    loadingText.textContent = 'Conectando con Google Sheets...';
     const response = await fetch(URL_API);
+    
+    if (!response.ok) {
+      throw new Error('Error HTTP: ' + response.status);
+    }
+    
     DATOS_COMPLETOS = await response.json();
     
-    if (DATOS_COMPLETOS.error) throw new Error(DATOS_COMPLETOS.mensaje);
+    if (DATOS_COMPLETOS.error) {
+      throw new Error(DATOS_COMPLETOS.mensaje || 'Error desconocido del servidor');
+    }
     
-    loadingText.textContent = 'Procesando datos...';
+    loadingText.textContent = 'Procesando ' + DATOS_COMPLETOS.resumen.total_equipos + ' equipos...';
     
     inicializarFiltros();
     renderizarTodo();
@@ -528,26 +546,32 @@ async function cargarDatos(forzar = false) {
     mainContent.style.display = 'block';
     
   } catch (error) {
-    loadingText.textContent = 'Error: ' + error.message;
-    console.error(error);
+    loadingText.innerHTML = '❌ Error: ' + error.message + '<br><br>Verifica que la URL de la API sea correcta y que el proyecto de Apps Script esté desplegado.';
+    loadingText.style.color = '#ef4444';
+    console.error('Error completo:', error);
   }
 }
 
 function inicializarFiltros() {
-  // Pestañas de meses (incluye TODOS)
+  // Pestañas de meses
   const monthTabs = document.getElementById('monthTabs');
   monthTabs.innerHTML = '<button class="pestana-mes activo" onclick="cambiarMes(\'TODOS\')">📅 TODOS</button>';
   
-  DATOS_COMPLETOS.meses_disponibles.forEach(mes => {
-    monthTabs.innerHTML += `<button class="pestana-mes" onclick="cambiarMes('${mes}')">${mes}</button>`;
-  });
+  if (DATOS_COMPLETOS.meses_disponibles && DATOS_COMPLETOS.meses_disponibles.length > 0) {
+    DATOS_COMPLETOS.meses_disponibles.forEach(mes => {
+      monthTabs.innerHTML += `<button class="pestana-mes" onclick="cambiarMes('${mes}')">${mes}</button>`;
+    });
+  }
   
   // Select de ejecutivos
   const select = document.getElementById('execSelect');
   select.innerHTML = '<option value="TODOS">Todos los ejecutivos</option>';
-  DATOS_COMPLETOS.ejecutivos.forEach(exec => {
-    select.innerHTML += `<option value="${exec}">${exec}</option>`;
-  });
+  
+  if (DATOS_COMPLETOS.ejecutivos && DATOS_COMPLETOS.ejecutivos.length > 0) {
+    DATOS_COMPLETOS.ejecutivos.forEach(exec => {
+      select.innerHTML += `<option value="${exec}">${exec}</option>`;
+    });
+  }
 }
 
 // ============================================================
@@ -560,7 +584,7 @@ function renderizarTodo() {
 }
 
 function renderizarResumen() {
-  let equipos = DATOS_COMPLETOS.equipos;
+  let equipos = DATOS_COMPLETOS.equipos || [];
   
   // Aplicar filtros
   if (mesActual !== 'TODOS') {
@@ -570,9 +594,10 @@ function renderizarResumen() {
     equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
   }
   
-  const totalGPV = equipos.reduce((sum, e) => sum + e.gpv_mes_actual, 0);
-  const totalTRX = equipos.reduce((sum, e) => sum + e.transacciones_mes_actual, 0);
+  const totalGPV = equipos.reduce((sum, e) => sum + (e.gpv_mes_actual || 0), 0);
+  const totalTRX = equipos.reduce((sum, e) => sum + (e.transacciones_mes_actual || 0), 0);
   const activos = equipos.filter(e => e.estado === 'ACTIVO').length;
+  const ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
   
   document.getElementById('resumenCards').innerHTML = `
     <div class="tarjeta-resumen">
@@ -582,18 +607,18 @@ function renderizarResumen() {
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">🛒 TRANSACCIONES</div>
-      <div class="valor">${formatearNumero(totalTRX)}</div>
-      <div class="detalle">${formatearNumero(totalTRX / (equipos.length || 1), 1)} por equipo</div>
+      <div class="valor">${formatearNumero(totalTRX, 0)}</div>
+      <div class="detalle">${equipos.length > 0 ? formatearNumero(totalTRX / equipos.length, 1) : '0'} por equipo</div>
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">🎫 TICKET PROMEDIO</div>
-      <div class="valor">S/ ${formatearNumero(totalTRX ? totalGPV / totalTRX : 0)}</div>
+      <div class="valor">S/ ${formatearNumero(ticketPromedio)}</div>
       <div class="detalle">por transacción</div>
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">✅ EQUIPOS ACTIVOS</div>
       <div class="valor">${activos}/${equipos.length}</div>
-      <div class="detalle">${Math.round(activos/equipos.length*100) || 0}% del total</div>
+      <div class="detalle">${equipos.length > 0 ? Math.round(activos/equipos.length*100) : 0}% del total</div>
     </div>
   `;
 }
@@ -601,6 +626,11 @@ function renderizarResumen() {
 function renderizarEjecutivos() {
   const grid = document.getElementById('ejecutivosGrid');
   grid.innerHTML = '';
+  
+  if (!DATOS_COMPLETOS.ejecutivos || !DATOS_COMPLETOS.desempeno_ejecutivos) {
+    grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay datos de ejecutivos</div>';
+    return;
+  }
   
   DATOS_COMPLETOS.ejecutivos.forEach(exec => {
     const stats = DATOS_COMPLETOS.desempeno_ejecutivos[exec];
@@ -623,7 +653,7 @@ function renderizarEjecutivos() {
             <div class="etiqueta">GPV</div>
           </div>
           <div class="metrica">
-            <div class="valor">${formatearNumero(stats.transacciones_total)}</div>
+            <div class="valor">${formatearNumero(stats.transacciones_total, 0)}</div>
             <div class="etiqueta">TRX</div>
           </div>
           <div class="metrica">
@@ -643,9 +673,9 @@ function renderizarEjecutivos() {
         </div>
         
         <div class="insignias-estado">
-          <div class="insignia insignia-verde">✅ ${stats.activos}</div>
-          <div class="insignia insignia-naranja">🟠 ${stats.regulares}</div>
-          <div class="insignia insignia-rojo">❌ ${stats.inactivos}</div>
+          <div class="insignia insignia-verde">✅ ${stats.activos || 0}</div>
+          <div class="insignia insignia-naranja">🟠 ${stats.regulares || 0}</div>
+          <div class="insignia insignia-rojo">❌ ${stats.inactivos || 0}</div>
         </div>
       </div>
     `;
@@ -653,7 +683,7 @@ function renderizarEjecutivos() {
 }
 
 function renderizarTabla() {
-  let equipos = DATOS_COMPLETOS.equipos;
+  let equipos = DATOS_COMPLETOS.equipos || [];
   
   if (mesActual !== 'TODOS') {
     equipos = equipos.filter(e => e.mes_venta === mesActual);
@@ -683,55 +713,88 @@ function renderizarTabla() {
       puntoColor = 'punto-naranja';
     }
     
-    const varClass = eq.variacion_gpv >= 0 ? '' : 'amount-negative';
-    const varSigno = eq.variacion_gpv >= 0 ? '+' : '';
+    const variacion = eq.variacion_gpv || 0;
+    const varClass = variacion >= 0 ? '' : 'amount-negative';
+    const varSigno = variacion >= 0 ? '+' : '';
     
     return `<tr>
       <td>${i + 1}</td>
       <td>
-        <strong>${eq.comercio}</strong><br>
-        <small style="color:var(--texto-suave)">📟 ${eq.numero_serie}</small>
+        <strong>${eq.comercio || 'SIN NOMBRE'}</strong><br>
+        <small style="color:var(--texto-suave)">📟 ${eq.numero_serie || 'N/A'}</small>
       </td>
-      <td>${eq.responsable_real}</td>
+      <td>${eq.responsable_real || 'SIN ASIGNAR'}</td>
       <td>${eq.ruc || '-'}</td>
       <td>${formatearFecha(eq.fecha_venta)}</td>
       <td>${formatearFecha(eq.dia_prueba) || '-'}</td>
       <td>${formatearFecha(eq.dia_activo) || '-'}</td>
       <td>${formatearFecha(eq.ultima_transaccion) || '-'}</td>
       <td>${eq.dias_desde_activo || '-'}</td>
-      <td class="amount">S/ ${formatearNumero(eq.gpv_mes_actual)}</td>
-      <td class="amount">${formatearNumero(eq.transacciones_mes_actual)}</td>
-      <td class="amount">S/ ${formatearNumero(eq.ticket_promedio_mes_actual)}</td>
-      <td class="amount">S/ ${formatearNumero(eq.gpv_mes_anterior)}</td>
-      <td class="amount">${formatearNumero(eq.transacciones_mes_anterior)}</td>
-      <td class="amount ${varClass}">${varSigno}${formatearNumero(eq.variacion_gpv, 1)}%</td>
-      <td><span class="estado ${claseEstado}"><span class="punto ${puntoColor}"></span> ${eq.estado}</span></td>
+      <td class="amount">S/ ${formatearNumero(eq.gpv_mes_actual || 0)}</td>
+      <td class="amount">${formatearNumero(eq.transacciones_mes_actual || 0, 0)}</td>
+      <td class="amount">S/ ${formatearNumero(eq.ticket_promedio_mes_actual || 0)}</td>
+      <td class="amount">S/ ${formatearNumero(eq.gpv_mes_anterior || 0)}</td>
+      <td class="amount">${formatearNumero(eq.transacciones_mes_anterior || 0, 0)}</td>
+      <td class="amount ${varClass}">${varSigno}${formatearNumero(variacion, 1)}%</td>
+      <td><span class="estado ${claseEstado}"><span class="punto ${puntoColor}"></span> ${eq.estado || 'SIN DATOS'}</span></td>
     </tr>`;
   }).join('');
 }
 
 // ============================================================
-// UTILIDADES
+// UTILIDADES CORREGIDAS
 // ============================================================
 function formatearNumero(num, decimales = 2) {
-  if (num === undefined || num === null) return '0';
-  return num.toLocaleString('es-PE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+  // Manejar casos extremos
+  if (num === undefined || num === null || num === '' || isNaN(num)) return decimales === 0 ? '0' : '0.00';
+  
+  // Convertir a número si viene como string
+  const n = typeof num === 'string' ? parseFloat(num) : Number(num);
+  
+  if (isNaN(n)) return decimales === 0 ? '0' : '0.00';
+  
+  // Usar formato peruano
+  return n.toLocaleString('es-PE', { 
+    minimumFractionDigits: decimales, 
+    maximumFractionDigits: decimales 
+  });
 }
 
 function formatearFecha(fecha) {
-  if (!fecha) return '';
-  if (fecha.includes('-')) {
-    const partes = fecha.split('-');
-    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  if (!fecha || fecha === 'Invalid Date') return '';
+  
+  // Si ya tiene formato DD/MM/YYYY o similar
+  if (typeof fecha === 'string') {
+    if (fecha.includes('-')) {
+      const partes = fecha.split('-');
+      if (partes.length === 3) {
+        // YYYY-MM-DD → DD/MM/YYYY
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+      }
+    }
+    return fecha;
   }
-  return fecha;
+  
+  // Si es objeto Date
+  if (fecha instanceof Date) {
+    const dia = fecha.getDate().toString().padStart(2, '0');
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+  }
+  
+  return fecha.toString();
 }
 
 function cambiarMes(mes) {
   mesActual = mes;
+  
+  // Actualizar clases de pestañas
   document.querySelectorAll('.pestana-mes').forEach(t => {
-    t.classList.toggle('activo', t.textContent.includes(mes));
+    const esActivo = t.textContent.includes(mes) || (mes === 'TODOS' && t.textContent.includes('TODOS'));
+    t.classList.toggle('activo', esActivo);
   });
+  
   renderizarTodo();
 }
 
@@ -747,11 +810,69 @@ function seleccionarEjecutivo(exec) {
 }
 
 function exportarExcel() {
-  // Similar a la tabla pero con todos los datos
-  alert('Función de exportación a Excel - Implementar según necesidad');
+  // Crear CSV con los datos filtrados actuales
+  let equipos = DATOS_COMPLETOS.equipos || [];
+  
+  if (mesActual !== 'TODOS') {
+    equipos = equipos.filter(e => e.mes_venta === mesActual);
+  }
+  if (ejecutivoActual !== 'TODOS') {
+    equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
+  }
+  
+  if (equipos.length === 0) {
+    alert('No hay datos para exportar');
+    return;
+  }
+  
+  // Cabeceras CSV
+  const headers = [
+    'N°', 'Comercio', 'Serie', 'Ejecutivo', 'RUC', 'Fecha Venta', 
+    'Día Prueba', 'Día Activo', 'Última TRX', 'Estado',
+    'GPV M0', 'TRX M0', 'Ticket M0', 'GPV M1', 'TRX M1', 'Variación %'
+  ];
+  
+  // Filas de datos
+  const rows = equipos.map((eq, i) => [
+    i + 1,
+    `"${(eq.comercio || '').replace(/"/g, '""')}"`,
+    eq.numero_serie || '',
+    eq.responsable_real || '',
+    eq.ruc || '',
+    eq.fecha_venta || '',
+    eq.dia_prueba || '',
+    eq.dia_activo || '',
+    eq.ultima_transaccion || '',
+    eq.estado || '',
+    eq.gpv_mes_actual || 0,
+    eq.transacciones_mes_actual || 0,
+    eq.ticket_promedio_mes_actual || 0,
+    eq.gpv_mes_anterior || 0,
+    eq.transacciones_mes_anterior || 0,
+    eq.variacion_gpv || 0
+  ]);
+  
+  // Unir todo
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(r => r.join(','))
+  ].join('\n');
+  
+  // Descargar
+  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `dashboard_ventas_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-// Inicializar
+// Inicializar al cargar la página
 window.onload = () => {
   cargarDatos();
 };
