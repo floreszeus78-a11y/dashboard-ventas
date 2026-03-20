@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Ventas - Menú Lateral</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background: #0a0e1a;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 280px;
+    background: #111827;
+    border-right: 1px solid #1e293b;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .sidebar-header {
+    padding: 24px 20px;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .sidebar-header h1 {
+    font-size: 22px;
+    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+
+  .sidebar-header p {
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  .nav-menu {
+    flex: 1;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    color: #94a3b8;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+  }
+
+  .nav-item:hover {
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+
+  .nav-item.active {
+    background: rgba(14, 165, 233, 0.15);
+    color: #0ea5e9;
+    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.3);
+  }
+
+  .nav-icon {
+    font-size: 22px;
+    width: 28px;
+    text-align: center;
+  }
+
+  .sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid #1e293b;
+    color: #64748b;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  /* Main Content */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #0a0e1a;
+    position: relative;
+  }
+
+  .mobile-header {
+    display: none;
+    padding: 16px 20px;
+    background: #111827;
+    border-bottom: 1px solid #1e293b;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .menu-toggle {
+    background: none;
+    border: none;
+    color: #e2e8f0;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  /* Iframe Container - IMPORTANTE */
+  .iframe-wrapper {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #0a0e1a;
+    display: block;
+  }
+
+  /* Fallback si no carga */
+  .fallback {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #0a0e1a;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
+  }
+
+  .fallback.show {
+    display: flex;
+  }
+
+  .btn-primary {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #0ea5e9;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* Overlay móvil */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 99;
+  }
+
+  .overlay.active {
+    display: block;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed;
+      left: -280px;
+      height: 100vh;
+      transition: left 0.3s ease;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+    }
+    
+    .sidebar.open {
+      left: 0;
+    }
+    
+    .mobile-header {
+      display: flex;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<!-- Sidebar / Menú -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1>📊 Panel Ventas</h1>
+    <p>Sistema de Gestión Comercial</p>
+  </div>
+  
+  <nav class="nav-menu">
+    <button class="nav-item active" onclick="loadPage('dashboard.html', this)">
+      <span class="nav-icon">📈</span>
+      <span>Dashboard Principal</span>
+    </button>
+    
+    <button class="nav-item" onclick="mostrarMensaje('Ejecutivos')">
+      <span class="nav-icon">👥</span>
+      <span>Ejecutivos</span>
+    </button>
+    
+    <button class="nav-item" onclick="mostrarMensaje('Comercios')">
+      <span class="nav-icon">🏪</span>
+      <span>Comercios</span>
+    </button>
+    
+    <button class="nav-item" onclick="mostrarMensaje('Análisis')">
+      <span class="nav-icon">📊</span>
+      <span>Análisis Avanzado</span>
+    </button>
+    
+    <button class="nav-item" onclick="mostrarMensaje('Reportes')">
+      <span class="nav-icon">📑</span>
+      <span>Reportes</span>
+    </button>
+    
+    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #1e293b;">
+      <button class="nav-item" onclick="window.open('https://github.com/floreszeus78-a11y/dashboard-ventas', '_blank')">
+        <span class="nav-icon">⚙️</span>
+        <span>Configuración</span>
+      </button>
+    </div>
+  </nav>
+  
+  <div class="sidebar-footer">
+    <div>© 2026 · Dashboard Ventas</div>
+    <div style="margin-top: 4px; font-size: 11px;">v2.0</div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<div class="main-content">
+  <div class="mobile-header">
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+    <h2 style="color: #e2e8f0; font-size: 18px;">Panel de Ventas</h2>
+  </div>
+  
+  <div class="iframe-wrapper">
+    <!-- IMPORTANTE: src="dashboard.html" carga el archivo del mismo folder -->
+    <iframe 
+      id="contentFrame" 
+      src="dashboard.html"
+      allow="fullscreen"
+      onload="iframeLoaded()"
+      onerror="iframeError()">
+    </iframe>
+    
+    <!-- Fallback si hay error -->
+    <div class="fallback" id="fallback">
+      <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+      <h3 style="color: #e2e8f0; margin-bottom: 8px;">No se pudo cargar el Dashboard</h3>
+      <p style="max-width: 400px; line-height: 1.6;">
+        El archivo <code>dashboard.html</code> debe estar en la misma carpeta que este archivo <code>index.html</code>
+      </p>
+      <button class="btn-primary" onclick="window.location.href='dashboard.html'">
+        Abrir Dashboard Directamente
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Toggle menú móvil
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('active');
+}
+
+// Cargar página en iframe
+function loadPage(url, btn) {
+  // Marcar botón activo
+  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  
+  // Si es dashboard, cargar en iframe
+  if (url === 'dashboard.html') {
+    document.getElementById('contentFrame').src = url;
+    document.getElementById('fallback').classList.remove('show');
+  } else {
+    // Otros módulos (aún no existen)
+    mostrarMensaje(url.replace('.html', ''));
+    // Volver a seleccionar dashboard
+    document.querySelectorAll('.nav-item')[0].classList.add('active');
+    btn.classList.remove('active');
+  }
+  
+  // Cerrar menú en móvil
+  if (window.innerWidth <= 768) {
+    toggleMenu();
+  }
+}
+
+function mostrarMensaje(modulo) {
+  alert(`🚧 Módulo "${modulo}" en construcción\n\nEsta sección estará disponible próximamente.\nPor ahora puedes usar el Dashboard Principal.`);
+}
+
+function iframeLoaded() {
+  console.log('✅ Dashboard cargado correctamente');
+  document.getElementById('fallback').classList.remove('show');
+}
+
+function iframeError() {
+  console.error('❌ Error al cargar iframe');
+  document.getElementById('fallback').classList.add('show');
+}
+
+// Verificar carga después de 3 segundos (fallback de seguridad)
+setTimeout(() => {
+  const iframe = document.getElementById('contentFrame');
+  // Si el iframe sigue en about:blank o vacío, mostrar error
+  if (!iframe.contentWindow || iframe.contentWindow.location.href === 'about:blank') {
+    // Intentar recargar una vez
+    iframe.src = 'dashboard.html';
+  }
+}, 3000);
+
+// Cerrar menú al hacer clic fuera (solo móvil)
+document.addEventListener('click', (e) => {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  
+  if (window.innerWidth <= 768 && 
+      !sidebar.contains(e.target) && 
+      !e.target.classList.contains('menu-toggle') &&
+      overlay.classList.contains('active')) {
+    toggleMenu();
+  }
+});
+</script>
+
+</body>
+</html>
