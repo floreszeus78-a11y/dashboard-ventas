@@ -7,9 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  /* =========================================================
-     VARIABLES DE TEMA
-     ========================================================= */
   :root {
     --fondo: #0a0e1a;
     --superficie: #111827;
@@ -25,8 +22,6 @@
     --naranja: #f97316;
     --naranja-bg: rgba(249,115,22,0.15);
     --sombra: 0 4px 20px rgba(0,0,0,0.5);
-    
-    /* Colores GPV */
     --gpv-excelente: #22c55e;
     --gpv-bueno: #f97316;
     --gpv-bajo: #64748b;
@@ -48,7 +43,6 @@
     --naranja: #ea580c;
     --naranja-bg: rgba(234,88,12,0.15);
     --sombra: 0 4px 20px rgba(0,0,0,0.1);
-    
     --gpv-excelente: #16a34a;
     --gpv-bueno: #ea580c;
     --gpv-bajo: #475569;
@@ -64,9 +58,6 @@
     min-height: 100vh;
   }
 
-  /* =========================================================
-     HEADER
-     ========================================================= */
   .cabecera {
     background: linear-gradient(135deg, #0f172a, #0a1628);
     border-bottom: 1px solid var(--borde);
@@ -150,9 +141,6 @@
     padding: 24px 32px;
   }
 
-  /* =========================================================
-     FILTROS
-     ========================================================= */
   .filtros {
     background: var(--superficie);
     border: 1px solid var(--borde);
@@ -217,35 +205,6 @@
     cursor: pointer;
   }
 
-  /* Leyenda GPV */
-  .leyenda-gpv {
-    display: flex;
-    gap: 16px;
-    margin-left: auto;
-    font-size: 12px;
-    font-weight: 600;
-  }
-  
-  .leyenda-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  
-  .dot-green { background: var(--gpv-excelente); }
-  .dot-orange { background: var(--gpv-bueno); }
-  .dot-gray { background: var(--gpv-bajo); }
-  .dot-red { background: var(--gpv-inactivo); }
-
-  /* =========================================================
-     RESUMEN KPIs (4 tarjetas superiores)
-     ========================================================= */
   .grid-resumen {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -284,9 +243,6 @@
     font-size: 14px;
   }
 
-  /* =========================================================
-     GRÁFICAS
-     ========================================================= */
   .grid-graficas {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -314,9 +270,6 @@
     height: 300px;
   }
 
-  /* =========================================================
-     RENDIMIENTO POR EJECUTIVO (EXACTAMENTE COMO LO TENÍAS)
-     ========================================================= */
   .titulo-seccion {
     margin: 30px 0 20px;
     font-size: 24px;
@@ -423,9 +376,7 @@
   .insignia-naranja { background: var(--naranja-bg); color: var(--naranja); }
   .insignia-rojo { background: var(--rojo-bg); color: var(--rojo); }
 
-  /* =========================================================
-     TABLA SIMPLIFICADA CON COLORES GPV
-     ========================================================= */
+  /* TABLA Y FILTROS GPV */
   .seccion-tabla {
     background: var(--superficie);
     border: 1px solid var(--borde);
@@ -440,7 +391,7 @@
     align-items: center;
     margin-bottom: 20px;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 16px;
   }
 
   .titulo-tabla {
@@ -448,6 +399,43 @@
     font-weight: 700;
     color: var(--texto);
   }
+
+  .filtros-gpv {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .chip-filtro {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .chip-filtro:hover {
+    border-color: var(--acento);
+    transform: translateY(-1px);
+  }
+
+  .chip-filtro.activo {
+    background: var(--acento);
+    color: white;
+    border-color: var(--acento);
+  }
+
+  .chip-filtro.activo[data-filtro="meta"] { background: var(--gpv-excelente); border-color: var(--gpv-excelente); }
+  .chip-filtro.activo[data-filtro="promedio"] { background: var(--gpv-bueno); border-color: var(--gpv-bueno); }
+  .chip-filtro.activo[data-filtro="bajo"] { background: var(--gpv-bajo); border-color: var(--gpv-bajo); }
+  .chip-filtro.activo[data-filtro="riesgo"] { background: var(--gpv-inactivo); border-color: var(--gpv-inactivo); }
 
   .buscador {
     padding: 10px 20px;
@@ -482,21 +470,61 @@
     color: var(--texto-suave);
     background: var(--superficie2);
     border-bottom: 2px solid var(--borde);
+    white-space: nowrap;
   }
 
   td {
     padding: 16px;
     border-bottom: 1px solid var(--borde);
     color: var(--texto);
+    vertical-align: top;
   }
 
   tr:hover td {
     background: var(--superficie2);
   }
 
-  /* Colores GPV en tabla */
-  .gpv-excelente { color: var(--gpv-excelente); font-weight: 700; }
-  .gpv-bueno { color: var(--gpv-bueno); font-weight: 700; }
+  /* Celdas específicas */
+  .cell-fecha {
+    font-size: 12px;
+    color: var(--texto-suave);
+    white-space: nowrap;
+  }
+
+  .comercio-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .comercio-nombre {
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .comercio-meta {
+    font-size: 11px;
+    color: var(--texto-suave);
+    font-family: monospace;
+  }
+
+  .ejecutivo-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ejecutivo-nombre {
+    font-weight: 600;
+  }
+
+  .ejecutivo-fecha {
+    font-size: 11px;
+    color: var(--texto-suave);
+  }
+
+  .gpv-excelente { color: var(--gpv-excelente); font-weight: 800; font-size: 16px; }
+  .gpv-bueno { color: var(--gpv-bueno); font-weight: 700; font-size: 15px; }
   .gpv-bajo { color: var(--gpv-bajo); font-weight: 600; }
   .gpv-inactivo { color: var(--gpv-inactivo); font-weight: 700; }
 
@@ -514,27 +542,6 @@
   .badge-regular { background: var(--naranja-bg); color: var(--naranja); }
   .badge-inactivo { background: var(--rojo-bg); color: var(--rojo); }
 
-  .comercio-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .comercio-nombre {
-    font-weight: 700;
-  }
-
-  .comercio-serie {
-    font-size: 12px;
-    color: var(--texto-suave);
-    font-family: monospace;
-  }
-
-  .comercio-ruc {
-    font-size: 11px;
-    color: var(--texto-suave);
-  }
-
   .multi-badge {
     display: inline-block;
     background: linear-gradient(135deg, var(--acento), #7c3aed);
@@ -543,12 +550,9 @@
     border-radius: 12px;
     font-size: 10px;
     font-weight: 700;
-    margin-left: 8px;
+    margin-left: 6px;
   }
 
-  /* =========================================================
-     LOADING
-     ========================================================= */
   .loading {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -574,8 +578,9 @@
   @media (max-width: 768px) {
     .grid-graficas { grid-template-columns: 1fr; }
     .fila-filtros { flex-direction: column; align-items: stretch; }
-    .leyenda-gpv { margin-left: 0; margin-top: 12px; }
     .buscador { width: 100%; }
+    .filtros-gpv { width: 100%; justify-content: center; }
+    th, td { padding: 12px 8px; font-size: 12px; }
   }
 </style>
 </head>
@@ -616,13 +621,6 @@
           <option value="TODOS">Todos los ejecutivos</option>
         </select>
       </div>
-
-      <div class="leyenda-gpv">
-        <div class="leyenda-item"><span class="dot dot-green"></span> ≥S/ 700</div>
-        <div class="leyenda-item"><span class="dot dot-orange"></span> S/ 400-699</div>
-        <div class="leyenda-item"><span class="dot dot-gray"></span> S/ 1-399</div>
-        <div class="leyenda-item"><span class="dot dot-red"></span> S/ 0</div>
-      </div>
     </div>
   </div>
 
@@ -649,10 +647,29 @@
   <h2 class="titulo-seccion">👥 Rendimiento por Ejecutivo</h2>
   <div class="grid-ejecutivos" id="ejecutivosGrid"></div>
 
-  <!-- Tabla Simplificada -->
+  <!-- Tabla Detalle con Filtros GPV -->
   <div class="seccion-tabla">
     <div class="encabezado-tabla">
-      <div class="titulo-tabla">📋 Detalle de Equipos</div>
+      <div>
+        <div class="titulo-tabla">📋 Detalle de Equipos</div>
+        <div style="margin-top: 12px;" class="filtros-gpv">
+          <button class="chip-filtro activo" onclick="filtrarPorGPV('todos')" data-filtro="todos">
+            📋 Todos
+          </button>
+          <button class="chip-filtro" onclick="filtrarPorGPV('meta')" data-filtro="meta">
+            🎯 Meta (≥700)
+          </button>
+          <button class="chip-filtro" onclick="filtrarPorGPV('promedio')" data-filtro="promedio">
+            📊 Promedio (400-699)
+          </button>
+          <button class="chip-filtro" onclick="filtrarPorGPV('bajo')" data-filtro="bajo">
+            ⚠️ Sin utilidad (1-399)
+          </button>
+          <button class="chip-filtro" onclick="filtrarPorGPV('riesgo')" data-filtro="riesgo">
+            🚨 Riesgo (0)
+          </button>
+        </div>
+      </div>
       <input type="text" class="buscador" id="buscador" placeholder="🔍 Buscar comercio, serie o RUC..." onkeyup="filtrarTabla()">
     </div>
     
@@ -660,12 +677,14 @@
       <table>
         <thead>
           <tr>
+            <th>Fecha Venta</th>
             <th>Comercio</th>
+            <th>Fecha Activación</th>
             <th>Ejecutivo</th>
             <th style="text-align: right;">GPV M0</th>
             <th style="text-align: center;">TRX</th>
             <th>Última Transacción</th>
-            <th style="text-align: center;">Estado Uso</th>
+            <th style="text-align: center;">Estado</th>
           </tr>
         </thead>
         <tbody id="tablaCuerpo"></tbody>
@@ -675,21 +694,28 @@
 </main>
 
 <script>
-// ============================================================
-// CONFIGURACIÓN
-// ============================================================
-const URL_API = 'https://script.google.com/macros/s/AKfycbwD_CP5UvEQiF5nPU2TTmHDrqwQ5xo6TkeaOsrS9XByeThAm6M6pxsZgQuLb0EfYyKW/exec';
+// Configuración
+const URL_API = 'https://script.google.com/macros/s/AKfycbzBOHz_tK_nURXBy3k7Adr8-3YBPNED2MQG8wrqg8qOzzOC8YaHf8T8EeARn87auqhf/exec';
 const META_VENTAS = 10;
 
 let DATOS_COMPLETOS = null;
 let mesActual = 'TODOS';
 let ejecutivoActual = 'TODOS';
+let filtroGPVActual = 'todos';
 let chartEjecutivos = null;
 let chartDistribucion = null;
 
-// ============================================================
+// Colores fijos para gráficas (evita problema de oscuridad)
+const COLORES_GRAFICA = {
+  dark: ['#22c55e', '#f97316', '#64748b', '#ef4444'],
+  light: ['#16a34a', '#ea580c', '#475569', '#dc2626'],
+  bar: {
+    dark: 'rgba(14, 165, 233, 0.8)',
+    light: 'rgba(2, 132, 199, 0.8)'
+  }
+};
+
 // TEMAS
-// ============================================================
 function toggleTheme() {
   const html = document.documentElement;
   const current = html.getAttribute('data-theme');
@@ -697,7 +723,6 @@ function toggleTheme() {
   html.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
   
-  // Actualizar gráficas si existen
   if (chartEjecutivos) {
     chartEjecutivos.destroy();
     chartDistribucion.destroy();
@@ -705,23 +730,18 @@ function toggleTheme() {
   }
 }
 
-// Cargar tema guardado
 const savedTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
-// ============================================================
-// COLORES GPV
-// ============================================================
-function getGPVColorClass(gpv) {
+// Clases GPV
+function getGPVClass(gpv) {
   if (!gpv || gpv === 0) return 'gpv-inactivo';
   if (gpv >= 700) return 'gpv-excelente';
   if (gpv >= 400) return 'gpv-bueno';
   return 'gpv-bajo';
 }
 
-// ============================================================
-// CARGA DE DATOS
-// ============================================================
+// CARGA DATOS
 async function cargarDatos(forzar = false) {
   const loading = document.getElementById('loading');
   const main = document.getElementById('mainContent');
@@ -747,14 +767,12 @@ async function cargarDatos(forzar = false) {
 }
 
 function inicializarFiltros() {
-  // Meses
   const tabs = document.getElementById('monthTabs');
   tabs.innerHTML = '<button class="pestana-mes activo" onclick="cambiarMes(\'TODOS\')">📅 TODOS</button>';
   DATOS_COMPLETOS.meses_disponibles?.forEach(mes => {
     tabs.innerHTML += `<button class="pestana-mes" onclick="cambiarMes('${mes}')">${mes}</button>`;
   });
   
-  // Ejecutivos
   const select = document.getElementById('execSelect');
   select.innerHTML = '<option value="TODOS">Todos los ejecutivos</option>';
   DATOS_COMPLETOS.ejecutivos?.forEach(exec => {
@@ -765,13 +783,11 @@ function inicializarFiltros() {
 function renderizarTodo() {
   renderizarResumen();
   renderizarGraficas();
-  renderizarEjecutivos(); // Mantengo exactamente tu función original
+  renderizarEjecutivos();
   renderizarTabla();
 }
 
-// ============================================================
-// RESUMEN KPIs (4 tarjetas)
-// ============================================================
+// RESUMEN
 function renderizarResumen() {
   let equipos = getEquiposFiltrados();
   
@@ -804,19 +820,16 @@ function renderizarResumen() {
   `;
 }
 
-// ============================================================
-// GRÁFICAS
-// ============================================================
+// GRÁFICAS (COLORES FIJOS ARREGLADOS)
 function renderizarGraficas() {
   const equipos = getEquiposFiltrados();
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const textColor = isDark ? '#94a3b8' : '#64748b';
   
-  // Destruir anteriores
   if (chartEjecutivos) chartEjecutivos.destroy();
   if (chartDistribucion) chartDistribucion.destroy();
   
-  // Datos por ejecutivo
+  // Por ejecutivo
   const porEjecutivo = {};
   equipos.forEach(e => {
     const exec = e.responsable_real || 'Sin asignar';
@@ -824,7 +837,6 @@ function renderizarGraficas() {
     porEjecutivo[exec] += e.gpv_mes_actual || 0;
   });
   
-  // Gráfica 1: Barras por ejecutivo
   const ctx1 = document.getElementById('chartEjecutivos').getContext('2d');
   chartEjecutivos = new Chart(ctx1, {
     type: 'bar',
@@ -833,9 +845,8 @@ function renderizarGraficas() {
       datasets: [{
         label: 'GPV (S/)',
         data: Object.values(porEjecutivo),
-        backgroundColor: isDark ? 'rgba(14, 165, 233, 0.8)' : 'rgba(2, 132, 199, 0.8)',
-        borderRadius: 8,
-        borderSkipped: false
+        backgroundColor: isDark ? COLORES_GRAFICA.bar.dark : COLORES_GRAFICA.bar.light,
+        borderRadius: 8
       }]
     },
     options: {
@@ -845,7 +856,7 @@ function renderizarGraficas() {
       scales: {
         y: {
           beginAtZero: true,
-          grid: { color: isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.1)' },
+          grid: { color: isDark ? 'rgba(148,163,184,0.1)' : 'rgba(100,116,139,0.1)' },
           ticks: { color: textColor }
         },
         x: {
@@ -856,7 +867,7 @@ function renderizarGraficas() {
     }
   });
   
-  // Gráfica 2: Distribución por rangos
+  // Distribución (COLORES FIJOS - NO VARIABLES CSS)
   const rangos = [
     equipos.filter(e => (e.gpv_mes_actual || 0) >= 700).length,
     equipos.filter(e => { const g = e.gpv_mes_actual || 0; return g >= 400 && g < 700 }).length,
@@ -868,16 +879,12 @@ function renderizarGraficas() {
   chartDistribucion = new Chart(ctx2, {
     type: 'doughnut',
     data: {
-      labels: ['≥ S/ 700', 'S/ 400-699', 'S/ 1-399', 'S/ 0'],
+      labels: ['≥ S/ 700 (Meta)', 'S/ 400-699 (Promedio)', 'S/ 1-399 (Bajo)', 'S/ 0 (Riesgo)'],
       datasets: [{
         data: rangos,
-        backgroundColor: [
-          'var(--gpv-excelente)',
-          'var(--gpv-bueno)',
-          'var(--gpv-bajo)',
-          'var(--gpv-inactivo)'
-        ],
-        borderWidth: 0
+        backgroundColor: isDark ? COLORES_GRAFICA.dark : COLORES_GRAFICA.light,
+        borderWidth: 2,
+        borderColor: isDark ? '#111827' : '#ffffff'
       }]
     },
     options: {
@@ -886,28 +893,23 @@ function renderizarGraficas() {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: textColor, padding: 20, usePointStyle: true }
+          labels: { color: textColor, padding: 15, usePointStyle: true }
         }
       }
     }
   });
 }
 
-// ============================================================
-// RENDIMIENTO POR EJECUTIVO (EXACTAMENTE COMO LO TENÍAS)
-// ============================================================
+// EJECUTIVOS (IGUAL QUE LO TENÍAS)
 function renderizarEjecutivos() {
   const grid = document.getElementById('ejecutivosGrid');
   grid.innerHTML = '';
   
   let equiposFiltrados = DATOS_COMPLETOS.equipos || [];
-  
-  if (mesActual !== 'TODOS') {
-    equiposFiltrados = equiposFiltrados.filter(e => e.mes_venta === mesActual);
-  }
+  if (mesActual !== 'TODOS') equiposFiltrados = equiposFiltrados.filter(e => e.mes_venta === mesActual);
   
   if (equiposFiltrados.length === 0) {
-    grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay equipos vendidos en este mes</div>';
+    grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay equipos</div>';
     return;
   }
   
@@ -916,41 +918,21 @@ function renderizarEjecutivos() {
   equiposFiltrados.forEach(eq => {
     const exec = eq.responsable_real || 'SIN ASIGNAR';
     if (!ejecutivosMap.has(exec)) {
-      ejecutivosMap.set(exec, {
-        total_equipos: 0,
-        gpv_total: 0,
-        transacciones_total: 0,
-        activos: 0,
-        regulares: 0,
-        inactivos: 0
-      });
+      ejecutivosMap.set(exec, { total_equipos: 0, gpv_total: 0, transacciones_total: 0, activos: 0, regulares: 0, inactivos: 0 });
     }
-    
     const stats = ejecutivosMap.get(exec);
     stats.total_equipos++;
     stats.gpv_total += eq.gpv_mes_actual || 0;
     stats.transacciones_total += eq.transacciones_mes_actual || 0;
-    
     if (eq.estado === 'ACTIVO') stats.activos++;
     else if (eq.estado === 'REGULAR') stats.regulares++;
     else if (eq.estado === 'INACTIVO') stats.inactivos++;
   });
   
-  const ejecutivosArray = Array.from(ejecutivosMap.entries()).map(([nombre, stats]) => {
-    const ticketPromedio = stats.transacciones_total > 0 ? stats.gpv_total / stats.transacciones_total : 0;
-    return {
-      nombre: nombre,
-      total_equipos: stats.total_equipos,
-      gpv_total: stats.gpv_total,
-      transacciones_total: stats.transacciones_total,
-      ticket_promedio: ticketPromedio,
-      activos: stats.activos,
-      regulares: stats.regulares,
-      inactivos: stats.inactivos
-    };
-  });
-  
-  ejecutivosArray.sort((a, b) => b.total_equipos - a.total_equipos);
+  const ejecutivosArray = Array.from(ejecutivosMap.entries()).map(([nombre, stats]) => ({
+    nombre, ...stats,
+    ticket_promedio: stats.transacciones_total > 0 ? stats.gpv_total / stats.transacciones_total : 0
+  })).sort((a, b) => b.total_equipos - a.total_equipos);
   
   const textoPeriodo = mesActual === 'TODOS' ? 'total' : mesActual;
   
@@ -993,22 +975,34 @@ function renderizarEjecutivos() {
         </div>
         
         <div class="insignias-estado">
-          <div class="insignia insignia-verde">✅ ${exec.activos || 0}</div>
-          <div class="insignia insignia-naranja">🟠 ${exec.regulares || 0}</div>
-          <div class="insignia insignia-rojo">❌ ${exec.inactivos || 0}</div>
+          <div class="insignia insignia-verde">✅ ${exec.activos}</div>
+          <div class="insignia insignia-naranja">🟠 ${exec.regulares}</div>
+          <div class="insignia insignia-rojo">❌ ${exec.inactivos}</div>
         </div>
       </div>
     `;
   });
 }
 
-// ============================================================
-// TABLA SIMPLIFICADA CON COLORES GPV
-// ============================================================
+// TABLA CON FECHAS Y FILTROS
 function renderizarTabla() {
   let equipos = getEquiposFiltrados();
   
-  // Detectar comercios con múltiples equipos
+  // Aplicar filtro GPV
+  if (filtroGPVActual !== 'todos') {
+    equipos = equipos.filter(e => {
+      const gpv = e.gpv_mes_actual || 0;
+      switch(filtroGPVActual) {
+        case 'meta': return gpv >= 700;
+        case 'promedio': return gpv >= 400 && gpv < 700;
+        case 'bajo': return gpv > 0 && gpv < 400;
+        case 'riesgo': return gpv === 0;
+        default: return true;
+      }
+    });
+  }
+  
+  // Detectar múltiples equipos
   const comerciosCount = {};
   equipos.forEach(e => {
     const key = `${e.ruc}_${e.comercio}`;
@@ -1018,16 +1012,15 @@ function renderizarTabla() {
   const tbody = document.getElementById('tablaCuerpo');
   
   if (equipos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos para mostrar</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos en este filtro</td></tr>';
     return;
   }
   
   tbody.innerHTML = equipos.map(eq => {
     const gpv = eq.gpv_mes_actual || 0;
-    const gpvClass = getGPVColorClass(gpv);
+    const gpvClass = getGPVClass(gpv);
     const esMulti = comerciosCount[`${eq.ruc}_${eq.comercio}`] > 1;
     
-    // Badge de estado
     let estadoBadge = '<span class="badge-estado badge-inactivo">● Sin datos</span>';
     if (eq.estado === 'ACTIVO') estadoBadge = '<span class="badge-estado badge-activo">● Activo</span>';
     else if (eq.estado === 'REGULAR') estadoBadge = '<span class="badge-estado badge-regular">● Regular</span>';
@@ -1035,17 +1028,22 @@ function renderizarTabla() {
     
     return `
       <tr>
+        <td class="cell-fecha">${formatearFecha(eq.fecha_venta) || '-'}</td>
         <td>
           <div class="comercio-cell">
             <div class="comercio-nombre">
               ${eq.comercio || 'Sin nombre'}
               ${esMulti ? `<span class="multi-badge">+${comerciosCount[`${eq.ruc}_${eq.comercio}`] - 1}</span>` : ''}
             </div>
-            <div class="comercio-serie">${eq.numero_serie || 'N/A'}</div>
-            <div class="comercio-ruc">RUC: ${eq.ruc || '-'}</div>
+            <div class="comercio-meta">📟 ${eq.numero_serie || 'N/A'} | RUC: ${eq.ruc || '-'}</div>
           </div>
         </td>
-        <td>${eq.responsable_real || 'Sin asignar'}</td>
+        <td class="cell-fecha">${formatearFecha(eq.dia_activo) || 'Pendiente'}</td>
+        <td>
+          <div class="ejecutivo-cell">
+            <div class="ejecutivo-nombre">${eq.responsable_real || 'Sin asignar'}</div>
+          </div>
+        </td>
         <td style="text-align: right;" class="${gpvClass}">
           S/ ${formatearNumero(gpv)}
         </td>
@@ -1057,19 +1055,34 @@ function renderizarTabla() {
   }).join('');
 }
 
+// FILTROS GPV
+function filtrarPorGPV(tipo) {
+  filtroGPVActual = tipo;
+  
+  // Actualizar UI chips
+  document.querySelectorAll('.chip-filtro').forEach(chip => {
+    chip.classList.remove('activo');
+    if (chip.dataset.filtro === tipo) chip.classList.add('activo');
+  });
+  
+  renderizarTabla();
+}
+
+// BUSCADOR
 function filtrarTabla() {
   const texto = document.getElementById('buscador').value.toLowerCase();
   const filas = document.querySelectorAll('#tablaCuerpo tr');
   
   filas.forEach(fila => {
-    const contenido = fila.textContent.toLowerCase();
-    fila.style.display = contenido.includes(texto) ? '' : 'none';
+    if (fila.textContent.toLowerCase().includes(texto)) {
+      fila.style.display = '';
+    } else {
+      fila.style.display = 'none';
+    }
   });
 }
 
-// ============================================================
 // UTILIDADES
-// ============================================================
 function getEquiposFiltrados() {
   let equipos = DATOS_COMPLETOS?.equipos || [];
   if (mesActual !== 'TODOS') equipos = equipos.filter(e => e.mes_venta === mesActual);
@@ -1102,23 +1115,21 @@ function seleccionarEjecutivo(exec) {
   renderizarTodo();
 }
 
-function formatearNumero(num, decimales = 2) {
-  if (num === undefined || num === null || num === '' || isNaN(num)) return decimales === 0 ? '0' : '0.00';
-  const n = typeof num === 'string' ? parseFloat(num) : Number(num);
-  if (isNaN(n)) return decimales === 0 ? '0' : '0.00';
-  return n.toLocaleString('es-PE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+function formatearNumero(num, dec = 2) {
+  if (!num || isNaN(num)) return dec === 0 ? '0' : '0.00';
+  return Number(num).toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
 function formatearFecha(fecha) {
-  if (!fecha || fecha === 'Invalid Date') return '';
+  if (!fecha) return '';
   if (typeof fecha === 'string' && fecha.includes('-')) {
-    const partes = fecha.split('-');
-    if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    const p = fecha.split('-');
+    if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
   }
   if (fecha instanceof Date) {
     return `${fecha.getDate().toString().padStart(2,'0')}/${(fecha.getMonth()+1).toString().padStart(2,'0')}/${fecha.getFullYear()}`;
   }
-  return fecha.toString();
+  return fecha;
 }
 
 function exportarExcel() {
@@ -1126,12 +1137,14 @@ function exportarExcel() {
   if (equipos.length === 0) return alert('No hay datos');
   
   const csv = [
-    ['Comercio', 'Serie', 'Ejecutivo', 'RUC', 'GPV M0', 'TRX M0', 'Última TRX', 'Estado'].join(','),
+    ['Fecha Venta', 'Comercio', 'Serie', 'RUC', 'Fecha Activacion', 'Ejecutivo', 'GPV M0', 'TRX', 'Ultima TRX', 'Estado'].join(','),
     ...equipos.map(e => [
+      e.fecha_venta || '',
       `"${(e.comercio || '').replace(/"/g, '""')}"`,
       e.numero_serie,
-      e.responsable_real,
       e.ruc,
+      e.dia_activo || '',
+      e.responsable_real,
       e.gpv_mes_actual || 0,
       e.transacciones_mes_actual || 0,
       e.ultima_transaccion || '',
