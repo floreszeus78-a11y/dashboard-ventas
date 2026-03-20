@@ -715,13 +715,46 @@ const COLORES_GRAFICA = {
   }
 };
 
-// TEMAS
+// ============================================================
+// SINCRONIZACIÓN DE TEMA CON EL MENÚ (INDEX.HTML)
+// ============================================================
+
+// Escuchar mensajes del parent (index.html) cuando cambia el tema allí
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'theme-change') {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    if (current !== e.data.theme) {
+      html.setAttribute('data-theme', e.data.theme);
+      localStorage.setItem('theme', e.data.theme);
+      // Actualizar gráficas si existen
+      if (chartEjecutivos) {
+        chartEjecutivos.destroy();
+        chartDistribucion.destroy();
+        renderizarGraficas();
+      }
+    }
+  }
+});
+
+// Notificar al parent cuando cambiamos el tema desde aquí
+function notificarTemaAParent(theme) {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'theme-change', theme: theme }, '*');
+  }
+}
+
+// Función toggleTheme original modificada para sincronizar
 function toggleTheme() {
   const html = document.documentElement;
   const current = html.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
+  
   html.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
+  
+  // Notificar al menú lateral
+  notificarTemaAParent(next);
   
   if (chartEjecutivos) {
     chartEjecutivos.destroy();
@@ -730,8 +763,19 @@ function toggleTheme() {
   }
 }
 
+// Al cargar, notificar el tema actual al parent
 const savedTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.setAttribute('data-theme', savedTheme);
+
+// Notificar tema al cargar (por si el menú se cargó después)
+window.addEventListener('load', () => {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  notificarTemaAParent(currentTheme);
+});
+
+// ============================================================
+// RESTO DE TU CÓDIGO ORIGINAL (SIN MODIFICACIONES)
+// ============================================================
 
 // Clases GPV
 function getGPVClass(gpv) {
