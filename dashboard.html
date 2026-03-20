@@ -504,7 +504,7 @@
 // CONFIGURACIÓN
 // ============================================================
 // ⚠️ REEMPLAZA ESTA URL CON LA DE TU PROYECTO DE GOOGLE APPS SCRIPT
-const URL_API = 'https://script.google.com/macros/s/AKfycbwrh_wqzIbzTMCg74VTmnQmc_S5goL8ZCrewEi0CLbBqgWXY-HT05VEEBg16fVkqS3K/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbyRQ2E9ErKzx9iF6ATVqQf19sW4lxDfJdHYo7epbXrnckdtAkOGO3FxpodzqurczlyC/exec';
 
 const META_VENTAS = 10;
 
@@ -579,7 +579,7 @@ function inicializarFiltros() {
 // ============================================================
 function renderizarTodo() {
   renderizarResumen();
-  renderizarEjecutivos();
+  renderizarEjecutivos();  // Ahora se recalcula según el mes seleccionado
   renderizarTabla();
 }
 
@@ -608,7 +608,7 @@ function renderizarResumen() {
     <div class="tarjeta-resumen">
       <div class="titulo">🛒 TRANSACCIONES</div>
       <div class="valor">${formatearNumero(totalTRX, 0)}</div>
-      <div class="detalle">${equipos.length > 0 ? formatearNumero(totalTRX / equipos.length, 1) : '0'} por equipo</div>
+      <div class="detalle">${equipos.length > 0 ? (totalTRX / equipos.length).toFixed(1) : '0'} por equipo</div>
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">🎫 TICKET PROMEDIO</div>
@@ -627,37 +627,95 @@ function renderizarEjecutivos() {
   const grid = document.getElementById('ejecutivosGrid');
   grid.innerHTML = '';
   
-  if (!DATOS_COMPLETOS.ejecutivos || !DATOS_COMPLETOS.desempeno_ejecutivos) {
-    grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay datos de ejecutivos</div>';
+  // Obtener equipos filtrados por MES (pero NO por ejecutivo para mostrar todos)
+  let equiposFiltrados = DATOS_COMPLETOS.equipos || [];
+  
+  // Aplicar filtro de MES para los ejecutivos
+  if (mesActual !== 'TODOS') {
+    equiposFiltrados = equiposFiltrados.filter(e => e.mes_venta === mesActual);
+  }
+  
+  // Si no hay equipos en el mes seleccionado
+  if (equiposFiltrados.length === 0) {
+    grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay equipos vendidos en este mes</div>';
     return;
   }
   
-  DATOS_COMPLETOS.ejecutivos.forEach(exec => {
-    const stats = DATOS_COMPLETOS.desempeno_ejecutivos[exec];
-    if (!stats) return;
+  // Agrupar por ejecutivo usando SOLO los equipos filtrados por mes
+  const ejecutivosMap = new Map();
+  
+  equiposFiltrados.forEach(eq => {
+    const exec = eq.responsable_real || 'SIN ASIGNAR';
+    if (!ejecutivosMap.has(exec)) {
+      ejecutivosMap.set(exec, {
+        total_equipos: 0,
+        gpv_total: 0,
+        transacciones_total: 0,
+        activos: 0,
+        regulares: 0,
+        inactivos: 0
+      });
+    }
     
-    const pct = Math.min(100, Math.round((stats.total_equipos / META_VENTAS) * 100));
-    const seleccionado = ejecutivoActual === exec ? 'seleccionado' : '';
+    const stats = ejecutivosMap.get(exec);
+    stats.total_equipos++;
+    stats.gpv_total += eq.gpv_mes_actual || 0;
+    stats.transacciones_total += eq.transacciones_mes_actual || 0;
+    
+    // Estados
+    if (eq.estado === 'ACTIVO') stats.activos++;
+    else if (eq.estado === 'REGULAR') stats.regulares++;
+    else if (eq.estado === 'INACTIVO') stats.inactivos++;
+  });
+  
+  // Calcular ticket promedio para cada ejecutivo y convertir a array
+  const ejecutivosArray = Array.from(ejecutivosMap.entries()).map(([nombre, stats]) => {
+    const ticketPromedio = stats.transacciones_total > 0 ? stats.gpv_total / stats.transacciones_total : 0;
+    return {
+      nombre: nombre,
+      total_equipos: stats.total_equipos,
+      gpv_total: stats.gpv_total,
+      transacciones_total: stats.transacciones_total,
+      ticket_promedio: ticketPromedio,
+      activos: stats.activos,
+      regulares: stats.regulares,
+      inactivos: stats.inactivos
+    };
+  });
+  
+  // Ordenar por cantidad de equipos (mayor a menor)
+  ejecutivosArray.sort((a, b) => b.total_equipos - a.total_equipos);
+  
+  // Texto para el subtítulo según el mes seleccionado
+  const textoPeriodo = mesActual === 'TODOS' ? 'total' : mesActual;
+  
+  // Renderizar cada tarjeta
+  ejecutivosArray.forEach(exec => {
+    const pct = Math.min(100, Math.round((exec.total_equipos / META_VENTAS) * 100));
+    const seleccionado = ejecutivoActual === exec.nombre ? 'seleccionado' : '';
+    
+    // Escapar nombre para evitar problemas con comillas
+    const nombreEscapado = exec.nombre.replace(/'/g, "\\'");
     
     grid.innerHTML += `
-      <div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${exec}')">
-        <div class="nombre-ejecutivo">${exec}</div>
+      <div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${nombreEscapado}')">
+        <div class="nombre-ejecutivo">${exec.nombre}</div>
         <div style="font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-          ${stats.total_equipos}
+          ${exec.total_equipos}
         </div>
-        <div style="color: var(--texto-suave); margin-bottom: 16px;">equipos vendidos</div>
+        <div style="color: var(--texto-suave); margin-bottom: 16px;">equipos vendidos en ${textoPeriodo}</div>
         
         <div class="metricas-rapidas">
           <div class="metrica">
-            <div class="valor">S/ ${formatearNumero(stats.gpv_total)}</div>
+            <div class="valor">S/ ${formatearNumero(exec.gpv_total)}</div>
             <div class="etiqueta">GPV</div>
           </div>
           <div class="metrica">
-            <div class="valor">${formatearNumero(stats.transacciones_total, 0)}</div>
+            <div class="valor">${formatearNumero(exec.transacciones_total, 0)}</div>
             <div class="etiqueta">TRX</div>
           </div>
           <div class="metrica">
-            <div class="valor">S/ ${formatearNumero(stats.ticket_promedio)}</div>
+            <div class="valor">S/ ${formatearNumero(exec.ticket_promedio)}</div>
             <div class="etiqueta">Ticket</div>
           </div>
         </div>
@@ -673,9 +731,9 @@ function renderizarEjecutivos() {
         </div>
         
         <div class="insignias-estado">
-          <div class="insignia insignia-verde">✅ ${stats.activos || 0}</div>
-          <div class="insignia insignia-naranja">🟠 ${stats.regulares || 0}</div>
-          <div class="insignia insignia-rojo">❌ ${stats.inactivos || 0}</div>
+          <div class="insignia insignia-verde">✅ ${exec.activos || 0}</div>
+          <div class="insignia insignia-naranja">🟠 ${exec.regulares || 0}</div>
+          <div class="insignia insignia-rojo">❌ ${exec.inactivos || 0}</div>
         </div>
       </div>
     `;
@@ -789,9 +847,14 @@ function formatearFecha(fecha) {
 function cambiarMes(mes) {
   mesActual = mes;
   
+  // Resetear filtro de ejecutivo al cambiar de mes para mejor experiencia
+  ejecutivoActual = 'TODOS';
+  document.getElementById('execSelect').value = 'TODOS';
+  
   // Actualizar clases de pestañas
   document.querySelectorAll('.pestana-mes').forEach(t => {
-    const esActivo = t.textContent.includes(mes) || (mes === 'TODOS' && t.textContent.includes('TODOS'));
+    const texto = t.textContent.trim();
+    const esActivo = (mes === 'TODOS' && texto.includes('TODOS')) || texto === mes;
     t.classList.toggle('activo', esActivo);
   });
   
