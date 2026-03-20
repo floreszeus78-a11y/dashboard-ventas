@@ -1,27 +1,48 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel de Ventas - Menú</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --fondo: #0a0e1a;
+    --superficie: #111827;
+    --superficie2: #1e293b;
+    --borde: #1e293b;
+    --acento: #0ea5e9;
+    --texto: #e2e8f0;
+    --texto-suave: #94a3b8;
+    --gradiente: linear-gradient(135deg, #0ea5e9, #7c3aed);
+  }
+
+  [data-theme="light"] {
+    --fondo: #f1f5f9;
+    --superficie: #ffffff;
+    --superficie2: #f8fafc;
+    --borde: #e2e8f0;
+    --acento: #0284c7;
+    --texto: #0f172a;
+    --texto-suave: #64748b;
+    --gradiente: linear-gradient(135deg, #0284c7, #7c3aed);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
   
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #0a0e1a;
-    color: #e2e8f0;
+    background: var(--fondo);
+    color: var(--texto);
     display: flex;
     height: 100vh;
     overflow: hidden;
   }
 
-  /* Sidebar - Mismo estilo que tu dashboard */
   .sidebar {
     width: 280px;
-    background: #111827;
-    border-right: 1px solid #1e293b;
+    background: var(--superficie);
+    border-right: 1px solid var(--borde);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -30,14 +51,14 @@
 
   .sidebar-header {
     padding: 28px 24px;
-    border-bottom: 1px solid #1e293b;
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(124, 58, 237, 0.05));
+    border-bottom: 1px solid var(--borde);
+    background: var(--superficie2);
   }
 
   .sidebar-header h1 {
     font-size: 24px;
     font-weight: 800;
-    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+    background: var(--gradiente);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 6px;
@@ -48,7 +69,7 @@
 
   .sidebar-header p {
     font-size: 13px;
-    color: #64748b;
+    color: var(--texto-suave);
     font-weight: 500;
   }
 
@@ -67,7 +88,7 @@
     gap: 14px;
     padding: 14px 18px;
     border-radius: 12px;
-    color: #94a3b8;
+    color: var(--texto-suave);
     font-size: 15px;
     font-weight: 600;
     transition: all 0.25s;
@@ -82,15 +103,20 @@
   }
 
   .nav-item:hover {
-    background: #1e293b;
-    color: #e2e8f0;
+    background: var(--superficie2);
+    color: var(--texto);
     transform: translateX(4px);
   }
 
   .nav-item.active {
     background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(124, 58, 237, 0.15));
-    color: #0ea5e9;
+    color: var(--acento);
     box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.3);
+  }
+
+  [data-theme="light"] .nav-item.active {
+    background: rgba(2, 132, 199, 0.15);
+    box-shadow: 0 0 0 1px rgba(2, 132, 199, 0.3);
   }
 
   .nav-item.active::before {
@@ -100,7 +126,7 @@
     top: 0;
     bottom: 0;
     width: 4px;
-    background: linear-gradient(180deg, #0ea5e9, #7c3aed);
+    background: var(--gradiente);
     border-radius: 0 4px 4px 0;
   }
 
@@ -119,39 +145,35 @@
 
   .sidebar-footer {
     padding: 20px;
-    border-top: 1px solid #1e293b;
-    color: #64748b;
+    border-top: 1px solid var(--borde);
+    color: var(--texto-suave);
     font-size: 12px;
     text-align: center;
-    background: rgba(15, 23, 42, 0.5);
+    background: var(--superficie2);
   }
 
-  /* Main Content */
   .main-content {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-width: 0;
-    background: #0a0e1a;
+    background: var(--fondo);
     position: relative;
   }
 
   .mobile-header {
     display: none;
     padding: 16px 20px;
-    background: #111827;
-    border-bottom: 1px solid #1e293b;
+    background: var(--superficie);
+    border-bottom: 1px solid var(--borde);
     align-items: center;
     gap: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
   }
 
   .menu-toggle {
     background: none;
     border: none;
-    color: #e2e8f0;
+    color: var(--texto);
     font-size: 24px;
     cursor: pointer;
     padding: 4px;
@@ -165,10 +187,9 @@
   }
 
   .menu-toggle:hover {
-    background: #1e293b;
+    background: var(--superficie2);
   }
 
-  /* Iframe Container */
   .iframe-container {
     flex: 1;
     position: relative;
@@ -181,15 +202,14 @@
     width: 100%;
     height: 100%;
     border: none;
-    background: #0a0e1a;
+    background: var(--fondo);
     display: block;
   }
 
-  /* Loading State */
   .loading-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: #0a0e1a;
+    background: var(--fondo);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -206,8 +226,8 @@
   .spinner {
     width: 50px;
     height: 50px;
-    border: 4px solid #1e293b;
-    border-top-color: #0ea5e9;
+    border: 4px solid var(--superficie2);
+    border-top-color: var(--acento);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -218,17 +238,16 @@
 
   .loading-text {
     margin-top: 16px;
-    color: #64748b;
+    color: var(--texto-suave);
     font-size: 14px;
     font-weight: 500;
   }
 
-  /* Error Fallback */
   .error-fallback {
     display: none;
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: #0a0e1a;
+    background: var(--fondo);
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -250,12 +269,12 @@
   .error-title {
     font-size: 24px;
     font-weight: 700;
-    color: #e2e8f0;
+    color: var(--texto);
     margin-bottom: 12px;
   }
 
   .error-desc {
-    color: #94a3b8;
+    color: var(--texto-suave);
     margin-bottom: 24px;
     max-width: 400px;
     line-height: 1.6;
@@ -274,9 +293,9 @@
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
-    border: 1px solid #1e293b;
-    background: #111827;
-    color: #e2e8f0;
+    border: 1px solid var(--borde);
+    background: var(--superficie);
+    color: var(--texto);
     transition: all 0.2s;
     text-decoration: none;
     display: inline-flex;
@@ -285,14 +304,13 @@
   }
 
   .btn:hover {
-    background: #1e293b;
-    border-color: #0ea5e9;
+    background: var(--superficie2);
+    border-color: var(--acento);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(14, 165, 233, 0.2);
   }
 
   .btn-primary {
-    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+    background: var(--gradiente);
     color: white;
     border: none;
   }
@@ -301,7 +319,6 @@
     box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
   }
 
-  /* Overlay móvil */
   .overlay {
     display: none;
     position: fixed;
@@ -318,7 +335,6 @@
     opacity: 1;
   }
 
-  /* Responsive */
   @media (max-width: 768px) {
     .sidebar {
       position: fixed;
@@ -335,13 +351,8 @@
     .mobile-header {
       display: flex;
     }
-    
-    .nav-item:hover {
-      transform: none;
-    }
   }
 
-  /* Scrollbar personalizado para el menú */
   .nav-menu::-webkit-scrollbar {
     width: 6px;
   }
@@ -351,12 +362,8 @@
   }
   
   .nav-menu::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: var(--borde);
     border-radius: 3px;
-  }
-  
-  .nav-menu::-webkit-scrollbar-thumb:hover {
-    background: #334155;
   }
 </style>
 </head>
@@ -364,7 +371,6 @@
 
 <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
-<!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h1>📊 Panel Ventas</h1>
@@ -397,7 +403,7 @@
       <span>Reportes</span>
     </button>
     
-    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #1e293b; margin-top: 20px;">
+    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--borde); margin-top: 20px;">
       <a href="https://github.com/floreszeus78-a11y/dashboard-ventas" target="_blank" class="nav-item" style="text-decoration: none; color: inherit;">
         <span class="nav-icon">⚙️</span>
         <span>Configuración</span>
@@ -411,11 +417,10 @@
   </div>
 </aside>
 
-<!-- Main Content -->
 <div class="main-content">
   <div class="mobile-header">
     <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-    <h2 style="color: #e2e8f0; font-size: 18px; font-weight: 700;">Panel de Ventas</h2>
+    <h2 style="color: var(--texto); font-size: 18px; font-weight: 700;">Panel de Ventas</h2>
   </div>
   
   <div class="iframe-container">
@@ -430,8 +435,7 @@
       <div class="error-icon">⚠️</div>
       <h3 class="error-title">No se pudo cargar el Dashboard</h3>
       <p class="error-desc">
-        No se encontró el archivo <code>dashboard.html</code> en el repositorio.<br>
-        Verifica que esté en la misma carpeta que este archivo.
+        No se encontró el archivo del dashboard en el repositorio.
       </p>
       <div class="btn-group">
         <button class="btn btn-primary" onclick="window.open('dashboard.html', '_blank')">
@@ -446,44 +450,55 @@
 </div>
 
 <script>
-// Configuración
-const CONFIG = {
-  dashboardFile: 'dashboard.html', // Cambia aquí si tu archivo tiene otro nombre (ej: 'panel.html')
-  fallbackFiles: ['dashboard.html', 'panel.html', 'index.html']
-};
+// SINCRONIZACIÓN DE TEMA
+function initTheme() {
+  // 1. Leer tema guardado o usar dark por defecto
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  aplicarTema(savedTheme);
+  
+  // 2. Escuchar cambios en localStorage (por si el dashboard cambia el tema)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'theme') {
+      aplicarTema(e.newValue);
+    }
+  });
+  
+  // 3. Escuchar mensajes del iframe (postMessage)
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'theme-change') {
+      aplicarTema(e.data.theme);
+    }
+  });
+}
 
-let currentFile = null;
-
-// Inicialización
-document.addEventListener('DOMContentLoaded', () => {
-  loadDashboard(CONFIG.dashboardFile);
-});
+function aplicarTema(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  // También guardar por si acaso
+  localStorage.setItem('theme', theme);
+}
 
 function loadDashboard(filename) {
-  currentFile = filename;
   const iframe = document.getElementById('contentFrame');
   const loading = document.getElementById('loadingOverlay');
   const error = document.getElementById('errorFallback');
   
-  // Mostrar loading
   loading.classList.remove('hidden');
   error.classList.remove('show');
   
-  // Cargar iframe
   iframe.src = filename;
   
-  // Timeout de seguridad
   setTimeout(() => {
     checkIframeLoaded();
   }, 3000);
   
-  // Manejar carga exitosa
   iframe.onload = () => {
     loading.classList.add('hidden');
     error.classList.remove('show');
+    // Enviar tema actual al iframe después de cargar
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    iframe.contentWindow.postMessage({ type: 'theme-change', theme: currentTheme }, '*');
   };
   
-  // Manejar error
   iframe.onerror = () => {
     showError();
   };
@@ -494,16 +509,12 @@ function checkIframeLoaded() {
   const loading = document.getElementById('loadingOverlay');
   
   try {
-    // Si podemos acceder al contentDocument y tiene contenido, está cargado
-    if (iframe.contentDocument && iframe.contentDocument.body.innerHTML.length > 0) {
-      loading.classList.add('hidden');
-    } else if (iframe.contentWindow.location.href === 'about:blank') {
-      // Si está en about:blank, no cargó
+    if (iframe.contentWindow.location.href === 'about:blank') {
       showError();
+    } else {
+      loading.classList.add('hidden');
     }
   } catch(e) {
-    // Error de cross-origin (normal si carga de otro dominio)
-    // Asumimos que cargó bien si pasó el tiempo
     loading.classList.add('hidden');
   }
 }
@@ -519,25 +530,27 @@ function toggleMenu() {
 }
 
 function mostrarMensaje(modulo) {
-  // Resetear active state
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
   event.currentTarget.classList.add('active');
   
   alert(`🚧 Módulo "${modulo}"\n\nEsta sección está en desarrollo.\nPor ahora solo está disponible el Dashboard Principal.`);
   
-  // Restaurar Dashboard como activo después de cerrar alerta
   setTimeout(() => {
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
     document.querySelector('.nav-item').classList.add('active');
   }, 100);
   
-  // Cerrar menú en móvil
   if (window.innerWidth <= 768) {
     toggleMenu();
   }
 }
 
-// Cerrar menú al redimensionar a desktop
+// Inicializar
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  loadDashboard('dashboard.html');
+});
+
 window.addEventListener('resize', () => {
   if (window.innerWidth > 768) {
     document.getElementById('sidebar').classList.remove('open');
