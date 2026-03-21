@@ -391,22 +391,22 @@
       <span>Dashboard Principal</span>
     </button>
     
-    <button class="nav-item" onclick="mostrarMensaje('Ejecutivos')">
+    <button class="nav-item" onclick="loadDashboard('ejecutivos.html')">
       <span class="nav-icon">👥</span>
       <span>Ejecutivos</span>
     </button>
     
-    <button class="nav-item" onclick="mostrarMensaje('Comercios')">
+    <button class="nav-item" onclick="loadDashboard('comercios.html')">
       <span class="nav-icon">🏪</span>
       <span>Comercios</span>
     </button>
     
-    <button class="nav-item" onclick="mostrarMensaje('Análisis')">
+    <button class="nav-item" onclick="loadDashboard('analisis.html')">
       <span class="nav-icon">📊</span>
       <span>Análisis</span>
     </button>
     
-    <button class="nav-item" onclick="mostrarMensaje('Reportes')">
+    <button class="nav-item" onclick="loadDashboard('reportes.html')">
       <span class="nav-icon">📑</span>
       <span>Reportes</span>
     </button>
@@ -461,7 +461,16 @@
 </div>
 
 <script>
+// ============================================================
+// CONFIGURACIÓN GLOBAL
+// ============================================================
+const URL_API = 'https://script.google.com/macros/s/AKfycbzRc0WYRBm6dcAxmV9iim7oWNe4R6Hn2mE6LR4HTCH1fpps9KXlbO8HH_gdj7kq9AI_/exec';
+let datosGlobales = null;
+let currentLoad = null;
+
+// ============================================================
 // SINCRONIZACIÓN DE TEMA
+// ============================================================
 function initTheme() {
   const savedTheme = localStorage.getItem('theme') || 'dark';
   aplicarTema(savedTheme);
@@ -484,14 +493,63 @@ function aplicarTema(theme) {
   localStorage.setItem('theme', theme);
 }
 
-let currentLoad = null;
+// ============================================================
+// CARGA DE DATOS DESDE APPS SCRIPT
+// ============================================================
+async function cargarDatosGlobales() {
+  try {
+    console.log('🔄 Cargando datos desde Apps Script...');
+    const res = await fetch(URL_API);
+    const data = await res.json();
+    
+    if (data.error) {
+      console.error('Error en datos:', data.mensaje);
+      return null;
+    }
+    
+    console.log('✅ Datos cargados correctamente:', data.equipos?.length, 'equipos');
+    return data;
+  } catch (err) {
+    console.error('❌ Error cargando datos:', err);
+    return null;
+  }
+}
 
+// ============================================================
+// COMUNICACIÓN CON IFRAMES
+// ============================================================
+window.addEventListener('message', async (e) => {
+  // Si el iframe solicita datos y ya los tenemos, se los enviamos
+  if (e.data && e.data.type === 'solicitar-datos') {
+    if (datosGlobales) {
+      e.source.postMessage({
+        type: 'datos-cargados',
+        datos: datosGlobales
+      }, '*');
+      console.log('📤 Datos enviados al iframe');
+    } else {
+      // Si aún no tenemos datos, los cargamos y luego enviamos
+      console.log('⏳ Cargando datos para el iframe...');
+      datosGlobales = await cargarDatosGlobales();
+      if (datosGlobales) {
+        e.source.postMessage({
+          type: 'datos-cargados',
+          datos: datosGlobales
+        }, '*');
+      }
+    }
+  }
+});
+
+// ============================================================
+// CARGA DE DASHBOARDS EN IFRAME
+// ============================================================
 function loadDashboard(filename) {
   const iframe = document.getElementById('contentFrame');
   const loading = document.getElementById('loadingOverlay');
   const error = document.getElementById('errorFallback');
   
-  // Actualizar clase activa
+  // Actualizar clase activa en el menú
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.remove('active');
   });
@@ -499,24 +557,56 @@ function loadDashboard(filename) {
     event.currentTarget.classList.add('active');
   }
   
+  // Actualizar título del header
+  const titleMap = {
+    'dashboard.html': 'Dashboard Principal',
+    'ejecutivos.html': 'Ejecutivos',
+    'comercios.html': 'Comercios',
+    'analisis.html': 'Análisis',
+    'reportes.html': 'Reportes'
+  };
+  const mobileTitle = document.querySelector('.mobile-title');
+  if (mobileTitle && titleMap[filename]) {
+    mobileTitle.textContent = titleMap[filename];
+  }
+  
   loading.classList.remove('hidden');
   error.classList.remove('show');
   
   if (currentLoad) clearTimeout(currentLoad);
   
-  iframe.src = filename;
-  
-  currentLoad = setTimeout(() => {
-    checkIframeLoaded();
-  }, 5000);
-  
+  // Configurar evento onload ANTES de cambiar el src
   iframe.onload = () => {
     if (currentLoad) clearTimeout(currentLoad);
     loading.classList.add('hidden');
     error.classList.remove('show');
+    
     const currentTheme = localStorage.getItem('theme') || 'dark';
+    
     try {
+      // Enviar tema al iframe
       iframe.contentWindow.postMessage({ type: 'theme-change', theme: currentTheme }, '*');
+      
+      // Enviar datos al iframe si ya están disponibles
+      if (datosGlobales) {
+        iframe.contentWindow.postMessage({
+          type: 'datos-cargados',
+          datos: datosGlobales
+        }, '*');
+      } else {
+        // Si no hay datos, cargarlos y enviarlos
+        cargarDatosGlobales().then(data => {
+          if (data) {
+            datosGlobales = data;
+            try {
+              iframe.contentWindow.postMessage({
+                type: 'datos-cargados',
+                datos: data
+              }, '*');
+            } catch(e) {}
+          }
+        });
+      }
     } catch(e) {
       console.log('No se pudo enviar mensaje al iframe');
     }
@@ -527,7 +617,14 @@ function loadDashboard(filename) {
     showError();
   };
   
-  // Cerrar menú después de seleccionar (en todos los dispositivos)
+  // Cambiar el src del iframe
+  iframe.src = filename;
+  
+  currentLoad = setTimeout(() => {
+    checkIframeLoaded();
+  }, 5000);
+  
+  // Cerrar menú después de seleccionar
   toggleMenu();
 }
 
@@ -554,6 +651,9 @@ function showError() {
   document.getElementById('errorFallback').classList.add('show');
 }
 
+// ============================================================
+// FUNCIONES DE MENÚ Y UI
+// ============================================================
 function toggleMenu() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
@@ -568,28 +668,6 @@ function toggleMenu() {
   }
 }
 
-function mostrarMensaje(modulo) {
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.classList.remove('active');
-  });
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add('active');
-  }
-  
-  alert(`🚧 Módulo "${modulo}"\n\nEsta sección está en desarrollo.\nPor ahora solo está disponible el Dashboard Principal.`);
-  
-  setTimeout(() => {
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.classList.remove('active');
-    });
-    const dashboardBtn = document.querySelector('.nav-item');
-    if (dashboardBtn) dashboardBtn.classList.add('active');
-  }, 100);
-  
-  // Cerrar menú después de mostrar mensaje
-  toggleMenu();
-}
-
 // Cerrar menú con tecla ESC
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -600,9 +678,17 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Inicializar
-document.addEventListener('DOMContentLoaded', () => {
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
+  
+  // Precargar datos globales para tenerlos listos
+  console.log('🚀 Inicializando panel...');
+  datosGlobales = await cargarDatosGlobales();
+  
+  // Cargar dashboard principal
   setTimeout(() => {
     loadDashboard('dashboard.html');
   }, 100);
