@@ -26,6 +26,9 @@
     --gpv-bueno: #f97316;
     --gpv-bajo: #64748b;
     --gpv-inactivo: #ef4444;
+    --m0-color: #64748b;
+    --m1-color: #f97316;
+    --m2-color: #22c55e;
   }
 
   [data-theme="light"] {
@@ -47,6 +50,9 @@
     --gpv-bueno: #ea580c;
     --gpv-bajo: #475569;
     --gpv-inactivo: #dc2626;
+    --m0-color: #475569;
+    --m1-color: #ea580c;
+    --m2-color: #16a34a;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; transition: background-color 0.3s, color 0.3s; }
@@ -518,9 +524,82 @@
     font-weight: 600;
   }
 
-  .ejecutivo-fecha {
+  /* NUEVOS ESTILOS PARA LÍNEA DE TIEMPO M0/M1/M2 */
+  .timeline-gpv {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .gpv-actual {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+
+  .gpv-historico {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
     font-size: 11px;
+    flex-wrap: wrap;
+  }
+
+  .mes-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    background: var(--superficie2);
     color: var(--texto-suave);
+    border: 1px solid var(--borde);
+    transition: all 0.2s;
+  }
+
+  .mes-badge.activo-m0 {
+    background: rgba(100, 116, 139, 0.2);
+    color: var(--m0-color);
+    border-color: var(--m0-color);
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(100, 116, 139, 0.3);
+  }
+
+  .mes-badge.activo-m1 {
+    background: rgba(249, 115, 22, 0.2);
+    color: var(--m1-color);
+    border-color: var(--m1-color);
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.3);
+  }
+
+  .mes-badge.activo-m2 {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--m2-color);
+    border-color: var(--m2-color);
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+  }
+
+  .etiqueta-mes-actual {
+    font-size: 10px;
+    color: var(--texto-suave);
+    text-align: right;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .timeline-trx {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--texto-suave);
+    flex-wrap: wrap;
+  }
+
+  .trx-badge {
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: var(--superficie2);
   }
 
   .gpv-excelente { color: var(--gpv-excelente); font-weight: 800; font-size: 16px; }
@@ -581,6 +660,7 @@
     .buscador { width: 100%; }
     .filtros-gpv { width: 100%; justify-content: center; }
     th, td { padding: 12px 8px; font-size: 12px; }
+    .gpv-historico { justify-content: flex-start; }
   }
 </style>
 </head>
@@ -594,7 +674,7 @@
 <header class="cabecera">
   <div class="titulo">
     <h1>📊 Dashboard de Ventas</h1>
-    <p>Punto de Venta · Cada fila = 1 equipo</p>
+    <p>Punto de Venta · Línea de tiempo M0/M1/M2</p>
   </div>
   <div class="botones">
     <button class="btn" onclick="exportarExcel()">📥 Exportar Excel</button>
@@ -609,7 +689,7 @@
   <div class="filtros">
     <div class="fila-filtros">
       <div>
-        <span class="etiqueta-filtro">📅 Mes:</span>
+        <span class="etiqueta-filtro">📅 Mes Venta:</span>
         <div class="pestanas-mes" id="monthTabs">
           <button class="pestana-mes activo" onclick="cambiarMes('TODOS')">📅 TODOS</button>
         </div>
@@ -630,28 +710,28 @@
   <!-- Gráficas -->
   <div class="grid-graficas">
     <div class="tarjeta-grafica">
-      <div class="titulo-grafica">📈 GPV por Ejecutivo</div>
+      <div class="titulo-grafica">📈 GPV por Ejecutivo (Mes Actual)</div>
       <div class="contenedor-grafica">
         <canvas id="chartEjecutivos"></canvas>
       </div>
     </div>
     <div class="tarjeta-grafica">
-      <div class="titulo-grafica">🎯 Distribución por Rangos GPV</div>
+      <div class="titulo-grafica">🎯 Distribución por Mes de Maduración</div>
       <div class="contenedor-grafica">
         <canvas id="chartDistribucion"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- Rendimiento por Ejecutivo (IGUAL QUE LO TENÍAS) -->
+  <!-- Rendimiento por Ejecutivo -->
   <h2 class="titulo-seccion">👥 Rendimiento por Ejecutivo</h2>
   <div class="grid-ejecutivos" id="ejecutivosGrid"></div>
 
-  <!-- Tabla Detalle con Filtros GPV -->
+  <!-- Tabla Detalle con Timeline M0/M1/M2 -->
   <div class="seccion-tabla">
     <div class="encabezado-tabla">
       <div>
-        <div class="titulo-tabla">📋 Detalle de Equipos</div>
+        <div class="titulo-tabla">📋 Detalle de Equipos - Línea de Tiempo</div>
         <div style="margin-top: 12px;" class="filtros-gpv">
           <button class="chip-filtro activo" onclick="filtrarPorGPV('todos')" data-filtro="todos">
             📋 Todos
@@ -681,8 +761,8 @@
             <th>Comercio</th>
             <th>Fecha Activación</th>
             <th>Ejecutivo</th>
-            <th style="text-align: right;">GPV M0</th>
-            <th style="text-align: center;">TRX</th>
+            <th style="text-align: right;">GPV (Línea de Tiempo)</th>
+            <th style="text-align: center;">TRX M0/M1/M2</th>
             <th>Última Transacción</th>
             <th style="text-align: center;">Estado</th>
           </tr>
@@ -695,7 +775,7 @@
 
 <script>
 // Configuración
-const URL_API = 'https://script.google.com/macros/s/AKfycbyFkf0k9u-kF2oaxZ1doSzRjHjurQGwN3Xw5rxVwU157Hkua5au73HP-lsksxy4LMY5/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbwaFxTdGfv9VmqCPvQ_cO8uyLOJjUVeKIAimUmWfI6n1B3zQcucB-y9_V4fDD7Vlh9b/exec';
 const META_VENTAS = 10;
 
 let DATOS_COMPLETOS = null;
@@ -705,7 +785,6 @@ let filtroGPVActual = 'todos';
 let chartEjecutivos = null;
 let chartDistribucion = null;
 
-// Colores fijos para gráficas (evita problema de oscuridad)
 const COLORES_GRAFICA = {
   dark: ['#22c55e', '#f97316', '#64748b', '#ef4444'],
   light: ['#16a34a', '#ea580c', '#475569', '#dc2626'],
@@ -716,10 +795,9 @@ const COLORES_GRAFICA = {
 };
 
 // ============================================================
-// SINCRONIZACIÓN DE TEMA CON EL MENÚ (INDEX.HTML)
+// SINCRONIZACIÓN DE TEMA
 // ============================================================
 
-// Escuchar mensajes del parent (index.html) cuando cambia el tema allí
 window.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'theme-change') {
     const html = document.documentElement;
@@ -727,7 +805,6 @@ window.addEventListener('message', (e) => {
     if (current !== e.data.theme) {
       html.setAttribute('data-theme', e.data.theme);
       localStorage.setItem('theme', e.data.theme);
-      // Actualizar gráficas si existen
       if (chartEjecutivos) {
         chartEjecutivos.destroy();
         chartDistribucion.destroy();
@@ -737,14 +814,12 @@ window.addEventListener('message', (e) => {
   }
 });
 
-// Notificar al parent cuando cambiamos el tema desde aquí
 function notificarTemaAParent(theme) {
   if (window.parent && window.parent !== window) {
     window.parent.postMessage({ type: 'theme-change', theme: theme }, '*');
   }
 }
 
-// Función toggleTheme original modificada para sincronizar
 function toggleTheme() {
   const html = document.documentElement;
   const current = html.getAttribute('data-theme');
@@ -752,8 +827,6 @@ function toggleTheme() {
   
   html.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
-  
-  // Notificar al menú lateral
   notificarTemaAParent(next);
   
   if (chartEjecutivos) {
@@ -763,21 +836,18 @@ function toggleTheme() {
   }
 }
 
-// Al cargar, notificar el tema actual al parent
 const savedTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
-// Notificar tema al cargar (por si el menú se cargó después)
 window.addEventListener('load', () => {
   const currentTheme = document.documentElement.getAttribute('data-theme');
   notificarTemaAParent(currentTheme);
 });
 
 // ============================================================
-// RESTO DE TU CÓDIGO ORIGINAL (SIN MODIFICACIONES)
+// FUNCIONES AUXILIARES
 // ============================================================
 
-// Clases GPV
 function getGPVClass(gpv) {
   if (!gpv || gpv === 0) return 'gpv-inactivo';
   if (gpv >= 700) return 'gpv-excelente';
@@ -795,12 +865,11 @@ async function cargarDatos(forzar = false) {
   
   try {
     console.log('Iniciando fetch a:', URL_API);
-    const res = await fetch(URL_API);
+    const url = forzar ? URL_API + '?nocache=true' : URL_API;
+    const res = await fetch(url);
     const data = await res.json();
     
     console.log('Datos recibidos:', data);
-    console.log('Resumen:', data.resumen);
-    console.log('Total GPV:', data.resumen?.total_gpv);
     
     DATOS_COMPLETOS = data;
     
@@ -839,28 +908,22 @@ function renderizarTodo() {
   renderizarTabla();
 }
 
-// RESUMEN - CORREGIDO PARA USAR DATOS DEL BACKEND CORRECTAMENTE
+// RESUMEN - Usa gpv_mes_actual_corriendo del backend
 function renderizarResumen() {
-  // Si no hay datos filtrados aún, usar todos los equipos
   let equipos = getEquiposFiltrados();
-  
-  // Si hay resumen del backend, usar esos totales cuando estemos en TODOS los meses y ejecutivos
   const resumenBackend = DATOS_COMPLETOS?.resumen;
   const usarTotalesGlobales = (mesActual === 'TODOS' && ejecutivoActual === 'TODOS' && resumenBackend);
   
   let totalGPV, totalTRX, activos, ticketPromedio;
   
   if (usarTotalesGlobales) {
-    // Usar los totales ya calculados por el backend
     totalGPV = resumenBackend.total_gpv || 0;
     totalTRX = resumenBackend.total_transacciones || 0;
     activos = resumenBackend.equipos_activos || 0;
     ticketPromedio = resumenBackend.ticket_promedio_general || 0;
-    console.log('Usando totales del backend:', { totalGPV, totalTRX, activos });
   } else {
-    // Calcular con los equipos filtrados
-    totalGPV = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_mes_actual) || 0), 0);
-    totalTRX = equipos.reduce((sum, e) => sum + (parseInt(e.transacciones_mes_actual) || 0), 0);
+    totalGPV = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_mes_actual_corriendo) || 0), 0);
+    totalTRX = equipos.reduce((sum, e) => sum + (parseInt(e.trx_mes_actual_corriendo) || 0), 0);
     activos = equipos.filter(e => e.estado === 'ACTIVO').length;
     ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
   }
@@ -869,7 +932,7 @@ function renderizarResumen() {
   
   document.getElementById('resumenCards').innerHTML = `
     <div class="tarjeta-resumen">
-      <div class="titulo">💰 GPV TOTAL</div>
+      <div class="titulo">💰 GPV TOTAL (Mes Actual)</div>
       <div class="valor">S/ ${formatearNumero(totalGPV)}</div>
       <div class="detalle">${totalEquipos} equipos</div>
     </div>
@@ -891,7 +954,7 @@ function renderizarResumen() {
   `;
 }
 
-// GRÁFICAS (COLORES FIJOS ARREGLADOS)
+// GRÁFICAS
 function renderizarGraficas() {
   const equipos = getEquiposFiltrados();
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -900,12 +963,12 @@ function renderizarGraficas() {
   if (chartEjecutivos) chartEjecutivos.destroy();
   if (chartDistribucion) chartDistribucion.destroy();
   
-  // Por ejecutivo
+  // Gráfico 1: GPV por ejecutivo (usando mes actual corriendo)
   const porEjecutivo = {};
   equipos.forEach(e => {
     const exec = e.responsable_real || 'Sin asignar';
     if (!porEjecutivo[exec]) porEjecutivo[exec] = 0;
-    porEjecutivo[exec] += (parseFloat(e.gpv_mes_actual) || 0);
+    porEjecutivo[exec] += (parseFloat(e.gpv_mes_actual_corriendo) || 0);
   });
   
   const ctx1 = document.getElementById('chartEjecutivos').getContext('2d');
@@ -914,7 +977,7 @@ function renderizarGraficas() {
     data: {
       labels: Object.keys(porEjecutivo),
       datasets: [{
-        label: 'GPV (S/)',
+        label: 'GPV Mes Actual (S/)',
         data: Object.values(porEjecutivo),
         backgroundColor: isDark ? COLORES_GRAFICA.bar.dark : COLORES_GRAFICA.bar.light,
         borderRadius: 8
@@ -938,22 +1001,23 @@ function renderizarGraficas() {
     }
   });
   
-  // Distribución (COLORES FIJOS - NO VARIABLES CSS)
-  const rangos = [
-    equipos.filter(e => (parseFloat(e.gpv_mes_actual) || 0) >= 700).length,
-    equipos.filter(e => { const g = parseFloat(e.gpv_mes_actual) || 0; return g >= 400 && g < 700 }).length,
-    equipos.filter(e => { const g = parseFloat(e.gpv_mes_actual) || 0; return g > 0 && g < 400 }).length,
-    equipos.filter(e => { const g = parseFloat(e.gpv_mes_actual) || 0; return g === 0 }).length
-  ];
+  // Gráfico 2: Distribución por etapa de maduración (M0, M1, M2)
+  const enM0 = equipos.filter(e => e.mes_actual_idx === 0).length;
+  const enM1 = equipos.filter(e => e.mes_actual_idx === 1).length;
+  const enM2 = equipos.filter(e => e.mes_actual_idx === 2).length;
   
   const ctx2 = document.getElementById('chartDistribucion').getContext('2d');
   chartDistribucion = new Chart(ctx2, {
     type: 'doughnut',
     data: {
-      labels: ['≥ S/ 700 (Meta)', 'S/ 400-699 (Promedio)', 'S/ 1-399 (Bajo)', 'S/ 0 (Riesgo)'],
+      labels: ['M0 (Prueba)', 'Mes 1', 'Mes 2'],
       datasets: [{
-        data: rangos,
-        backgroundColor: isDark ? COLORES_GRAFICA.dark : COLORES_GRAFICA.light,
+        data: [enM0, enM1, enM2],
+        backgroundColor: [
+          isDark ? '#64748b' : '#475569',  // M0 - gris
+          isDark ? '#f97316' : '#ea580c',  // M1 - naranja
+          isDark ? '#22c55e' : '#16a34a'   // M2 - verde
+        ],
         borderWidth: 2,
         borderColor: isDark ? '#111827' : '#ffffff'
       }]
@@ -971,7 +1035,7 @@ function renderizarGraficas() {
   });
 }
 
-// EJECUTIVOS (IGUAL QUE LO TENÍAS)
+// EJECUTIVOS
 function renderizarEjecutivos() {
   const grid = document.getElementById('ejecutivosGrid');
   grid.innerHTML = '';
@@ -989,15 +1053,30 @@ function renderizarEjecutivos() {
   equiposFiltrados.forEach(eq => {
     const exec = eq.responsable_real || 'SIN ASIGNAR';
     if (!ejecutivosMap.has(exec)) {
-      ejecutivosMap.set(exec, { total_equipos: 0, gpv_total: 0, transacciones_total: 0, activos: 0, regulares: 0, inactivos: 0 });
+      ejecutivosMap.set(exec, { 
+        total_equipos: 0, 
+        gpv_total: 0, 
+        transacciones_total: 0, 
+        activos: 0, 
+        regulares: 0, 
+        inactivos: 0,
+        en_m0: 0,
+        en_m1: 0,
+        en_m2: 0
+      });
     }
     const stats = ejecutivosMap.get(exec);
     stats.total_equipos++;
-    stats.gpv_total += (parseFloat(eq.gpv_mes_actual) || 0);
-    stats.transacciones_total += (parseInt(eq.transacciones_mes_actual) || 0);
+    stats.gpv_total += (parseFloat(eq.gpv_mes_actual_corriendo) || 0);
+    stats.transacciones_total += (parseInt(eq.trx_mes_actual_corriendo) || 0);
     if (eq.estado === 'ACTIVO') stats.activos++;
     else if (eq.estado === 'REGULAR') stats.regulares++;
     else if (eq.estado === 'INACTIVO') stats.inactivos++;
+    
+    // Contar por etapa
+    if (eq.mes_actual_idx === 0) stats.en_m0++;
+    else if (eq.mes_actual_idx === 1) stats.en_m1++;
+    else if (eq.mes_actual_idx === 2) stats.en_m2++;
   });
   
   const ejecutivosArray = Array.from(ejecutivosMap.entries()).map(([nombre, stats]) => ({
@@ -1020,10 +1099,16 @@ function renderizarEjecutivos() {
         </div>
         <div style="color: var(--texto-suave); margin-bottom: 16px;">equipos vendidos en ${textoPeriodo}</div>
         
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; font-size: 11px;">
+          <span style="padding: 4px 8px; background: rgba(100,116,139,0.2); border-radius: 12px; color: var(--m0-color);">M0: ${exec.en_m0}</span>
+          <span style="padding: 4px 8px; background: rgba(249,115,22,0.2); border-radius: 12px; color: var(--m1-color);">M1: ${exec.en_m1}</span>
+          <span style="padding: 4px 8px; background: rgba(34,197,94,0.2); border-radius: 12px; color: var(--m2-color);">M2: ${exec.en_m2}</span>
+        </div>
+        
         <div class="metricas-rapidas">
           <div class="metrica">
             <div class="valor">S/ ${formatearNumero(exec.gpv_total)}</div>
-            <div class="etiqueta">GPV</div>
+            <div class="etiqueta">GPV Actual</div>
           </div>
           <div class="metrica">
             <div class="valor">${formatearNumero(exec.transacciones_total, 0)}</div>
@@ -1055,19 +1140,19 @@ function renderizarEjecutivos() {
   });
 }
 
-// TABLA CON FECHAS Y FILTROS
+// TABLA CON LÍNEA DE TIEMPO M0/M1/M2
 function renderizarTabla() {
   let equipos = getEquiposFiltrados();
   
-  // Aplicar filtro GPV
+  // Aplicar filtro GPV (sobre el mes que está corriendo actualmente)
   if (filtroGPVActual !== 'todos') {
     equipos = equipos.filter(e => {
-      const gpv = parseFloat(e.gpv_mes_actual) || 0;
+      const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
       switch(filtroGPVActual) {
-        case 'meta': return gpv >= 700;
-        case 'promedio': return gpv >= 400 && gpv < 700;
-        case 'bajo': return gpv > 0 && gpv < 400;
-        case 'riesgo': return gpv === 0;
+        case 'meta': return gpvActual >= 700;
+        case 'promedio': return gpvActual >= 400 && gpvActual < 700;
+        case 'bajo': return gpvActual > 0 && gpvActual < 400;
+        case 'riesgo': return gpvActual === 0;
         default: return true;
       }
     });
@@ -1088,14 +1173,30 @@ function renderizarTabla() {
   }
   
   tbody.innerHTML = equipos.map(eq => {
-    const gpv = parseFloat(eq.gpv_mes_actual) || 0;
-    const gpvClass = getGPVClass(gpv);
+    const gpvM0 = parseFloat(eq.gpv_m0) || 0;
+    const gpvM1 = parseFloat(eq.gpv_m1) || 0;
+    const gpvM2 = parseFloat(eq.gpv_m2) || 0;
+    const trxM0 = parseInt(eq.trx_m0) || 0;
+    const trxM1 = parseInt(eq.trx_m1) || 0;
+    const trxM2 = parseInt(eq.trx_m2) || 0;
+    
+    // Determinar mes actual corriendo
+    const mesActualIdx = eq.mes_actual_idx || 0;
+    const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
+    const etiquetaMes = eq.etiqueta_mes_actual || 'M0 (Prueba)';
+    
+    const gpvClass = getGPVClass(gpvActual);
     const esMulti = comerciosCount[`${eq.ruc}_${eq.comercio}`] > 1;
     
     let estadoBadge = '<span class="badge-estado badge-inactivo">● Sin datos</span>';
     if (eq.estado === 'ACTIVO') estadoBadge = '<span class="badge-estado badge-activo">● Activo</span>';
     else if (eq.estado === 'REGULAR') estadoBadge = '<span class="badge-estado badge-regular">● Regular</span>';
     else if (eq.estado === 'INACTIVO') estadoBadge = '<span class="badge-estado badge-inactivo">● Inactivo</span>';
+    
+    // Clases para destacar el mes actual
+    const classM0 = mesActualIdx === 0 ? 'activo-m0' : '';
+    const classM1 = mesActualIdx === 1 ? 'activo-m1' : '';
+    const classM2 = mesActualIdx === 2 ? 'activo-m2' : '';
     
     return `
       <tr>
@@ -1115,10 +1216,26 @@ function renderizarTabla() {
             <div class="ejecutivo-nombre">${eq.responsable_real || 'Sin asignar'}</div>
           </div>
         </td>
-        <td style="text-align: right;" class="${gpvClass}">
-          S/ ${formatearNumero(gpv)}
+        <td style="text-align: right;">
+          <div class="timeline-gpv">
+            <div class="${gpvClass} gpv-actual">
+              S/ ${formatearNumero(gpvActual)}
+            </div>
+            <div class="gpv-historico">
+              <span class="mes-badge ${classM0}" title="Mes de Prueba">M0: ${formatearNumero(gpvM0, 0)}</span>
+              <span class="mes-badge ${classM1}" title="Mes 1">M1: ${formatearNumero(gpvM1, 0)}</span>
+              <span class="mes-badge ${classM2}" title="Mes 2">M2: ${formatearNumero(gpvM2, 0)}</span>
+            </div>
+            <div class="etiqueta-mes-actual">🕐 ${etiquetaMes} • Ticket: S/${formatearNumero(eq.ticket_mes_actual || 0)}</div>
+          </div>
         </td>
-        <td style="text-align: center;">${eq.transacciones_mes_actual || 0}</td>
+        <td style="text-align: center;">
+          <div class="timeline-trx">
+            <span class="trx-badge" style="${trxM0 > 0 ? 'color: var(--m0-color); font-weight:600;' : ''}">M0:${trxM0}</span>
+            <span class="trx-badge" style="${trxM1 > 0 ? 'color: var(--m1-color); font-weight:600;' : ''}">M1:${trxM1}</span>
+            <span class="trx-badge" style="${trxM2 > 0 ? 'color: var(--m2-color); font-weight:600;' : ''}">M2:${trxM2}</span>
+          </div>
+        </td>
         <td>${formatearFecha(eq.ultima_transaccion) || '-'}</td>
         <td style="text-align: center;">${estadoBadge}</td>
       </tr>
@@ -1130,7 +1247,6 @@ function renderizarTabla() {
 function filtrarPorGPV(tipo) {
   filtroGPVActual = tipo;
   
-  // Actualizar UI chips
   document.querySelectorAll('.chip-filtro').forEach(chip => {
     chip.classList.remove('activo');
     if (chip.dataset.filtro === tipo) chip.classList.add('activo');
@@ -1210,7 +1326,7 @@ function exportarExcel() {
   if (equipos.length === 0) return alert('No hay datos');
   
   const csv = [
-    ['Fecha Venta', 'Comercio', 'Serie', 'RUC', 'Fecha Activacion', 'Ejecutivo', 'GPV M0', 'TRX', 'Ultima TRX', 'Estado'].join(','),
+    ['Fecha Venta', 'Comercio', 'Serie', 'RUC', 'Fecha Activacion', 'Ejecutivo', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'Mes Actual', 'GPV Mes Actual', 'TRX Mes Actual', 'Ultima TRX', 'Estado'].join(','),
     ...equipos.map(e => [
       e.fecha_venta || '',
       `"${(e.comercio || '').replace(/"/g, '""')}"`,
@@ -1218,8 +1334,15 @@ function exportarExcel() {
       e.ruc,
       e.dia_activo || '',
       e.responsable_real,
-      e.gpv_mes_actual || 0,
-      e.transacciones_mes_actual || 0,
+      e.gpv_m0 || 0,
+      e.trx_m0 || 0,
+      e.gpv_m1 || 0,
+      e.trx_m1 || 0,
+      e.gpv_m2 || 0,
+      e.trx_m2 || 0,
+      e.etiqueta_mes_actual || '',
+      e.gpv_mes_actual_corriendo || 0,
+      e.trx_mes_actual_corriendo || 0,
       e.ultima_transaccion || '',
       e.estado || 'SIN_DATOS'
     ].join(','))
@@ -1228,7 +1351,7 @@ function exportarExcel() {
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `dashboard_${new Date().toISOString().split('T')[0]}.csv`;
+  link.download = `dashboard_timeline_${new Date().toISOString().split('T')[0]}.csv`;
   link.click();
 }
 
