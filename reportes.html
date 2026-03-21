@@ -14,6 +14,7 @@
     --acento: #0ea5e9;
     --texto: #e2e8f0;
     --texto-suave: #94a3b8;
+    --verde: #22c55e;
   }
 
   [data-theme="light"] {
@@ -35,7 +36,7 @@
     padding: 24px;
   }
 
-  .contenedor { max-width: 1000px; margin: 0 auto; }
+  .contenedor { max-width: 1200px; margin: 0 auto; }
 
   .header {
     margin-bottom: 32px;
@@ -47,7 +48,6 @@
     background: linear-gradient(135deg, var(--acento), #7c3aed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
   }
 
   .panel-reportes {
@@ -149,16 +149,39 @@
     margin-top: 20px;
     font-family: monospace;
     font-size: 12px;
-    max-height: 300px;
+    max-height: 400px;
     overflow: auto;
+    display: none;
   }
+
+  .preview-area.show {
+    display: block;
+  }
+
+  .loading, .empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--texto-suave);
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--superficie2);
+    border-top-color: var(--acento);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 <div class="contenedor">
   <div class="header">
     <h1>📑 Generador de Reportes</h1>
-    <p>Exporta datos personalizados en múltiples formatos</p>
+    <p>Exporta datos personalizados de equipos Culqi</p>
   </div>
 
   <div class="panel-reportes">
@@ -167,7 +190,6 @@
       <select id="formato">
         <option value="excel">Excel (CSV)</option>
         <option value="txt">Texto Plano (TXT)</option>
-        <option value="pdf">PDF (Impresión)</option>
       </select>
     </div>
 
@@ -175,10 +197,10 @@
       <label>🎯 Rango de datos</label>
       <select id="rango">
         <option value="todos">Todos los equipos</option>
-        <option value="filtros">Datos con filtros actuales</option>
         <option value="ejecutivo">Por ejecutivo específico</option>
         <option value="mes">Por mes de venta</option>
         <option value="estado">Por estado de equipo</option>
+        <option value="etapa">Por etapa (M0/M1/M2)</option>
       </select>
       
       <div id="opcionEjecutivo" class="opcion-adicional">
@@ -194,6 +216,13 @@
           <option value="INACTIVO">Inactivos (GPV = 0)</option>
         </select>
       </div>
+      <div id="opcionEtapa" class="opcion-adicional">
+        <select id="etapaSelect">
+          <option value="0">M0 (Prueba)</option>
+          <option value="1">M1 (Mes 1)</option>
+          <option value="2">M2 (Mes 2)</option>
+        </select>
+      </div>
     </div>
 
     <div class="grupo-opciones">
@@ -201,7 +230,7 @@
       <div class="checkbox-group">
         <label><input type="checkbox" id="incluirResumen" checked> Incluir resumen (KPIs)</label>
         <label><input type="checkbox" id="incluirTabla" checked> Incluir tabla detallada</label>
-        <label><input type="checkbox" id="incluirTimeline"> Incluir timeline M0/M1/M2</label>
+        <label><input type="checkbox" id="incluirTimeline"> Incluir timeline completo M0/M1/M2</label>
       </div>
     </div>
 
@@ -212,7 +241,7 @@
       <button class="btn btn-primary" onclick="exportarReporte()">📥 Exportar Reporte</button>
     </div>
 
-    <div id="previewArea" class="preview-area" style="display: none;"></div>
+    <div id="previewArea" class="preview-area"></div>
   </div>
 </div>
 
@@ -231,6 +260,17 @@ window.addEventListener('message', (e) => {
 
 function solicitarDatos() {
   window.parent.postMessage({ type: 'solicitar-datos' }, '*');
+}
+
+function getEstadoPorGPV(gpv) {
+  if (gpv === 0) return 'INACTIVO';
+  if (gpv < 400) return 'REGULAR';
+  return 'ACTIVO';
+}
+
+function formatearNumero(num) {
+  if (num === null || num === undefined || isNaN(num)) return '0';
+  return Number(num).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function cargarOpcionesSelectores() {
@@ -267,14 +307,13 @@ function getEquiposFiltrados() {
       const estadoFiltro = document.getElementById('estadoSelect').value;
       equipos = equipos.filter(e => {
         const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-        if (estadoFiltro === 'ACTIVO') return gpv >= 400;
-        if (estadoFiltro === 'REGULAR') return gpv > 0 && gpv < 400;
-        return gpv === 0;
+        const estado = getEstadoPorGPV(gpv);
+        return estado === estadoFiltro;
       });
       break;
-    case 'filtros':
-      // En un iframe no tenemos acceso directo a los filtros del dashboard padre
-      // Por ahora usamos todos
+    case 'etapa':
+      const etapa = parseInt(document.getElementById('etapaSelect').value);
+      equipos = equipos.filter(e => (e.mes_actual_idx || 0) === etapa);
       break;
   }
   return equipos;
@@ -285,8 +324,8 @@ function generarVistaPrevia() {
   const previewDiv = document.getElementById('previewArea');
   
   if (equipos.length === 0) {
-    previewDiv.style.display = 'block';
     previewDiv.innerHTML = '⚠️ No hay datos para mostrar con los filtros seleccionados.';
+    previewDiv.classList.add('show');
     return;
   }
   
@@ -296,57 +335,79 @@ function generarVistaPrevia() {
   let html = '<div style="font-weight: 700; margin-bottom: 12px;">📋 Vista Previa del Reporte</div>';
   
   if (incluirResumen) {
-    let totalGPV = 0, totalTRX = 0, activos = 0;
+    let totalGPV = 0, totalTRX = 0, activos = 0, regulares = 0, inactivos = 0;
+    let enM0 = 0, enM1 = 0, enM2 = 0;
+    
     equipos.forEach(e => {
-      totalGPV += (parseFloat(e.gpv_mes_actual_corriendo) || 0);
-      totalTRX += (parseInt(e.trx_mes_actual_corriendo) || 0);
       const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-      if (gpv >= 400) activos++;
+      totalGPV += gpv;
+      totalTRX += (parseInt(e.trx_mes_actual_corriendo) || 0);
+      const estado = getEstadoPorGPV(gpv);
+      if (estado === 'ACTIVO') activos++;
+      else if (estado === 'REGULAR') regulares++;
+      else inactivos++;
+      
+      const etapa = e.mes_actual_idx || 0;
+      if (etapa === 0) enM0++;
+      else if (etapa === 1) enM1++;
+      else enM2++;
     });
+    
     html += `
       <div style="margin-bottom: 16px; padding: 12px; background: var(--superficie); border-radius: 12px;">
         <div><strong>Total registros:</strong> ${equipos.length}</div>
-        <div><strong>GPV Total:</strong> S/ ${totalGPV.toLocaleString('es-PE')}</div>
+        <div><strong>GPV Total:</strong> S/ ${formatearNumero(totalGPV)}</div>
         <div><strong>Transacciones:</strong> ${totalTRX.toLocaleString('es-PE')}</div>
-        <div><strong>Equipos Activos:</strong> ${activos}</div>
+        <div><strong>Activos:</strong> ${activos} | <strong>Regulares:</strong> ${regulares} | <strong>Inactivos:</strong> ${inactivos}</div>
+        <div><strong>M0:</strong> ${enM0} | <strong>M1:</strong> ${enM1} | <strong>M2:</strong> ${enM2}</div>
       </div>
     `;
   }
   
   if (incluirTabla) {
     html += `
-      <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
         <thead>
           <tr style="background: var(--superficie);">
             <th style="padding: 6px;">#</th>
+            <th style="padding: 6px;">Serie</th>
             <th style="padding: 6px;">Comercio</th>
+            <th style="padding: 6px;">RUC</th>
             <th style="padding: 6px;">Ejecutivo</th>
+            <th style="padding: 6px;">GPV M0</th>
+            <th style="padding: 6px;">GPV M1</th>
+            <th style="padding: 6px;">GPV M2</th>
             <th style="padding: 6px;">GPV Act</th>
             <th style="padding: 6px;">Estado</th>
            </tr>
         </thead>
         <tbody>
-          ${equipos.slice(0, 10).map((e, i) => {
+          ${equipos.slice(0, 15).map((e, i) => {
             const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-            const estado = gpv === 0 ? '❌ Inactivo' : (gpv < 400 ? '🟠 Regular' : '✅ Activo');
+            const estado = getEstadoPorGPV(gpv);
             return `
               <tr style="border-bottom: 1px solid var(--borde);">
                 <td style="padding: 6px;">${i+1}</td>
+                <td style="padding: 6px;"><code>${e.numero_serie || '-'}</code></td>
                 <td style="padding: 6px;">${e.comercio?.substring(0, 25) || '-'}</td>
+                <td style="padding: 6px;">${e.ruc || '-'}</td>
                 <td style="padding: 6px;">${e.responsable_real || '-'}</td>
-                <td style="padding: 6px;">S/ ${gpv.toLocaleString('es-PE')}</td>
+                <td style="padding: 6px;">S/ ${formatearNumero(e.gpv_m0)}</td>
+                <td style="padding: 6px;">S/ ${formatearNumero(e.gpv_m1)}</td>
+                <td style="padding: 6px;">S/ ${formatearNumero(e.gpv_m2)}</td>
+                <td style="padding: 6px;">S/ ${formatearNumero(gpv)}</td>
                 <td style="padding: 6px;">${estado}</td>
               </tr>
             `;
           }).join('')}
         </tbody>
       </table>
-      ${equipos.length > 10 ? '<div style="margin-top: 8px; color: var(--texto-suave);">... y ' + (equipos.length - 10) + ' registros más</div>' : ''}
+      ${equipos.length > 15 ? '<div style="margin-top: 8px; color: var(--texto-suave);">... y ' + (equipos.length - 15) + ' registros más</div>' : ''}
     `;
   }
   
-  previewDiv.style.display = 'block';
   previewDiv.innerHTML = html;
+  previewDiv.classList.add('show');
 }
 
 function exportarReporte() {
@@ -365,14 +426,12 @@ function exportarReporte() {
     exportarExcel(equipos, incluirResumen, incluirTabla, incluirTimeline);
   } else if (formato === 'txt') {
     exportarTXT(equipos, incluirResumen, incluirTabla, incluirTimeline);
-  } else if (formato === 'pdf') {
-    alert('La exportación a PDF requiere una ventana de impresión. Usa Ctrl+P o Cmd+P en la vista previa.');
-    generarVistaPrevia();
   }
 }
 
 function exportarExcel(equipos, incluirResumen, incluirTabla, incluirTimeline) {
   let csv = [];
+  const fecha = new Date().toISOString().split('T')[0];
   
   if (incluirResumen) {
     let totalGPV = 0, totalTRX = 0, activos = 0, regulares = 0, inactivos = 0;
@@ -380,12 +439,13 @@ function exportarExcel(equipos, incluirResumen, incluirTabla, incluirTimeline) {
       const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
       totalGPV += gpv;
       totalTRX += (parseInt(e.trx_mes_actual_corriendo) || 0);
-      if (gpv >= 400) activos++;
-      else if (gpv > 0) regulares++;
+      const estado = getEstadoPorGPV(gpv);
+      if (estado === 'ACTIVO') activos++;
+      else if (estado === 'REGULAR') regulares++;
       else inactivos++;
     });
-    csv.push('=== RESUMEN ===');
-    csv.push(`Fecha,${new Date().toLocaleString()}`);
+    csv.push('=== REPORTE DE VENTAS CULQI ===');
+    csv.push(`Fecha Generación,${new Date().toLocaleString()}`);
     csv.push(`Total Registros,${equipos.length}`);
     csv.push(`GPV Total,${totalGPV}`);
     csv.push(`Transacciones Totales,${totalTRX}`);
@@ -396,22 +456,22 @@ function exportarExcel(equipos, incluirResumen, incluirTabla, incluirTimeline) {
   }
   
   if (incluirTabla) {
-    const headers = ['#', 'Fecha Venta', 'Comercio', 'Serie', 'RUC', 'Ejecutivo', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'GPV Actual', 'TRX Actual', 'Estado'];
+    const headers = ['#', 'Serie POS', 'Comercio', 'RUC', 'Ejecutivo', 'Fecha Venta', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'GPV Actual', 'TRX Actual', 'Etapa Actual', 'Estado'];
     if (incluirTimeline) {
-      headers.push('Mes Actual', 'Variación M0→M1', 'Variación M1→M2');
+      headers.push('Variación M0→M1', 'Variación M1→M2');
     }
     csv.push(headers.join(','));
     
     equipos.forEach((e, i) => {
       const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-      const estado = gpvActual === 0 ? 'INACTIVO' : (gpvActual < 400 ? 'REGULAR' : 'ACTIVO');
+      const estado = getEstadoPorGPV(gpvActual);
       const row = [
         i + 1,
-        e.fecha_venta || '',
+        `"${e.numero_serie || ''}"`,
         `"${(e.comercio || '').replace(/"/g, '""')}"`,
-        e.numero_serie || '',
         e.ruc || '',
         e.responsable_real || '',
+        e.fecha_venta || '',
         e.gpv_m0 || 0,
         e.trx_m0 || 0,
         e.gpv_m1 || 0,
@@ -420,12 +480,12 @@ function exportarExcel(equipos, incluirResumen, incluirTabla, incluirTimeline) {
         e.trx_m2 || 0,
         gpvActual,
         e.trx_mes_actual_corriendo || 0,
+        e.etiqueta_mes_actual || 'M0',
         estado
       ];
       if (incluirTimeline) {
         const varM0M1 = e.gpv_m0 > 0 ? (((e.gpv_m1 - e.gpv_m0) / e.gpv_m0) * 100).toFixed(1) : 0;
         const varM1M2 = e.gpv_m1 > 0 ? (((e.gpv_m2 - e.gpv_m1) / e.gpv_m1) * 100).toFixed(1) : 0;
-        row.push(e.etiqueta_mes_actual || '-');
         row.push(varM0M1 + '%');
         row.push(varM1M2 + '%');
       }
@@ -435,20 +495,21 @@ function exportarExcel(equipos, incluirResumen, incluirTabla, incluirTimeline) {
   
   const blob = new Blob(['\ufeff' + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.href = url;
-  link.download = `reporte_${new Date().toISOString().split('T')[0]}.csv`;
+  link.href = URL.createObjectURL(blob);
+  link.download = `reporte_culqi_${fecha}.csv`;
   link.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(link.href);
 }
 
 function exportarTXT(equipos, incluirResumen, incluirTabla, incluirTimeline) {
   let txt = [];
   const separador = '='.repeat(80);
+  const fecha = new Date().toISOString().split('T')[0];
   
   txt.push(separador);
-  txt.push('REPORTE DE VENTAS - PUNTO DE VENTA');
-  txt.push(`Fecha de generación: ${new Date().toLocaleString()}`);
+  txt.push('REPORTE DE VENTAS - EQUIPOS CULQI');
+  txt.push(`Fecha: ${new Date().toLocaleString()}`);
+  txt.push(`Total equipos: ${equipos.length}`);
   txt.push(separador);
   txt.push('');
   
@@ -458,41 +519,41 @@ function exportarTXT(equipos, incluirResumen, incluirTabla, incluirTimeline) {
       const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
       totalGPV += gpv;
       totalTRX += (parseInt(e.trx_mes_actual_corriendo) || 0);
-      if (gpv >= 400) activos++;
-      else if (gpv > 0) regulares++;
+      const estado = getEstadoPorGPV(gpv);
+      if (estado === 'ACTIVO') activos++;
+      else if (estado === 'REGULAR') regulares++;
       else inactivos++;
     });
     txt.push('RESUMEN GENERAL');
     txt.push('-'.repeat(40));
-    txt.push(`Total de registros: ${equipos.length}`);
-    txt.push(`GPV Total: S/ ${totalGPV.toLocaleString('es-PE')}`);
-    txt.push(`Transacciones totales: ${totalTRX.toLocaleString('es-PE')}`);
-    txt.push(`Equipos Activos: ${activos}`);
-    txt.push(`Equipos Regulares: ${regulares}`);
-    txt.push(`Equipos Inactivos: ${inactivos}`);
+    txt.push(`GPV Total: S/ ${formatearNumero(totalGPV)}`);
+    txt.push(`Transacciones Totales: ${totalTRX.toLocaleString('es-PE')}`);
+    txt.push(`Activos: ${activos} | Regulares: ${regulares} | Inactivos: ${inactivos}`);
     txt.push('');
   }
   
   if (incluirTabla) {
-    txt.push('TABLA DETALLADA');
+    txt.push('LISTADO DETALLADO DE EQUIPOS');
     txt.push('-'.repeat(100));
-    txt.push(`# | Comercio | Ejecutivo | GPV Actual | Estado`);
+    txt.push(`# | Serie | Comercio | Ejecutivo | GPV M0 | GPV M1 | GPV M2 | GPV Act | Estado`);
     txt.push('-'.repeat(100));
     
     equipos.forEach((e, i) => {
       const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-      const estado = gpv === 0 ? 'INACTIVO' : (gpv < 400 ? 'REGULAR' : 'ACTIVO');
-      txt.push(`${i+1} | ${(e.comercio || '-').substring(0, 30)} | ${(e.responsable_real || '-').substring(0, 20)} | S/ ${gpv.toLocaleString('es-PE')} | ${estado}`);
+      const estado = getEstadoPorGPV(gpv);
+      txt.push(`${i+1} | ${e.numero_serie || '-'} | ${(e.comercio || '-').substring(0, 30)} | ${e.responsable_real || '-'} | ${e.gpv_m0 || 0} | ${e.gpv_m1 || 0} | ${e.gpv_m2 || 0} | ${gpv} | ${estado}`);
     });
-    txt.push('');
     
     if (incluirTimeline) {
-      txt.push('TIMELINE M0/M1/M2 (Primeros 10 equipos)');
-      txt.push('-'.repeat(100));
-      equipos.slice(0, 10).forEach((e, i) => {
-        txt.push(`${i+1}. ${e.comercio || '-'}`);
-        txt.push(`   M0: S/ ${e.gpv_m0 || 0} (${e.trx_m0 || 0} trx) → M1: S/ ${e.gpv_m1 || 0} (${e.trx_m1 || 0} trx) → M2: S/ ${e.gpv_m2 || 0} (${e.trx_m2 || 0} trx)`);
-        txt.push(`   Actual: ${e.etiqueta_mes_actual || '-'} - S/ ${parseFloat(e.gpv_mes_actual_corriendo) || 0}`);
+      txt.push('');
+      txt.push('TIMELINE COMPLETO (Primeros 15 equipos)');
+      txt.push('-'.repeat(80));
+      equipos.slice(0, 15).forEach((e, i) => {
+        txt.push(`${i+1}. ${e.numero_serie} - ${e.comercio}`);
+        txt.push(`   M0: S/ ${e.gpv_m0 || 0} (${e.trx_m0 || 0} trx)`);
+        txt.push(`   M1: S/ ${e.gpv_m1 || 0} (${e.trx_m1 || 0} trx) | Var: ${e.gpv_m0 > 0 ? (((e.gpv_m1 - e.gpv_m0) / e.gpv_m0 * 100).toFixed(1)) : 0}%`);
+        txt.push(`   M2: S/ ${e.gpv_m2 || 0} (${e.trx_m2 || 0} trx) | Var: ${e.gpv_m1 > 0 ? (((e.gpv_m2 - e.gpv_m1) / e.gpv_m1 * 100).toFixed(1)) : 0}%`);
+        txt.push(`   Actual: ${e.etiqueta_mes_actual || 'M0'} - S/ ${parseFloat(e.gpv_mes_actual_corriendo) || 0}`);
         txt.push('');
       });
     }
@@ -500,11 +561,10 @@ function exportarTXT(equipos, incluirResumen, incluirTabla, incluirTimeline) {
   
   const blob = new Blob([txt.join('\n')], { type: 'text/plain;charset=utf-8;' });
   const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.href = url;
-  link.download = `reporte_${new Date().toISOString().split('T')[0]}.txt`;
+  link.href = URL.createObjectURL(blob);
+  link.download = `reporte_culqi_${fecha}.txt`;
   link.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(link.href);
 }
 
 // Mostrar/ocultar opciones según rango
@@ -513,6 +573,7 @@ document.getElementById('rango').addEventListener('change', function() {
   if (this.value === 'ejecutivo') document.getElementById('opcionEjecutivo').classList.add('active');
   if (this.value === 'mes') document.getElementById('opcionMes').classList.add('active');
   if (this.value === 'estado') document.getElementById('opcionEstado').classList.add('active');
+  if (this.value === 'etapa') document.getElementById('opcionEtapa').classList.add('active');
 });
 
 setTimeout(solicitarDatos, 100);
