@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reportes - Panel Ventas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #0a0e1a;
+    --superficie: #111827;
+    --superficie2: #1e293b;
+    --borde: #1e2d45;
+    --acento: #0ea5e9;
+    --texto: #e2e8f0;
+    --texto-suave: #94a3b8;
+  }
+
+  [data-theme="light"] {
+    --fondo: #f8fafc;
+    --superficie: #ffffff;
+    --superficie2: #f1f5f9;
+    --borde: #e2e8f0;
+    --acento: #0284c7;
+    --texto: #0f172a;
+    --texto-suave: #64748b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    padding: 24px;
+  }
+
+  .contenedor { max-width: 1000px; margin: 0 auto; }
+
+  .header {
+    margin-bottom: 32px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  .panel-reportes {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 24px;
+    padding: 32px;
+  }
+
+  .grupo-opciones {
+    margin-bottom: 28px;
+  }
+
+  .grupo-opciones label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--texto);
+  }
+
+  select, .btn-group {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 12px;
+    background: transparent;
+    padding: 0;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    color: white;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(14,165,233,0.3);
+  }
+
+  .opcion-adicional {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--superficie2);
+    border-radius: 12px;
+    display: none;
+  }
+
+  .opcion-adicional.active {
+    display: block;
+  }
+
+  .checkbox-group {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: normal;
+  }
+
+  hr {
+    border-color: var(--borde);
+    margin: 24px 0;
+  }
+
+  .preview-area {
+    background: var(--superficie2);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    font-family: monospace;
+    font-size: 12px;
+    max-height: 300px;
+    overflow: auto;
+  }
+</style>
+</head>
+<body>
+<div class="contenedor">
+  <div class="header">
+    <h1>📑 Generador de Reportes</h1>
+    <p>Exporta datos personalizados en múltiples formatos</p>
+  </div>
+
+  <div class="panel-reportes">
+    <div class="grupo-opciones">
+      <label>📄 Formato de exportación</label>
+      <select id="formato">
+        <option value="excel">Excel (CSV)</option>
+        <option value="txt">Texto Plano (TXT)</option>
+        <option value="pdf">PDF (Impresión)</option>
+      </select>
+    </div>
+
+    <div class="grupo-opciones">
+      <label>🎯 Rango de datos</label>
+      <select id="rango">
+        <option value="todos">Todos los equipos</option>
+        <option value="filtros">Datos con filtros actuales</option>
+        <option value="ejecutivo">Por ejecutivo específico</option>
+        <option value="mes">Por mes de venta</option>
+        <option value="estado">Por estado de equipo</option>
+      </select>
+      
+      <div id="opcionEjecutivo" class="opcion-adicional">
+        <select id="ejecutivoSelect"></select>
+      </div>
+      <div id="opcionMes" class="opcion-adicional">
+        <select id="mesSelect"></select>
+      </div>
+      <div id="opcionEstado" class="opcion-adicional">
+        <select id="estadoSelect">
+          <option value="ACTIVO">Activos (GPV ≥ 400)</option>
+          <option value="REGULAR">Regulares (GPV 1-399)</option>
+          <option value="INACTIVO">Inactivos (GPV = 0)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grupo-opciones">
+      <label>📊 Contenido del reporte</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" id="incluirResumen" checked> Incluir resumen (KPIs)</label>
+        <label><input type="checkbox" id="incluirTabla" checked> Incluir tabla detallada</label>
+        <label><input type="checkbox" id="incluirTimeline"> Incluir timeline M0/M1/M2</label>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="btn-group">
+      <button class="btn" onclick="generarVistaPrevia()">👁️ Vista Previa</button>
+      <button class="btn btn-primary" onclick="exportarReporte()">📥 Exportar Reporte</button>
+    </div>
+
+    <div id="previewArea" class="preview-area" style="display: none;"></div>
+  </div>
+</div>
+
+<script>
+let datosCompletos = null;
+
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'datos-cargados') {
+    datosCompletos = e.data.datos;
+    cargarOpcionesSelectores();
+  }
+  if (e.data && e.data.type === 'theme-change') {
+    document.documentElement.setAttribute('data-theme', e.data.theme);
+  }
+});
+
+function solicitarDatos() {
+  window.parent.postMessage({ type: 'solicitar-datos' }, '*');
+}
+
+function cargarOpcionesSelectores() {
+  if (!datosCompletos) return;
+  
+  const ejecutivos = [...new Set(datosCompletos.equipos.map(e => e.responsable_real).filter(e => e))];
+  const meses = datosCompletos.meses_disponibles || [];
+  
+  const ejecutivoSelect = document.getElementById('ejecutivoSelect');
+  ejecutivoSelect.innerHTML = '<option value="">Seleccionar ejecutivo...</option>' + 
+    ejecutivos.map(exec => `<option value="${exec}">${exec}</option>`).join('');
+  
+  const mesSelect = document.getElementById('mesSelect');
+  mesSelect.innerHTML = '<option value="">Seleccionar mes...</option>' + 
+    meses.map(mes => `<option value="${mes}">${mes}</option>`).join('');
+}
+
+function getEquiposFiltrados() {
+  if (!datosCompletos?.equipos) return [];
+  
+  const rango = document.getElementById('rango').value;
+  let equipos = [...datosCompletos.equipos];
+  
+  switch(rango) {
+    case 'ejecutivo':
+      const ejecutivo = document.getElementById('ejecutivoSelect').value;
+      if (ejecutivo) equipos = equipos.filter(e => e.responsable_real === ejecutivo);
+      break;
+    case 'mes':
+      const mes = document.getElementById('mesSelect').value;
+      if (mes) equipos = equipos.filter(e => e.mes_venta === mes);
+      break;
+    case 'estado':
+      const estadoFiltro = document.getElementById('estadoSelect').value;
+      equipos = equipos.filter(e => {
+        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        if (estadoFiltro === 'ACTIVO') return gpv >= 400;
+        if (estadoFiltro === 'REGULAR') return gpv > 0 && gpv < 400;
+        return gpv === 0;
+      });
+      break;
+    case 'filtros':
+      // En un iframe no tenemos acceso directo a los filtros del dashboard padre
+      // Por ahora usamos todos
+      break;
+  }
+  return equipos;
+}
+
+function generarVistaPrevia() {
+  const equipos = getEquiposFiltrados();
+  const previewDiv = document.getElementById('previewArea');
+  
+  if (equipos.length === 0) {
+    previewDiv.style.display = 'block';
+    previewDiv.innerHTML = '⚠️ No hay datos para mostrar con los filtros seleccionados.';
+    return;
+  }
+  
+  const incluirResumen = document.getElementById('incluirResumen').checked;
+  const incluirTabla = document.getElementById('incluirTabla').checked;
+  
+  let html = '<div style="font-weight: 700; margin-bottom: 12px;">📋 Vista Previa del Reporte</div>';
+  
+  if (incluirResumen) {
+    let totalGPV = 0, totalTRX = 0, activos = 0;
+    equipos.forEach(e => {
+      totalGPV += (parseFloat(e.gpv_mes_actual_corriendo) || 0);
+      totalTRX += (parseInt(e.trx_mes_actual_corriendo) || 0);
+      const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+      if (gpv >= 400) activos++;
+    });
+    html += `
+      <div style="margin-bottom: 16px; padding: 12px; background: var(--superficie); border-radius: 12px;">
+        <div><strong>Total registros:</strong> ${equipos.length}</div>
+        <div><strong>GPV Total:</strong> S/ ${totalGPV.toLocaleString('es-PE')}</div>
+        <div><strong>Transacciones:</strong> ${totalTRX.toLocaleString('es-PE')}</div>
+        <div><strong>Equipos Activos:</strong> ${activos}</div>
+      </div>
+    `;
+  }
+  
+  if (incluirTabla) {
+    html += `
+      <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+        <thead>
+          <tr style="background: var(--superficie);">
+            <th style="padding: 6px;">#</th>
+            <th style="padding: 6px;">Comercio</th>
+            <th style="padding: 6px;">Ejecutivo</th>
+            <th style="padding: 6px;">GPV Act</th>
+            <th style="padding: 6px;">Estado</th>
+           </tr>
+        </thead>
+        <tbody>
+          ${equipos.slice(0, 10).map((e, i) => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            const estado = gpv === 0 ? '❌ Inactivo' : (gpv < 400 ? '🟠 Regular' : '✅ Activo');
+            return `
+              <tr style="border-bottom: 1px solid var(--borde);">
+                <td style="padding: 6px;">${i+1}</td>
+                <td style="padding: 6px;">${e.comercio?.substring(0, 25) || '-'}</td>
+                <td style="padding: 6px;">${e.responsable_real || '-'}</td>
+                <td style="padding: 6px;">S/ ${gpv.toLocaleString('es-PE')}</td>
+                <td style="padding: 6px;">${estado}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+      ${equipos.length > 10 ? '<div style="margin-top: 8px; color: var(--texto-suave);">... y ' + (equipos.length - 10) + ' registros más</div>' : ''}
+    `;
+  }
+  
+  previewDiv.style.display = 'block';
+  previewDiv.innerHTML = html;
+}
+
+function exportarReporte() {
+  const equipos = getEquiposFiltrados();
+  const formato = document.getElementById('formato').value;
+  const incluirResumen = document.getElementById('incluirResumen').checked;
+  const incluirTabla = document.getElementById('incluirTabla').checked;
+  const incluirTimeline = document.getElementById('incluirTimeline').checked;
+  
+  if (equipos.length === 0) {
+    alert('No hay datos para exportar');
+    return;
+  }
+  
+  if (formato === 'excel') {
+    exportarExcel(equipos, incluirResumen, incluirTabla, incluirTimeline);
+  } else if (formato === 'txt') {
+    exportarTXT(equipos, incluirResumen, incluirTabla, incluirTimeline);
+  } else if (formato === 'pdf') {
+    alert('La exportación a PDF requiere una ventana de impresión. Usa Ctrl+P o Cmd+P en la vista previa.');
+    generarVistaPrevia();
+  }
+}
+
+function exportarExcel(equipos, incluirResumen, incluirTabla, incluirTimeline) {
+  let csv = [];
+  
+  if (incluirResumen) {
+    let totalGPV = 0, totalTRX = 0, activos = 0, regulares = 0, inactivos = 0;
+    equipos.forEach(e => {
+      const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+      totalGPV += gpv;
+      totalTRX += (parseInt(e.trx_mes_actual_corriendo) || 0);
+      if (gpv >= 400) activos++;
+      else if (gpv > 0) regulares++;
+      else inactivos++;
+    });
+    csv.push('=== RESUMEN ===');
+    csv.push(`Fecha,${new Date().toLocaleString()}`);
+    csv.push(`Total Registros,${equipos.length}`);
+    csv.push(`GPV Total,${totalGPV}`);
+    csv.push(`Transacciones Totales,${totalTRX}`);
+    csv.push(`Equipos Activos,${activos}`);
+    csv.push(`Equipos Regulares,${regulares}`);
+    csv.push(`Equipos Inactivos,${inactivos}`);
+    csv.push('');
+  }
+  
+  if (incluirTabla) {
+    const headers = ['#', 'Fecha Venta', 'Comercio', 'Serie', 'RUC', 'Ejecutivo', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'GPV Actual', 'TRX Actual', 'Estado'];
+    if (incluirTimeline) {
+      headers.push('Mes Actual', 'Variación M0→M1', 'Variación M1→M2');
+    }
+    csv.push(headers.join(','));
+    
+    equipos.forEach((e, i) => {
+      const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+      const estado = gpvActual === 0 ? 'INACTIVO' : (gpvActual < 400 ? 'REGULAR' : 'ACTIVO');
+      const row = [
+        i + 1,
+        e.fecha_venta || '',
+        `"${(e.comercio || '').replace(/"/g, '""')}"`,
+        e.numero_serie || '',
+        e.ruc || '',
+        e.responsable_real || '',
+        e.gpv_m0 || 0,
+        e.trx_m0 || 0,
+        e.gpv_m1 || 0,
+        e.trx_m1 || 0,
+        e.gpv_m2 || 0,
+        e.trx_m2 || 0,
+        gpvActual,
+        e.trx_mes_actual_corriendo || 0,
+        estado
+      ];
+      if (incluirTimeline) {
+        const varM0M1 = e.gpv_m0 > 0 ? (((e.gpv_m1 - e.gpv_m0) / e.gpv_m0) * 100).toFixed(1) : 0;
+        const varM1M2 = e.gpv_m1 > 0 ? (((e.gpv_m2 - e.gpv_m1) / e.gpv_m1) * 100).toFixed(1) : 0;
+        row.push(e.etiqueta_mes_actual || '-');
+        row.push(varM0M1 + '%');
+        row.push(varM1M2 + '%');
+      }
+      csv.push(row.join(','));
+    });
+  }
+  
+  const blob = new Blob(['\ufeff' + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.download = `reporte_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportarTXT(equipos, incluirResumen, incluirTabla, incluirTimeline) {
+  let txt = [];
+  const separador = '='.repeat(80);
+  
+  txt.push(separador);
+  txt.push('REPORTE DE VENTAS - PUNTO DE VENTA');
+  txt.push(`Fecha de generación: ${new Date().toLocaleString()}`);
+  txt.push(separador);
+  txt.push('');
+  
+  if (incluirResumen) {
+    let totalGPV = 0, totalTRX = 0, activos = 0, regulares = 0, inactivos = 0;
+    equipos.forEach(e => {
+      const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+      totalGPV += gpv;
+      totalTRX += (parseInt(e.trx_mes_actual_corriendo) || 0);
+      if (gpv >= 400) activos++;
+      else if (gpv > 0) regulares++;
+      else inactivos++;
+    });
+    txt.push('RESUMEN GENERAL');
+    txt.push('-'.repeat(40));
+    txt.push(`Total de registros: ${equipos.length}`);
+    txt.push(`GPV Total: S/ ${totalGPV.toLocaleString('es-PE')}`);
+    txt.push(`Transacciones totales: ${totalTRX.toLocaleString('es-PE')}`);
+    txt.push(`Equipos Activos: ${activos}`);
+    txt.push(`Equipos Regulares: ${regulares}`);
+    txt.push(`Equipos Inactivos: ${inactivos}`);
+    txt.push('');
+  }
+  
+  if (incluirTabla) {
+    txt.push('TABLA DETALLADA');
+    txt.push('-'.repeat(100));
+    txt.push(`# | Comercio | Ejecutivo | GPV Actual | Estado`);
+    txt.push('-'.repeat(100));
+    
+    equipos.forEach((e, i) => {
+      const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+      const estado = gpv === 0 ? 'INACTIVO' : (gpv < 400 ? 'REGULAR' : 'ACTIVO');
+      txt.push(`${i+1} | ${(e.comercio || '-').substring(0, 30)} | ${(e.responsable_real || '-').substring(0, 20)} | S/ ${gpv.toLocaleString('es-PE')} | ${estado}`);
+    });
+    txt.push('');
+    
+    if (incluirTimeline) {
+      txt.push('TIMELINE M0/M1/M2 (Primeros 10 equipos)');
+      txt.push('-'.repeat(100));
+      equipos.slice(0, 10).forEach((e, i) => {
+        txt.push(`${i+1}. ${e.comercio || '-'}`);
+        txt.push(`   M0: S/ ${e.gpv_m0 || 0} (${e.trx_m0 || 0} trx) → M1: S/ ${e.gpv_m1 || 0} (${e.trx_m1 || 0} trx) → M2: S/ ${e.gpv_m2 || 0} (${e.trx_m2 || 0} trx)`);
+        txt.push(`   Actual: ${e.etiqueta_mes_actual || '-'} - S/ ${parseFloat(e.gpv_mes_actual_corriendo) || 0}`);
+        txt.push('');
+      });
+    }
+  }
+  
+  const blob = new Blob([txt.join('\n')], { type: 'text/plain;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.download = `reporte_${new Date().toISOString().split('T')[0]}.txt`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+// Mostrar/ocultar opciones según rango
+document.getElementById('rango').addEventListener('change', function() {
+  document.querySelectorAll('.opcion-adicional').forEach(el => el.classList.remove('active'));
+  if (this.value === 'ejecutivo') document.getElementById('opcionEjecutivo').classList.add('active');
+  if (this.value === 'mes') document.getElementById('opcionMes').classList.add('active');
+  if (this.value === 'estado') document.getElementById('opcionEstado').classList.add('active');
+});
+
+setTimeout(solicitarDatos, 100);
+</script>
+</body>
+</html>
