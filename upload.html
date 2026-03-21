@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subir Reporte - Panel Ventas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #0a0e1a;
+    --superficie: #111827;
+    --superficie2: #1e293b;
+    --borde: #1e2d45;
+    --acento: #0ea5e9;
+    --texto: #e2e8f0;
+    --texto-suave: #94a3b8;
+    --verde: #22c55e;
+    --rojo: #ef4444;
+  }
+
+  [data-theme="light"] {
+    --fondo: #f8fafc;
+    --superficie: #ffffff;
+    --superficie2: #f1f5f9;
+    --borde: #e2e8f0;
+    --acento: #0284c7;
+    --texto: #0f172a;
+    --texto-suave: #64748b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .upload-container {
+    max-width: 600px;
+    width: 100%;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 32px;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .upload-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+
+  .desc {
+    color: var(--texto-suave);
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .drop-area {
+    border: 2px dashed var(--borde);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 24px;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .drop-area.drag-over {
+    border-color: var(--acento);
+    background: var(--superficie2);
+  }
+
+  .file-input {
+    display: none;
+  }
+
+  .file-label {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--superficie2);
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 16px;
+  }
+
+  .file-label:hover {
+    background: var(--acento);
+    color: white;
+  }
+
+  .selected-file {
+    margin: 16px 0;
+    padding: 12px;
+    background: var(--superficie2);
+    border-radius: 12px;
+    font-size: 14px;
+    display: none;
+  }
+
+  .selected-file.show {
+    display: block;
+  }
+
+  .btn-upload {
+    width: 100%;
+    padding: 16px;
+    border-radius: 40px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    color: white;
+    border: none;
+    margin-top: 16px;
+    transition: all 0.3s;
+  }
+
+  .btn-upload:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(14,165,233,0.3);
+  }
+
+  .btn-upload:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .progress {
+    display: none;
+    margin-top: 24px;
+  }
+
+  .progress.show {
+    display: block;
+  }
+
+  .progress-bar {
+    height: 8px;
+    background: var(--superficie2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  .result {
+    margin-top: 24px;
+    padding: 20px;
+    border-radius: 20px;
+    display: none;
+  }
+
+  .result.show {
+    display: block;
+  }
+
+  .result.success {
+    background: rgba(34,197,94,0.15);
+    border: 1px solid var(--verde);
+  }
+
+  .result.error {
+    background: rgba(239,68,68,0.15);
+    border: 1px solid var(--rojo);
+  }
+
+  .result-title {
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .result-details {
+    font-size: 13px;
+    color: var(--texto-suave);
+  }
+</style>
+</head>
+<body>
+<div class="upload-container">
+  <div class="upload-icon">📤</div>
+  <h1>Actualizar Reporte de Ventas</h1>
+  <p class="desc">Sube tu archivo Excel o CSV con los datos diarios<br>El sistema validará y actualizará automáticamente la base de datos</p>
+
+  <div class="drop-area" id="dropArea">
+    <div>📁 Arrastra tu archivo aquí</div>
+    <div style="font-size: 12px; margin-top: 8px; color: var(--texto-suave);">o</div>
+    <input type="file" id="fileInput" class="file-input" accept=".csv,.xlsx,.xls">
+    <label for="fileInput" class="file-label">Seleccionar archivo</label>
+  </div>
+
+  <div class="selected-file" id="selectedFile"></div>
+
+  <button class="btn-upload" id="uploadBtn" disabled>📤 Subir y Actualizar Datos</button>
+
+  <div class="progress" id="progress">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div id="progressText">Procesando...</div>
+  </div>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const URL_API = 'https://script.google.com/macros/s/AKfycbzRc0WYRBm6dcAxmV9iim7oWNe4R6Hn2mE6LR4HTCH1fpps9KXlbO8HH_gdj7kq9AI_/exec';
+
+let selectedFile = null;
+
+// Elementos DOM
+const dropArea = document.getElementById('dropArea');
+const fileInput = document.getElementById('fileInput');
+const selectedFileDiv = document.getElementById('selectedFile');
+const uploadBtn = document.getElementById('uploadBtn');
+const progress = document.getElementById('progress');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const resultDiv = document.getElementById('result');
+
+// Eventos de drag & drop
+dropArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropArea.classList.add('drag-over');
+});
+
+dropArea.addEventListener('dragleave', () => {
+  dropArea.classList.remove('drag-over');
+});
+
+dropArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropArea.classList.remove('drag-over');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    handleFile(files[0]);
+  }
+});
+
+// Evento de selección de archivo
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) {
+    handleFile(e.target.files[0]);
+  }
+});
+
+function handleFile(file) {
+  const extension = file.name.split('.').pop().toLowerCase();
+  if (!['csv', 'xlsx', 'xls'].includes(extension)) {
+    alert('Formato no soportado. Usa CSV o Excel (.xlsx, .xls)');
+    return;
+  }
+  
+  selectedFile = file;
+  selectedFileDiv.innerHTML = `✅ Archivo seleccionado: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+  selectedFileDiv.classList.add('show');
+  uploadBtn.disabled = false;
+}
+
+uploadBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+  
+  uploadBtn.disabled = true;
+  progress.classList.add('show');
+  resultDiv.classList.remove('show');
+  progressFill.style.width = '30%';
+  progressText.textContent = 'Validando archivo...';
+  
+  try {
+    // Leer el archivo
+    const reader = new FileReader();
+    
+    const fileData = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(selectedFile);
+    });
+    
+    progressFill.style.width = '60%';
+    progressText.textContent = 'Enviando a Google Sheets...';
+    
+    // Enviar al servidor
+    const formData = new FormData();
+    formData.append('action', 'upload');
+    formData.append('archivo', fileData);
+    formData.append('nombre', selectedFile.name);
+    formData.append('usuario', 'dashboard_user');
+    
+    const response = await fetch(URL_API, {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    progressFill.style.width = '100%';
+    progressText.textContent = 'Procesamiento completado';
+    
+    if (result.success) {
+      resultDiv.className = 'result success show';
+      resultDiv.innerHTML = `
+        <div class="result-title">✅ ¡Actualización Exitosa!</div>
+        <div class="result-details">
+          ${result.mensaje || 'Datos actualizados correctamente'}<br>
+          ${result.resultado ? `📊 Nuevas filas: ${result.resultado.nuevas} | Actualizadas: ${result.resultado.actualizadas}` : ''}
+        </div>
+      `;
+      
+      // Notificar al dashboard padre
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'datos-actualizados' }, '*');
+      }
+      
+    } else {
+      throw new Error(result.mensaje || result.error || 'Error desconocido');
+    }
+    
+  } catch (error) {
+    console.error('Error:', error);
+    resultDiv.className = 'result error show';
+    resultDiv.innerHTML = `
+      <div class="result-title">❌ Error al Actualizar</div>
+      <div class="result-details">
+        ${error.message}<br>
+        Verifica que el archivo tenga el formato correcto y vuelve a intentarlo.
+      </div>
+    `;
+  } finally {
+    setTimeout(() => {
+      uploadBtn.disabled = false;
+      setTimeout(() => {
+        progress.classList.remove('show');
+        progressFill.style.width = '0%';
+      }, 2000);
+    }, 1000);
+  }
+});
+
+// Sincronizar tema
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'theme-change') {
+    document.documentElement.setAttribute('data-theme', e.data.theme);
+  }
+});
+
+function aplicarTema(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+const savedTheme = localStorage.getItem('theme') || 'dark';
+aplicarTema(savedTheme);
+</script>
+</body>
+</html>
