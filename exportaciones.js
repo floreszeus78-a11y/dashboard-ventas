@@ -130,10 +130,6 @@ function mostrarDialogoExportacion() {
                         <input type="checkbox" id="incluirTabla" checked>
                         <span>Incluir tabla detallada</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="incluirGraficas" checked>
-                        <span>Incluir gráficas (solo PDF)</span>
-                    </label>
                 </div>
             </div>
             
@@ -209,7 +205,6 @@ function ejecutarExportacion() {
     const rango = document.getElementById('rangoExportacion').value;
     const incluirResumen = document.getElementById('incluirResumen').checked;
     const incluirTabla = document.getElementById('incluirTabla').checked;
-    const incluirGraficas = document.getElementById('incluirGraficas').checked;
     
     let datos = [];
     
@@ -253,7 +248,7 @@ function ejecutarExportacion() {
             exportarExcelCompleto(datos, incluirResumen, incluirTabla);
             break;
         case 'pdf':
-            exportarPDFCompleto(datos, incluirResumen, incluirTabla, incluirGraficas);
+            exportarPDFCompleto(datos, incluirResumen, incluirTabla);
             break;
         case 'txt':
             exportarTXTCompleto(datos, incluirResumen, incluirTabla);
@@ -262,153 +257,16 @@ function ejecutarExportacion() {
 }
 
 // ============================================================
-// EXPORTAR EXCEL (CSV con múltiples hojas)
+// EXPORTAR EXCEL (CSV)
 // ============================================================
 function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
     const nombreArchivo = `reporte_ventas_${new Date().toISOString().split('T')[0]}`;
-    
-    if (incluirResumen && incluirTabla) {
-        // Crear CSV con resumen y tabla
-        let contenido = [];
-        
-        // Resumen
-        contenido.push('=== RESUMEN DEL REPORTE ===');
-        contenido.push('');
-        contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
-        contenido.push(`Total de registros: ${datos.length}`);
-        
-        // Calcular totales
-        let totalGPV = 0;
-        let totalTRX = 0;
-        let activos = 0;
-        
-        datos.forEach(e => {
-            totalGPV += (parseFloat(e.gpv_m0) || 0) + (parseFloat(e.gpv_m1) || 0) + (parseFloat(e.gpv_m2) || 0);
-            totalTRX += (parseInt(e.trx_m0) || 0) + (parseInt(e.trx_m1) || 0) + (parseInt(e.trx_m2) || 0);
-            const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-            if (getEstadoPorGPV(gpvActual) === 'ACTIVO') activos++;
-        });
-        
-        contenido.push(`GPV Total: S/ ${totalGPV.toLocaleString('es-PE')}`);
-        contenido.push(`TRX Total: ${totalTRX.toLocaleString('es-PE')}`);
-        contenido.push(`Equipos Activos: ${activos}/${datos.length}`);
-        contenido.push('');
-        contenido.push('');
-        
-        // Tabla detallada
-        contenido.push('=== TABLA DETALLADA ===');
-        contenido.push('');
-        
-        const headers = [
-            '#', 'Fecha Venta', 'Comercio', 'Serie', 'RUC', 
-            'Fecha Activación', 'Ejecutivo', 'GPV M0', 'TRX M0', 
-            'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'Mes Actual', 
-            'GPV Actual', 'TRX Actual', 'Última Transacción', 'Estado'
-        ];
-        
-        contenido.push(headers.join(','));
-        
-        datos.forEach((item, i) => {
-            const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
-            const estado = getEstadoPorGPV(gpvActual);
-            
-            const row = [
-                i + 1,
-                item.fecha_venta || '',
-                `"${(item.comercio || '').replace(/"/g, '""')}"`,
-                item.numero_serie || '',
-                item.ruc || '',
-                item.dia_activo || '',
-                item.responsable_real || '',
-                item.gpv_m0 || 0,
-                item.trx_m0 || 0,
-                item.gpv_m1 || 0,
-                item.trx_m1 || 0,
-                item.gpv_m2 || 0,
-                item.trx_m2 || 0,
-                item.etiqueta_mes_actual || '',
-                gpvActual,
-                item.trx_mes_actual_corriendo || 0,
-                item.ultima_transaccion || '',
-                estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo')
-            ];
-            contenido.push(row.join(','));
-        });
-        
-        const blob = new Blob(['\ufeff' + contenido.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        descargarArchivo(blob, `${nombreArchivo}.csv`);
-        
-    } else if (incluirTabla) {
-        // Solo tabla
-        const headers = [
-            '#', 'Fecha Venta', 'Comercio', 'Serie', 'RUC', 
-            'Fecha Activación', 'Ejecutivo', 'GPV M0', 'TRX M0', 
-            'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'Mes Actual', 
-            'GPV Actual', 'TRX Actual', 'Última Transacción', 'Estado'
-        ];
-        
-        const rows = [headers.join(',')];
-        
-        datos.forEach((item, i) => {
-            const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
-            const estado = getEstadoPorGPV(gpvActual);
-            
-            const row = [
-                i + 1,
-                item.fecha_venta || '',
-                `"${(item.comercio || '').replace(/"/g, '""')}"`,
-                item.numero_serie || '',
-                item.ruc || '',
-                item.dia_activo || '',
-                item.responsable_real || '',
-                item.gpv_m0 || 0,
-                item.trx_m0 || 0,
-                item.gpv_m1 || 0,
-                item.trx_m1 || 0,
-                item.gpv_m2 || 0,
-                item.trx_m2 || 0,
-                item.etiqueta_mes_actual || '',
-                gpvActual,
-                item.trx_mes_actual_corriendo || 0,
-                item.ultima_transaccion || '',
-                estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo')
-            ];
-            rows.push(row.join(','));
-        });
-        
-        const blob = new Blob(['\ufeff' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        descargarArchivo(blob, `${nombreArchivo}_tabla.csv`);
-    }
-}
-
-// ============================================================
-// EXPORTAR TXT (formato legible)
-// ============================================================
-function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
-    const nombreArchivo = `reporte_ventas_${new Date().toISOString().split('T')[0]}`;
     let contenido = [];
     
-    // Línea separadora
-    const separador = '='.repeat(100);
-    
     if (incluirResumen) {
-        contenido.push(separador);
-        contenido.push('RESUMEN DEL REPORTE');
-        contenido.push(separador);
-        contenido.push('');
-        contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
-        contenido.push(`Total de registros: ${datos.length}`);
-        contenido.push('');
-        
-        // Calcular totales
-        let totalGPV = 0;
-        let totalGPV_M0 = 0;
-        let totalGPV_M1 = 0;
-        let totalGPV_M2 = 0;
-        let totalTRX = 0;
-        let activos = 0;
-        let regulares = 0;
-        let inactivos = 0;
+        // Calcular totales para resumen
+        let totalGPV = 0, totalGPV_M0 = 0, totalGPV_M1 = 0, totalGPV_M2 = 0;
+        let totalTRX = 0, activos = 0, regulares = 0, inactivos = 0;
         
         datos.forEach(e => {
             const m0 = parseFloat(e.gpv_m0) || 0;
@@ -427,6 +285,104 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
             else inactivos++;
         });
         
+        contenido.push('=== RESUMEN DEL REPORTE ===');
+        contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
+        contenido.push(`Total de registros: ${datos.length}`);
+        contenido.push(`GPV Total: S/ ${totalGPV.toLocaleString('es-PE')}`);
+        contenido.push(`GPV M0: S/ ${totalGPV_M0.toLocaleString('es-PE')}`);
+        contenido.push(`GPV M1: S/ ${totalGPV_M1.toLocaleString('es-PE')}`);
+        contenido.push(`GPV M2: S/ ${totalGPV_M2.toLocaleString('es-PE')}`);
+        contenido.push(`Transacciones Totales: ${totalTRX.toLocaleString('es-PE')}`);
+        contenido.push(`Equipos Activos: ${activos}`);
+        contenido.push(`Equipos Regulares: ${regulares}`);
+        contenido.push(`Equipos Inactivos: ${inactivos}`);
+        contenido.push('');
+        contenido.push('');
+    }
+    
+    if (incluirTabla) {
+        contenido.push('=== TABLA DETALLADA ===');
+        contenido.push('');
+        
+        const headers = [
+            '#', 'Fecha Venta', 'Comercio', 'Serie', 'RUC', 
+            'Fecha Activación', 'Ejecutivo', 'GPV M0', 'TRX M0', 
+            'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'Mes Actual', 
+            'GPV Actual', 'TRX Actual', 'Última Transacción', 'Estado'
+        ];
+        
+        contenido.push(headers.join(','));
+        
+        datos.forEach((item, i) => {
+            const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
+            const estado = getEstadoPorGPV(gpvActual);
+            const estadoTexto = estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo');
+            
+            const row = [
+                i + 1,
+                item.fecha_venta || '',
+                `"${(item.comercio || '').replace(/"/g, '""')}"`,
+                item.numero_serie || '',
+                item.ruc || '',
+                item.dia_activo || '',
+                item.responsable_real || '',
+                item.gpv_m0 || 0,
+                item.trx_m0 || 0,
+                item.gpv_m1 || 0,
+                item.trx_m1 || 0,
+                item.gpv_m2 || 0,
+                item.trx_m2 || 0,
+                item.etiqueta_mes_actual || '',
+                gpvActual,
+                item.trx_mes_actual_corriendo || 0,
+                item.ultima_transaccion || '',
+                estadoTexto
+            ];
+            contenido.push(row.join(','));
+        });
+    }
+    
+    const blob = new Blob(['\ufeff' + contenido.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    descargarArchivo(blob, `${nombreArchivo}.csv`);
+}
+
+// ============================================================
+// EXPORTAR TXT
+// ============================================================
+function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
+    const nombreArchivo = `reporte_ventas_${new Date().toISOString().split('T')[0]}`;
+    let contenido = [];
+    const separador = '='.repeat(100);
+    
+    if (incluirResumen) {
+        // Calcular totales
+        let totalGPV = 0, totalGPV_M0 = 0, totalGPV_M1 = 0, totalGPV_M2 = 0;
+        let totalTRX = 0, activos = 0, regulares = 0, inactivos = 0;
+        
+        datos.forEach(e => {
+            const m0 = parseFloat(e.gpv_m0) || 0;
+            const m1 = parseFloat(e.gpv_m1) || 0;
+            const m2 = parseFloat(e.gpv_m2) || 0;
+            totalGPV += (m0 + m1 + m2);
+            totalGPV_M0 += m0;
+            totalGPV_M1 += m1;
+            totalGPV_M2 += m2;
+            totalTRX += (parseInt(e.trx_m0) || 0) + (parseInt(e.trx_m1) || 0) + (parseInt(e.trx_m2) || 0);
+            
+            const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            const estado = getEstadoPorGPV(gpvActual);
+            if (estado === 'ACTIVO') activos++;
+            else if (estado === 'REGULAR') regulares++;
+            else inactivos++;
+        });
+        
+        contenido.push(separador);
+        contenido.push('RESUMEN DEL REPORTE');
+        contenido.push(separador);
+        contenido.push('');
+        contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
+        contenido.push(`Total de registros: ${datos.length}`);
+        contenido.push('');
         contenido.push('📊 INDICADORES PRINCIPALES:');
         contenido.push(`   • GPV Total (Cohorte): S/ ${totalGPV.toLocaleString('es-PE')}`);
         contenido.push(`   • GPV M0 (Prueba): S/ ${totalGPV_M0.toLocaleString('es-PE')}`);
@@ -447,25 +403,29 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
         contenido.push(separador);
         contenido.push('');
         
-        // Encabezado formateado
-        const formatoEncabezado = (texto, ancho) => texto.padEnd(ancho);
+        // Función para formatear texto con ancho fijo
+        const pad = (texto, ancho) => {
+            const str = String(texto || '-');
+            return str.length > ancho ? str.substring(0, ancho - 3) + '...' : str.padEnd(ancho);
+        };
+        
         contenido.push(
-            formatoEncabezado('#', 5) +
-            formatoEncabezado('Fecha Venta', 12) +
-            formatoEncabezado('Comercio', 30) +
-            formatoEncabezado('Serie', 15) +
-            formatoEncabezado('RUC', 12) +
-            formatoEncabezado('Ejecutivo', 20) +
-            formatoEncabezado('GPV M0', 10) +
-            formatoEncabezado('TRX M0', 8) +
-            formatoEncabezado('GPV M1', 10) +
-            formatoEncabezado('TRX M1', 8) +
-            formatoEncabezado('GPV M2', 10) +
-            formatoEncabezado('TRX M2', 8) +
-            formatoEncabezado('GPV Act', 10) +
-            formatoEncabezado('Estado', 10)
+            pad('#', 5) +
+            pad('Fecha Venta', 12) +
+            pad('Comercio', 28) +
+            pad('Serie', 15) +
+            pad('RUC', 12) +
+            pad('Ejecutivo', 20) +
+            pad('GPV M0', 10) +
+            pad('TRX M0', 8) +
+            pad('GPV M1', 10) +
+            pad('TRX M1', 8) +
+            pad('GPV M2', 10) +
+            pad('TRX M2', 8) +
+            pad('GPV Act', 10) +
+            pad('Estado', 10)
         );
-        contenido.push('-'.repeat(180));
+        contenido.push('-'.repeat(176));
         
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
@@ -473,20 +433,20 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
             const estadoTexto = estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo');
             
             contenido.push(
-                formatoEncabezado(String(i + 1), 5) +
-                formatoEncabezado(item.fecha_venta || '-', 12) +
-                formatoEncabezado((item.comercio || '-').substring(0, 28), 30) +
-                formatoEncabezado(item.numero_serie || '-', 15) +
-                formatoEncabezado(item.ruc || '-', 12) +
-                formatoEncabezado((item.responsable_real || '-').substring(0, 18), 20) +
-                formatoEncabezado(String(item.gpv_m0 || 0), 10) +
-                formatoEncabezado(String(item.trx_m0 || 0), 8) +
-                formatoEncabezado(String(item.gpv_m1 || 0), 10) +
-                formatoEncabezado(String(item.trx_m1 || 0), 8) +
-                formatoEncabezado(String(item.gpv_m2 || 0), 10) +
-                formatoEncabezado(String(item.trx_m2 || 0), 8) +
-                formatoEncabezado(String(gpvActual), 10) +
-                formatoEncabezado(estadoTexto, 10)
+                pad(i + 1, 5) +
+                pad(item.fecha_venta || '-', 12) +
+                pad(item.comercio || '-', 28) +
+                pad(item.numero_serie || '-', 15) +
+                pad(item.ruc || '-', 12) +
+                pad(item.responsable_real || '-', 20) +
+                pad(item.gpv_m0 || 0, 10) +
+                pad(item.trx_m0 || 0, 8) +
+                pad(item.gpv_m1 || 0, 10) +
+                pad(item.trx_m1 || 0, 8) +
+                pad(item.gpv_m2 || 0, 10) +
+                pad(item.trx_m2 || 0, 8) +
+                pad(gpvActual, 10) +
+                pad(estadoTexto, 10)
             );
         });
     }
@@ -496,9 +456,9 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
 }
 
 // ============================================================
-// EXPORTAR PDF (usando html2canvas + jsPDF)
+// EXPORTAR PDF
 // ============================================================
-function exportarPDFCompleto(datos, incluirResumen, incluirTabla, incluirGraficas) {
+function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
     // Crear un elemento temporal para renderizar el PDF
     const elementoPDF = document.createElement('div');
     elementoPDF.style.cssText = `
@@ -522,14 +482,8 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla, incluirGrafica
     
     if (incluirResumen) {
         // Calcular totales
-        let totalGPV = 0;
-        let totalGPV_M0 = 0;
-        let totalGPV_M1 = 0;
-        let totalGPV_M2 = 0;
-        let totalTRX = 0;
-        let activos = 0;
-        let regulares = 0;
-        let inactivos = 0;
+        let totalGPV = 0, totalGPV_M0 = 0, totalGPV_M1 = 0, totalGPV_M2 = 0;
+        let totalTRX = 0, activos = 0, regulares = 0, inactivos = 0;
         
         datos.forEach(e => {
             const m0 = parseFloat(e.gpv_m0) || 0;
@@ -551,7 +505,7 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla, incluirGrafica
         contenidoHTML += `
             <div style="margin-bottom: 30px;">
                 <h2 style="color: #333; margin-bottom: 15px;">📈 Resumen General</h2>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <table style="width: 100%; border-collapse: collapse;">
                     <tr style="background: #f0f0f0;">
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Métrica</th>
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Valor</th>
@@ -573,20 +527,20 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla, incluirGrafica
         contenidoHTML += `
             <div>
                 <h2 style="color: #333; margin-bottom: 15px;">📋 Tabla Detallada de Equipos</h2>
-                <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
                     <thead>
                         <tr style="background: #f0f0f0;">
-                            <th style="padding: 8px; border: 1px solid #ddd;">#</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">Fecha Venta</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">Comercio</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">Serie</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">RUC</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">Ejecutivo</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">GPV M0</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">GPV M1</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">GPV M2</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">GPV Act</th>
-                            <th style="padding: 8px; border: 1px solid #ddd;">Estado</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">#</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">Fecha Venta</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">Comercio</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">Serie</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">RUC</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">Ejecutivo</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">GPV M0</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">GPV M1</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">GPV M2</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">GPV Act</th>
+                            <th style="padding: 6px; border: 1px solid #ddd;">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -600,17 +554,17 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla, incluirGrafica
             
             contenidoHTML += `
                 <tr>
-                    <td style="padding: 6px; border: 1px solid #ddd;">${i + 1}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd;">${item.fecha_venta || '-'}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd;">${(item.comercio || '-').substring(0, 25)}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd;">${item.numero_serie || '-'}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd;">${item.ruc || '-'}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd;">${item.responsable_real || '-'}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd; text-align: right;">${item.gpv_m0 || 0}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd; text-align: right;">${item.gpv_m1 || 0}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd; text-align: right;">${item.gpv_m2 || 0}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd; text-align: right;">${gpvActual}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd; color: ${colorEstado}; font-weight: bold;">${estadoTexto}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">${i + 1}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">${item.fecha_venta || '-'}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">${(item.comercio || '-').substring(0, 25)}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">${item.numero_serie || '-'}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">${item.ruc || '-'}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">${item.responsable_real || '-'}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd; text-align: right;">${item.gpv_m0 || 0}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd; text-align: right;">${item.gpv_m1 || 0}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd; text-align: right;">${item.gpv_m2 || 0}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd; text-align: right;">${gpvActual}</td>
+                    <td style="padding: 4px; border: 1px solid #ddd; color: ${colorEstado}; font-weight: bold;">${estadoTexto}</td>
                 </tr>
             `;
         });
