@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Equipos - Panel Ventas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #0a0e1a;
+    --superficie: #111827;
+    --superficie2: #1e293b;
+    --borde: #1e2d45;
+    --acento: #0ea5e9;
+    --texto: #e2e8f0;
+    --texto-suave: #94a3b8;
+    --verde: #22c55e;
+    --verde-bg: rgba(34,197,94,0.15);
+    --azul: #3b82f6;
+    --azul-bg: rgba(59,130,246,0.15);
+    --naranja: #f97316;
+    --naranja-bg: rgba(249,115,22,0.15);
+    --rojo: #ef4444;
+    --rojo-bg: rgba(239,68,68,0.15);
+    --morado: #a855f7;
+    --morado-bg: rgba(168,85,247,0.15);
+  }
+
+  [data-theme="light"] {
+    --fondo: #f8fafc;
+    --superficie: #ffffff;
+    --superficie2: #f1f5f9;
+    --borde: #e2e8f0;
+    --acento: #0284c7;
+    --texto: #0f172a;
+    --texto-suave: #64748b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    padding: 24px;
+  }
+
+  .contenedor { max-width: 1600px; margin: 0 auto; }
+
+  .header {
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--borde);
+    padding-bottom: 8px;
+  }
+
+  .tab {
+    padding: 12px 28px;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--superficie2);
+    color: var(--texto-suave);
+    border: 1px solid var(--borde);
+  }
+
+  .tab.active {
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    color: white;
+    border-color: transparent;
+  }
+
+  .tab:hover:not(.active) {
+    background: var(--superficie);
+    border-color: var(--acento);
+  }
+
+  /* Stats Cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--acento);
+  }
+
+  .stat-number {
+    font-size: 32px;
+    font-weight: 800;
+  }
+  .stat-number.ingreso { color: var(--azul); }
+  .stat-number.campo { color: var(--naranja); }
+  .stat-number.vendido { color: var(--verde); }
+
+  .stat-label {
+    color: var(--texto-suave);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  /* Formulario */
+  .formulario {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 28px;
+    display: none;
+  }
+
+  .formulario.show {
+    display: block;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--texto-suave);
+  }
+
+  .form-group input, .form-group select {
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    font-size: 14px;
+  }
+
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--acento);
+  }
+
+  .btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    color: white;
+    border: none;
+  }
+
+  .btn-success {
+    background: var(--verde);
+    color: white;
+    border: none;
+  }
+
+  .btn-warning {
+    background: var(--naranja);
+    color: white;
+    border: none;
+  }
+
+  .btn-danger {
+    background: var(--rojo);
+    color: white;
+    border: none;
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* Tabla */
+  .tabla-container {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    background: var(--superficie2);
+    padding: 14px 12px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--texto-suave);
+    border-bottom: 2px solid var(--borde);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 12px;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  tr:hover td {
+    background: var(--superficie2);
+  }
+
+  .badge-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .badge-ingreso { background: var(--azul-bg); color: var(--azul); }
+  .badge-campo { background: var(--naranja-bg); color: var(--naranja); }
+  .badge-vendido { background: var(--verde-bg); color: var(--verde); }
+
+  .filtros {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .buscador {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 16px;
+    border-radius: 30px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+  }
+
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-content {
+    background: var(--superficie);
+    border-radius: 24px;
+    padding: 28px;
+    max-width: 500px;
+    width: 90%;
+    border: 1px solid var(--borde);
+  }
+
+  .loading, .empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--texto-suave);
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--superficie2);
+    border-top-color: var(--acento);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="contenedor">
+  <div class="header">
+    <div>
+      <h1>📱 Gestión de Equipos Culqi</h1>
+      <p>Control de inventario, asignación y ventas en tiempo real</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="ingreso" onclick="cambiarTab('ingreso')">📦 INGRESO</div>
+    <div class="tab" data-tab="campo" onclick="cambiarTab('campo')">🚚 CAMPO</div>
+    <div class="tab" data-tab="vendido" onclick="cambiarTab('vendido')">✅ VENDIDO</div>
+    <div class="tab" data-tab="todos" onclick="cambiarTab('todos')">📋 TODOS LOS EQUIPOS</div>
+  </div>
+
+  <!-- Formulario INGRESO -->
+  <div class="formulario" id="formIngreso">
+    <h3 style="margin-bottom: 20px;">📦 Registrar Nuevo Equipo</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Número de Serie *</label>
+        <input type="text" id="serieIngreso" placeholder="Ej: CULQI-001234" required>
+      </div>
+      <div class="form-group">
+        <label>Modelo</label>
+        <input type="text" id="modeloIngreso" placeholder="Modelo del equipo">
+      </div>
+      <div class="form-group">
+        <label>Notas / Observaciones</label>
+        <input type="text" id="notasIngreso" placeholder="Información adicional">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="registrarEquipo()">✅ Registrar Equipo</button>
+  </div>
+
+  <!-- Formulario CAMPO (Asignación) -->
+  <div class="formulario" id="formCampo">
+    <h3 style="margin-bottom: 20px;">🚚 Asignar Equipo a Ejecutivo</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Seleccionar Equipo *</label>
+        <select id="equipoAsignar"></select>
+      </div>
+      <div class="form-group">
+        <label>Ejecutivo *</label>
+        <select id="ejecutivoAsignar"></select>
+      </div>
+      <div class="form-group">
+        <label>Fecha de Entrega</label>
+        <input type="date" id="fechaAsignacion">
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <input type="text" id="notasAsignacion" placeholder="Comentarios">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="asignarEquipo()">📤 Asignar a Campo</button>
+  </div>
+
+  <!-- Formulario VENDIDO -->
+  <div class="formulario" id="formVendido">
+    <h3 style="margin-bottom: 20px;">✅ Marcar Equipo como Vendido</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Seleccionar Equipo en Campo *</label>
+        <select id="equipoVender"></select>
+      </div>
+      <div class="form-group">
+        <label>Comercio</label>
+        <input type="text" id="comercioVenta" placeholder="Nombre del comercio">
+      </div>
+      <div class="form-group">
+        <label>RUC</label>
+        <input type="text" id="rucVenta" placeholder="RUC del comercio">
+      </div>
+      <div class="form-group">
+        <label>Fecha de Venta</label>
+        <input type="date" id="fechaVenta">
+      </div>
+    </div>
+    <button class="btn btn-success" onclick="marcarVendido()">💰 Marcar como Vendido</button>
+  </div>
+
+  <!-- Filtros y Tabla -->
+  <div class="filtros">
+    <input type="text" class="buscador" id="buscador" placeholder="🔍 Buscar por serie, ejecutivo, comercio..." onkeyup="filtrarTabla()">
+  </div>
+
+  <div class="tabla-container">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Serie</th>
+          <th>Modelo</th>
+          <th>Estado</th>
+          <th>Ejecutivo</th>
+          <th>Comercio / RUC</th>
+          <th>Fecha Entrega</th>
+          <th>Fecha Venta</th>
+          <th>Notas</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tablaCuerpo"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// Base de datos local (simulada - se guarda en localStorage)
+let equiposDB = [];
+let ejecutivosList = [];
+
+// Cargar datos desde el padre y sincronizar
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'datos-cargados') {
+    // Obtener ejecutivos del dashboard
+    if (e.data.datos && e.data.datos.ejecutivos) {
+      ejecutivosList = e.data.datos.ejecutivos;
+      cargarSelectores();
+    }
+  }
+  if (e.data && e.data.type === 'theme-change') {
+    document.documentElement.setAttribute('data-theme', e.data.theme);
+  }
+});
+
+function solicitarDatos() {
+  window.parent.postMessage({ type: 'solicitar-datos' }, '*');
+}
+
+// Cargar equipos desde localStorage
+function cargarEquipos() {
+  const guardado = localStorage.getItem('equipos_culqi');
+  if (guardado) {
+    equiposDB = JSON.parse(guardado);
+  } else {
+    // Datos de ejemplo iniciales
+    equiposDB = [
+      { id: '1', serie: 'CULQI-001234', modelo: 'CULQI FULL', estado: 'INGRESO', ejecutivo: null, comercio: null, ruc: null, fechaEntrega: null, fechaVenta: null, notas: 'Equipo nuevo en stock' },
+      { id: '2', serie: 'CULQI-001235', modelo: 'CULQI FULL', estado: 'CAMPO', ejecutivo: 'JENNIFER QUINTERO', comercio: null, ruc: null, fechaEntrega: '2026-03-15', fechaVenta: null, notas: 'En proceso de venta' },
+      { id: '3', serie: 'CULQI-001236', modelo: 'CULQI FULL', estado: 'VENDIDO', ejecutivo: 'CRISTIAN GARCIA', comercio: 'MULTISTORE COLPA S.A.C.', ruc: '20608332481', fechaEntrega: '2026-03-10', fechaVenta: '2026-03-18', notas: 'Venta exitosa' }
+    ];
+    guardarEquipos();
+  }
+  renderizarTodo();
+}
+
+function guardarEquipos() {
+  localStorage.setItem('equipos_culqi', JSON.stringify(equiposDB));
+}
+
+let tabActual = 'ingreso';
+let equiposFiltrados = [];
+
+function cambiarTab(tab) {
+  tabActual = tab;
+  
+  // Actualizar tabs visualmente
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+  
+  // Mostrar/ocultar formularios según tab
+  document.getElementById('formIngreso').classList.remove('show');
+  document.getElementById('formCampo').classList.remove('show');
+  document.getElementById('formVendido').classList.remove('show');
+  
+  if (tab === 'ingreso') {
+    document.getElementById('formIngreso').classList.add('show');
+    cargarSelectoresEquipos();
+  } else if (tab === 'campo') {
+    document.getElementById('formCampo').classList.add('show');
+    cargarSelectoresEquipos();
+  } else if (tab === 'vendido') {
+    document.getElementById('formVendido').classList.add('show');
+    cargarSelectoresEquipos();
+  }
+  
+  filtrarTabla();
+}
+
+function cargarSelectores() {
+  // Cargar ejecutivos en selectores
+  const selects = ['ejecutivoAsignar'];
+  selects.forEach(id => {
+    const select = document.getElementById(id);
+    if (select) {
+      select.innerHTML = '<option value="">Seleccionar ejecutivo...</option>' + 
+        ejecutivosList.map(exec => `<option value="${exec}">${exec}</option>`).join('');
+    }
+  });
+}
+
+function cargarSelectoresEquipos() {
+  // Equipos para asignar (solo INGRESO)
+  const equiposIngreso = equiposDB.filter(e => e.estado === 'INGRESO');
+  const selectAsignar = document.getElementById('equipoAsignar');
+  if (selectAsignar) {
+    selectAsignar.innerHTML = '<option value="">Seleccionar equipo...</option>' + 
+      equiposIngreso.map(e => `<option value="${e.id}">${e.serie} - ${e.modelo || 'Sin modelo'}</option>`).join('');
+  }
+  
+  // Equipos para vender (solo CAMPO)
+  const equiposCampo = equiposDB.filter(e => e.estado === 'CAMPO');
+  const selectVender = document.getElementById('equipoVender');
+  if (selectVender) {
+    selectVender.innerHTML = '<option value="">Seleccionar equipo...</option>' + 
+      equiposCampo.map(e => `<option value="${e.id}">${e.serie} - ${e.ejecutivo || 'Sin ejecutivo'}</option>`).join('');
+  }
+}
+
+function registrarEquipo() {
+  const serie = document.getElementById('serieIngreso').value.trim();
+  const modelo = document.getElementById('modeloIngreso').value.trim();
+  const notas = document.getElementById('notasIngreso').value.trim();
+  
+  if (!serie) {
+    alert('Por favor ingrese el número de serie');
+    return;
+  }
+  
+  // Verificar si ya existe
+  if (equiposDB.some(e => e.serie === serie)) {
+    alert('Ya existe un equipo con este número de serie');
+    return;
+  }
+  
+  const nuevoEquipo = {
+    id: Date.now().toString(),
+    serie: serie,
+    modelo: modelo || 'CULQI FULL',
+    estado: 'INGRESO',
+    ejecutivo: null,
+    comercio: null,
+    ruc: null,
+    fechaEntrega: null,
+    fechaVenta: null,
+    notas: notas,
+    fechaRegistro: new Date().toISOString()
+  };
+  
+  equiposDB.push(nuevoEquipo);
+  guardarEquipos();
+  
+  // Limpiar formulario
+  document.getElementById('serieIngreso').value = '';
+  document.getElementById('modeloIngreso').value = '';
+  document.getElementById('notasIngreso').value = '';
+  
+  alert('✅ Equipo registrado correctamente');
+  renderizarTodo();
+  cargarSelectoresEquipos();
+}
+
+function asignarEquipo() {
+  const equipoId = document.getElementById('equipoAsignar').value;
+  const ejecutivo = document.getElementById('ejecutivoAsignar').value;
+  const fechaEntrega = document.getElementById('fechaAsignacion').value;
+  const notas = document.getElementById('notasAsignacion').value;
+  
+  if (!equipoId || !ejecutivo) {
+    alert('Por favor seleccione equipo y ejecutivo');
+    return;
+  }
+  
+  const equipo = equiposDB.find(e => e.id === equipoId);
+  if (!equipo || equipo.estado !== 'INGRESO') {
+    alert('El equipo no está disponible para asignación');
+    return;
+  }
+  
+  equipo.estado = 'CAMPO';
+  equipo.ejecutivo = ejecutivo;
+  equipo.fechaEntrega = fechaEntrega || new Date().toISOString().split('T')[0];
+  equipo.notas = notas || equipo.notas;
+  
+  guardarEquipos();
+  
+  // Limpiar formulario
+  document.getElementById('equipoAsignar').value = '';
+  document.getElementById('ejecutivoAsignar').value = '';
+  document.getElementById('fechaAsignacion').value = '';
+  document.getElementById('notasAsignacion').value = '';
+  
+  alert(`🚚 Equipo ${equipo.serie} asignado a ${ejecutivo}`);
+  renderizarTodo();
+  cargarSelectoresEquipos();
+}
+
+function marcarVendido() {
+  const equipoId = document.getElementById('equipoVender').value;
+  const comercio = document.getElementById('comercioVenta').value.trim();
+  const ruc = document.getElementById('rucVenta').value.trim();
+  const fechaVenta = document.getElementById('fechaVenta').value;
+  
+  if (!equipoId) {
+    alert('Por favor seleccione un equipo');
+    return;
+  }
+  
+  const equipo = equiposDB.find(e => e.id === equipoId);
+  if (!equipo || equipo.estado !== 'CAMPO') {
+    alert('El equipo no está en estado CAMPO para vender');
+    return;
+  }
+  
+  equipo.estado = 'VENDIDO';
+  equipo.comercio = comercio || equipo.comercio;
+  equipo.ruc = ruc || equipo.ruc;
+  equipo.fechaVenta = fechaVenta || new Date().toISOString().split('T')[0];
+  
+  guardarEquipos();
+  
+  // Limpiar formulario
+  document.getElementById('equipoVender').value = '';
+  document.getElementById('comercioVenta').value = '';
+  document.getElementById('rucVenta').value = '';
+  document.getElementById('fechaVenta').value = '';
+  
+  alert(`💰 Equipo ${equipo.serie} marcado como VENDIDO`);
+  renderizarTodo();
+  cargarSelectoresEquipos();
+}
+
+function renderizarStats() {
+  const ingresos = equiposDB.filter(e => e.estado === 'INGRESO').length;
+  const campo = equiposDB.filter(e => e.estado === 'CAMPO').length;
+  const vendidos = equiposDB.filter(e => e.estado === 'VENDIDO').length;
+  const total = equiposDB.length;
+  
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card" onclick="cambiarTab('ingreso')">
+      <div class="stat-number ingreso">${ingresos}</div>
+      <div class="stat-label">📦 En Stock (INGRESO)</div>
+    </div>
+    <div class="stat-card" onclick="cambiarTab('campo')">
+      <div class="stat-number campo">${campo}</div>
+      <div class="stat-label">🚚 En Campo (Asignados)</div>
+    </div>
+    <div class="stat-card" onclick="cambiarTab('vendido')">
+      <div class="stat-number vendido">${vendidos}</div>
+      <div class="stat-label">✅ Vendidos</div>
+    </div>
+    <div class="stat-card" onclick="cambiarTab('todos')">
+      <div class="stat-number">${total}</div>
+      <div class="stat-label">📋 Total Equipos</div>
+    </div>
+  `;
+}
+
+function filtrarTabla() {
+  const busqueda = document.getElementById('buscador').value.toLowerCase();
+  
+  equiposFiltrados = equiposDB.filter(e => {
+    // Filtrar por tab
+    if (tabActual !== 'todos' && e.estado !== tabActual.toUpperCase()) return false;
+    
+    // Filtrar por búsqueda
+    if (busqueda) {
+      const texto = `${e.serie} ${e.ejecutivo || ''} ${e.comercio || ''} ${e.modelo || ''}`.toLowerCase();
+      if (!texto.includes(busqueda)) return false;
+    }
+    return true;
+  });
+  
+  renderizarTabla();
+}
+
+function renderizarTabla() {
+  const tbody = document.getElementById('tablaCuerpo');
+  
+  if (equiposFiltrados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px;">📭 No hay equipos para mostrar</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = equiposFiltrados.map((eq, idx) => {
+    let estadoBadge = '';
+    if (eq.estado === 'INGRESO') estadoBadge = '<span class="badge-estado badge-ingreso">📦 INGRESO</span>';
+    else if (eq.estado === 'CAMPO') estadoBadge = '<span class="badge-estado badge-campo">🚚 CAMPO</span>';
+    else estadoBadge = '<span class="badge-estado badge-vendido">✅ VENDIDO</span>';
+    
+    return `
+      <tr>
+        <td>${idx + 1}</td>
+        <td><code style="font-weight: 700;">${eq.serie}</code></td>
+        <td>${eq.modelo || '-'}</td>
+        <td>${estadoBadge}</td>
+        <td>${eq.ejecutivo || '-'}</td>
+        <td>${eq.comercio ? `${eq.comercio}<br><small>${eq.ruc || ''}</small>` : '-'}</td>
+        <td>${eq.fechaEntrega || '-'}</td>
+        <td>${eq.fechaVenta || '-'}</td>
+        <td><small>${eq.notas || '-'}</small></td>
+        <td>
+          ${eq.estado === 'INGRESO' ? `<button class="btn btn-sm btn-warning" onclick="abrirModalAsignar('${eq.id}')">📤 Asignar</button>` : ''}
+          ${eq.estado === 'CAMPO' ? `<button class="btn btn-sm btn-success" onclick="abrirModalVender('${eq.id}')">💰 Vender</button>` : ''}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function abrirModalAsignar(id) {
+  const equipo = equiposDB.find(e => e.id === id);
+  if (!equipo) return;
+  
+  // Cambiar a tab campo y abrir formulario
+  cambiarTab('campo');
+  
+  // Seleccionar el equipo en el select
+  const select = document.getElementById('equipoAsignar');
+  select.value = id;
+}
+
+function abrirModalVender(id) {
+  const equipo = equiposDB.find(e => e.id === id);
+  if (!equipo) return;
+  
+  // Cambiar a tab vendido y abrir formulario
+  cambiarTab('vendido');
+  
+  // Seleccionar el equipo en el select
+  const select = document.getElementById('equipoVender');
+  select.value = id;
+}
+
+function renderizarTodo() {
+  renderizarStats();
+  filtrarTabla();
+  cargarSelectoresEquipos();
+}
+
+// Inicializar
+setTimeout(() => {
+  solicitarDatos();
+  cargarEquipos();
+}, 100);
+</script>
+</body>
+</html>
