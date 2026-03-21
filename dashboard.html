@@ -757,6 +757,7 @@
       <table>
         <thead>
           <tr>
+            <th>#</th>
             <th>Fecha Venta</th>
             <th>Comercio</th>
             <th>Fecha Activación</th>
@@ -793,6 +794,15 @@ const COLORES_GRAFICA = {
     light: 'rgba(2, 132, 199, 0.8)'
   }
 };
+
+// ============================================================
+// FUNCIÓN PARA OBTENER ESTADO BASADO EN GPV (NUEVA)
+// ============================================================
+function getEstadoPorGPV(gpv) {
+  if (gpv === 0) return 'INACTIVO';
+  if (gpv < 400) return 'REGULAR';
+  return 'ACTIVO';
+}
 
 // ============================================================
 // SINCRONIZACIÓN DE TEMA
@@ -907,13 +917,24 @@ function renderizarTodo() {
   renderizarEjecutivos();
   renderizarTabla();
 }
-// RESUMEN - CORREGIDO PARA MOSTRAR M0 DEL MES FILTRADO
-// RESUMEN - CORREGIDO PARA USAR LOS NUEVOS CAMPOS DEL BACKEND
-// RESUMEN - CORREGIDO PARA MOSTRAR M0 DEL MES FILTRADO
-// RESUMEN - CORREGIDO PARA MOSTRAR M0 CUANDO SE FILTRA POR MES
+
+// RESUMEN - SIN CAMBIOS ESTRUCTURALES
 function renderizarResumen() {
   let equipos = getEquiposFiltrados();
-  const resumenBackend = DATOS_COMPLETOS?.resumen;
+  
+  // Aplicar filtro GPV al resumen también para sincronización
+  if (filtroGPVActual !== 'todos') {
+    equipos = equipos.filter(e => {
+      const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+      switch(filtroGPVActual) {
+        case 'meta': return gpvActual >= 700;
+        case 'promedio': return gpvActual >= 400 && gpvActual < 700;
+        case 'bajo': return gpvActual > 0 && gpvActual < 400;
+        case 'riesgo': return gpvActual === 0;
+        default: return true;
+      }
+    });
+  }
 
   let totalGPV = 0;
   let totalTRX = 0;
@@ -939,13 +960,15 @@ function renderizarResumen() {
     totalGPV_M1 += m1;
     totalGPV_M2 += m2;
 
-    if (e.estado === 'ACTIVO') activos++;
+    // Estado basado en GPV actual
+    const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+    if (getEstadoPorGPV(gpvActual) === 'ACTIVO') activos++;
   });
 
   const totalEquipos = equipos.length;
 
-  let html = `
-    <div class="tarjeta-resumen">
+  let html = 
+    `<div class="tarjeta-resumen">
       <div class="titulo">💰 GPV TOTAL COHORTE</div>
       <div class="valor">S/ ${formatearNumero(totalGPV)}</div>
       <div class="detalle">M0 + M1 + M2 acumulado</div>
@@ -979,13 +1002,12 @@ function renderizarResumen() {
       <div class="titulo">✅ EQUIPOS ACTIVOS</div>
       <div class="valor">${activos}/${totalEquipos}</div>
       <div class="detalle">${totalEquipos > 0 ? Math.round(activos/totalEquipos*100) : 0}% del total</div>
-    </div>
-
-  `;
+    </div>`;
 
   document.getElementById('resumenCards').innerHTML = html;
 }
-// GRÁFICAS
+
+// GRÁFICAS - SIN CAMBIOS
 function renderizarGraficas() {
   const equipos = getEquiposFiltrados();
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1066,16 +1088,30 @@ function renderizarGraficas() {
   });
 }
 
-// EJECUTIVOS
+// EJECUTIVOS - MODIFICADO PARA SINCRONIZAR CON FILTROS
 function renderizarEjecutivos() {
   const grid = document.getElementById('ejecutivosGrid');
   grid.innerHTML = '';
   
-  let equiposFiltrados = DATOS_COMPLETOS.equipos || [];
-  if (mesActual !== 'TODOS') equiposFiltrados = equiposFiltrados.filter(e => e.mes_venta === mesActual);
+  // OBTENER MISMA FUENTE QUE LA TABLA
+  let equiposFiltrados = getEquiposFiltrados();
+  
+  // 🔥 APLICAR FILTRO GPV IGUAL QUE LA TABLA
+  if (filtroGPVActual !== 'todos') {
+    equiposFiltrados = equiposFiltrados.filter(e => {
+      const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+      switch(filtroGPVActual) {
+        case 'meta': return gpvActual >= 700;
+        case 'promedio': return gpvActual >= 400 && gpvActual < 700;
+        case 'bajo': return gpvActual > 0 && gpvActual < 400;
+        case 'riesgo': return gpvActual === 0;
+        default: return true;
+      }
+    });
+  }
   
   if (equiposFiltrados.length === 0) {
-    grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay equipos</div>';
+    grid.innerHTML = '<div style="color: var(--texto-suave); padding: 20px;">No hay equipos con los filtros actuales</div>';
     return;
   }
   
@@ -1100,9 +1136,13 @@ function renderizarEjecutivos() {
     stats.total_equipos++;
     stats.gpv_total += (parseFloat(eq.gpv_mes_actual_corriendo) || 0);
     stats.transacciones_total += (parseInt(eq.trx_mes_actual_corriendo) || 0);
-    if (eq.estado === 'ACTIVO') stats.activos++;
-    else if (eq.estado === 'REGULAR') stats.regulares++;
-    else if (eq.estado === 'INACTIVO') stats.inactivos++;
+    
+    // Estado basado en GPV actual
+    const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
+    const estadoCalculado = getEstadoPorGPV(gpvActual);
+    if (estadoCalculado === 'ACTIVO') stats.activos++;
+    else if (estadoCalculado === 'REGULAR') stats.regulares++;
+    else if (estadoCalculado === 'INACTIVO') stats.inactivos++;
     
     // Contar por etapa
     if (eq.mes_actual_idx === 0) stats.en_m0++;
@@ -1121,8 +1161,8 @@ function renderizarEjecutivos() {
     const seleccionado = ejecutivoActual === exec.nombre ? 'seleccionado' : '';
     const nombreEscapado = exec.nombre.replace(/'/g, "\\'");
     
-    grid.innerHTML += `
-      <div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${nombreEscapado}')">
+    grid.innerHTML += 
+      `<div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${nombreEscapado}')">
         <div class="nombre-ejecutivo">${exec.nombre}</div>
         <div style="font-size: 32px; font-weight: 800; background: linear-gradient(135deg, var(--acento), #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
           ${exec.total_equipos}
@@ -1161,12 +1201,11 @@ function renderizarEjecutivos() {
           <div class="insignia insignia-naranja">🟠 ${exec.regulares}</div>
           <div class="insignia insignia-rojo">❌ ${exec.inactivos}</div>
         </div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
-// TABLA CON LÍNEA DE TIEMPO M0/M1/M2
+// TABLA CON LÍNEA DE TIEMPO M0/M1/M2 - MODIFICADA PARA AÑADIR ENUMERACIÓN Y CORREGIR ESTADO
 function renderizarTabla() {
   let equipos = getEquiposFiltrados();
   
@@ -1194,11 +1233,11 @@ function renderizarTabla() {
   const tbody = document.getElementById('tablaCuerpo');
   
   if (equipos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos en este filtro</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos en este filtro</td></tr>';
     return;
   }
   
-  tbody.innerHTML = equipos.map(eq => {
+  tbody.innerHTML = equipos.map((eq, index) => {
     const gpvM0 = parseFloat(eq.gpv_m0) || 0;
     const gpvM1 = parseFloat(eq.gpv_m1) || 0;
     const gpvM2 = parseFloat(eq.gpv_m2) || 0;
@@ -1214,10 +1253,16 @@ function renderizarTabla() {
     const gpvClass = getGPVClass(gpvActual);
     const esMulti = comerciosCount[`${eq.ruc}_${eq.comercio}`] > 1;
     
-    let estadoBadge = '<span class="badge-estado badge-inactivo">● Sin datos</span>';
-    if (eq.estado === 'ACTIVO') estadoBadge = '<span class="badge-estado badge-activo">● Activo</span>';
-    else if (eq.estado === 'REGULAR') estadoBadge = '<span class="badge-estado badge-regular">● Regular</span>';
-    else if (eq.estado === 'INACTIVO') estadoBadge = '<span class="badge-estado badge-inactivo">● Inactivo</span>';
+    // 🔥 NUEVA LÓGICA DE ESTADO BASADA EN GPV ACTUAL (CORREGIDO)
+    const estadoCalculado = getEstadoPorGPV(gpvActual);
+    let estadoBadge = '';
+    if (estadoCalculado === 'ACTIVO') {
+      estadoBadge = '<span class="badge-estado badge-activo">● Activo</span>';
+    } else if (estadoCalculado === 'REGULAR') {
+      estadoBadge = '<span class="badge-estado badge-regular">● Regular</span>';
+    } else {
+      estadoBadge = '<span class="badge-estado badge-inactivo">● Inactivo</span>';
+    }
     
     // Clases para destacar el mes actual
     const classM0 = mesActualIdx === 0 ? 'activo-m0' : '';
@@ -1226,6 +1271,7 @@ function renderizarTabla() {
     
     return `
       <tr>
+        <td style="font-weight:600; color: var(--texto-suave);">${index + 1}</td>
         <td class="cell-fecha">${formatearFecha(eq.fecha_venta) || '-'}</td>
         <td>
           <div class="comercio-cell">
@@ -1278,7 +1324,7 @@ function filtrarPorGPV(tipo) {
     if (chip.dataset.filtro === tipo) chip.classList.add('activo');
   });
   
-  renderizarTabla();
+  renderizarTodo();
 }
 
 // BUSCADOR
@@ -1352,8 +1398,9 @@ function exportarExcel() {
   if (equipos.length === 0) return alert('No hay datos');
   
   const csv = [
-    ['Fecha Venta', 'Comercio', 'Serie', 'RUC', 'Fecha Activacion', 'Ejecutivo', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'Mes Actual', 'GPV Mes Actual', 'TRX Mes Actual', 'Ultima TRX', 'Estado'].join(','),
-    ...equipos.map(e => [
+    ['#', 'Fecha Venta', 'Comercio', 'Serie', 'RUC', 'Fecha Activacion', 'Ejecutivo', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'Mes Actual', 'GPV Mes Actual', 'TRX Mes Actual', 'Ultima TRX', 'Estado'].join(','),
+    ...equipos.map((e, i) => [
+      i + 1,
       e.fecha_venta || '',
       `"${(e.comercio || '').replace(/"/g, '""')}"`,
       e.numero_serie,
@@ -1370,7 +1417,7 @@ function exportarExcel() {
       e.gpv_mes_actual_corriendo || 0,
       e.trx_mes_actual_corriendo || 0,
       e.ultima_transaccion || '',
-      e.estado || 'SIN_DATOS'
+      getEstadoPorGPV(parseFloat(e.gpv_mes_actual_corriendo) || 0)
     ].join(','))
   ].join('\n');
   
