@@ -942,7 +942,6 @@ function renderizarResumen() {
     if (e.estado === 'ACTIVO') activos++;
   });
 
-  const ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
   const totalEquipos = equipos.length;
 
   let html = `
@@ -982,11 +981,6 @@ function renderizarResumen() {
       <div class="detalle">${totalEquipos > 0 ? Math.round(activos/totalEquipos*100) : 0}% del total</div>
     </div>
 
-    <div class="tarjeta-resumen">
-      <div class="titulo">🎫 TICKET PROMEDIO</div>
-      <div class="valor">S/ ${formatearNumero(ticketPromedio)}</div>
-      <div class="detalle">Sobre todo el cohorte</div>
-    </div>
   `;
 
   document.getElementById('resumenCards').innerHTML = html;
@@ -1118,7 +1112,6 @@ function renderizarEjecutivos() {
   
   const ejecutivosArray = Array.from(ejecutivosMap.entries()).map(([nombre, stats]) => ({
     nombre, ...stats,
-    ticket_promedio: stats.transacciones_total > 0 ? stats.gpv_total / stats.transacciones_total : 0
   })).sort((a, b) => b.total_equipos - a.total_equipos);
   
   const textoPeriodo = mesActual === 'TODOS' ? 'total' : mesActual;
@@ -1150,10 +1143,6 @@ function renderizarEjecutivos() {
           <div class="metrica">
             <div class="valor">${formatearNumero(exec.transacciones_total, 0)}</div>
             <div class="etiqueta">TRX</div>
-          </div>
-          <div class="metrica">
-            <div class="valor">S/ ${formatearNumero(exec.ticket_promedio)}</div>
-            <div class="etiqueta">Ticket</div>
           </div>
         </div>
         
@@ -1263,7 +1252,7 @@ function renderizarTabla() {
               <span class="mes-badge ${classM1}" title="Mes 1">M1: ${formatearNumero(gpvM1, 0)}</span>
               <span class="mes-badge ${classM2}" title="Mes 2">M2: ${formatearNumero(gpvM2, 0)}</span>
             </div>
-            <div class="etiqueta-mes-actual">🕐 ${etiquetaMes} • Ticket: S/${formatearNumero(eq.ticket_mes_actual || 0)}</div>
+            <div class="etiqueta-mes-actual">🕐 ${etiquetaMes} </div>
           </div>
         </td>
         <td style="text-align: center;">
