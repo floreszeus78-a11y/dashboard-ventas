@@ -909,80 +909,83 @@ function renderizarTodo() {
 }
 // RESUMEN - CORREGIDO PARA MOSTRAR M0 DEL MES FILTRADO
 // RESUMEN - CORREGIDO PARA USAR LOS NUEVOS CAMPOS DEL BACKEND
+// RESUMEN - CORREGIDO PARA MOSTRAR M0 DEL MES FILTRADO
 function renderizarResumen() {
-  // DATOS_COMPLETOS es la variable global que contiene la respuesta de tu backend
-  const resumen = DATOS_COMPLETOS?.resumen;
+  let equipos = getEquiposFiltrados();
+  const resumenBackend = DATOS_COMPLETOS?.resumen;
+  const usarTotalesGlobales = (mesActual === 'TODOS' && ejecutivoActual === 'TODOS' && resumenBackend);
   
-  if (!resumen) {
-    console.warn('No hay datos de resumen para mostrar');
-    return;
+  let totalGPV_M0, totalTRX_M0, totalGPV_Corriendo, totalTRX_Corriendo, activos, ticketPromedioM0;
+  
+  if (usarTotalesGlobales) {
+    // Cuando es TODOS, mostrar suma total de todos los M0
+    totalGPV_M0 = resumenBackend.total_gpv || 0;
+    totalTRX_M0 = resumenBackend.total_transacciones || 0;
+    totalGPV_Corriendo = null; // No aplica para TODOS (mezcla de M0, M1, M2)
+    activos = resumenBackend.equipos_activos || 0;
+    ticketPromedioM0 = totalTRX_M0 > 0 ? totalGPV_M0 / totalTRX_M0 : 0;
+  } else {
+    // CORRECCIÓN: Cuando filtra por mes específico, sumar M0 de ese mes
+    totalGPV_M0 = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_m0) || 0), 0);
+    totalTRX_M0 = equipos.reduce((sum, e) => sum + (parseInt(e.trx_m0) || 0), 0);
+    
+    // Calcular también el mes corriendo para mostrar evolución
+    totalGPV_Corriendo = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_mes_actual_corriendo) || 0), 0);
+    totalTRX_Corriendo = equipos.reduce((sum, e) => sum + (parseInt(e.trx_mes_actual_corriendo) || 0), 0);
+    
+    activos = equipos.filter(e => e.estado === 'ACTIVO').length;
+    ticketPromedioM0 = totalTRX_M0 > 0 ? totalGPV_M0 / totalTRX_M0 : 0;
   }
-
-  // Valores principales: siempre serán del M0 del período filtrado (gracias a la corrección en GS)
-  const totalGPV_M0 = resumen.total_gpv || 0;
-  const totalTRX_M0 = resumen.total_transacciones || 0;
-  const ticketPromedioM0 = resumen.ticket_promedio_general || 0;
-  const totalEquipos = resumen.total_equipos || 0;
-  const activos = resumen.equipos_activos || 0;
   
-  // Valores de evolución (solo existen cuando filtramos por un mes específico)
-  const gpvActual = resumen.gpv_actual_periodo;
-  const crecimiento = resumen.crecimiento_m0_a_actual;
-  const mesFiltrado = resumen.mes_filtrado;
-
-  // HTML de las tarjetas principales (KPI del M0)
+  const totalEquipos = equipos.length;
+  
+  // HTML de las tarjetas principales
   let html = `
     <div class="tarjeta-resumen">
-      <div class="titulo">💰 GPV (Mes de Prueba - M0)</div>
+      <div class="titulo">💰 GPV M0 (Mes de Prueba)</div>
       <div class="valor">S/ ${formatearNumero(totalGPV_M0)}</div>
-      <div class="detalle">${totalEquipos} equipos vendidos en ${mesFiltrado || 'el período'}</div>
+      <div class="detalle">${totalEquipos} equipos vendidos en ${mesActual === 'TODOS' ? 'total' : mesActual}</div>
     </div>
     <div class="tarjeta-resumen">
-      <div class="titulo">🛒 TRANSACCIONES (M0)</div>
+      <div class="titulo">🛒 TRANSACCIONES M0</div>
       <div class="valor">${formatearNumero(totalTRX_M0, 0)}</div>
-      <div class="detalle">Promedio: ${totalEquipos > 0 ? (totalTRX_M0 / totalEquipos).toFixed(1) : '0'} por equipo</div>
+      <div class="detalle">${totalEquipos > 0 ? (totalTRX_M0 / totalEquipos).toFixed(1) : '0'} por equipo</div>
     </div>
     <div class="tarjeta-resumen">
-      <div class="titulo">🎫 TICKET PROMEDIO (M0)</div>
+      <div class="titulo">🎫 TICKET PROMEDIO M0</div>
       <div class="valor">S/ ${formatearNumero(ticketPromedioM0)}</div>
-      <div class="detalle">por transacción en el mes de prueba</div>
+      <div class="detalle">por transacción en mes de prueba</div>
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">✅ EQUIPOS ACTIVOS</div>
       <div class="valor">${activos}/${totalEquipos}</div>
-      <div class="detalle">${totalEquipos > 0 ? Math.round(activos/totalEquipos*100) : 0}% están activos</div>
+      <div class="detalle">${totalEquipos > 0 ? Math.round(activos/totalEquipos*100) : 0}% del total</div>
     </div>
   `;
-
-  // Si tenemos datos de evolución (es decir, si filtramos por un mes y ya pasaron a M1/M2)
-  // MOSTRAMOS UNA TARJETA ADICIONAL CON EL RENDIMIENTO ACTUAL DE ESOS EQUIPOS
-  if (gpvActual !== undefined && gpvActual !== totalGPV_M0) {
-    const diferencia = gpvActual - totalGPV_M0;
-    const porcentaje = crecimiento || 0;
+  
+  // Si hay filtro por mes específico Y ya pasaron al siguiente mes (tienen M1/M2)
+  // mostrar tarjeta adicional con el GPV del mes actual corriendo
+  if (mesActual !== 'TODOS' && totalGPV_Corriendo !== null && totalGPV_Corriendo !== totalGPV_M0) {
+    const etiquetaMes = mesActual === 'FEBRERO' ? 'M1 (Marzo)' : 
+                        mesActual === 'ENERO' ? 'M2 (Marzo)' : 'Mes Actual';
+    
+    const diferencia = totalGPV_Corriendo - totalGPV_M0;
+    const porcentaje = totalGPV_M0 > 0 ? ((diferencia / totalGPV_M0) * 100).toFixed(1) : 0;
     const emoji = diferencia >= 0 ? '📈' : '📉';
-    const color = diferencia >= 0 ? 'var(--verde, green)' : 'var(--rojo, red)';
-    const etiquetaMes = mesFiltrado === 'FEBRERO' ? 'Marzo (M1)' : 
-                        mesFiltrado === 'ENERO' ? 'Marzo (M2)' : 'Mes Actual';
-
+    const color = diferencia >= 0 ? 'var(--verde)' : 'var(--rojo)';
+    
     html += `
-      <div class="tarjeta-resumen" style="border: 2px solid var(--acento, #0ea5e9); background: linear-gradient(135deg, var(--superficie, #f9fafb), rgba(14,165,233,0.1));">
-        <div class="titulo">🔄 Evolución vs ${etiquetaMes}</div>
-        <div class="valor" style="font-size: 32px;">S/ ${formatearNumero(gpvActual)}</div>
+      <div class="tarjeta-resumen" style="border: 2px solid var(--acento); background: linear-gradient(135deg, var(--superficie), rgba(14,165,233,0.1));">
+        <div class="titulo">🔄 GPV ${etiquetaMes}</div>
+        <div class="valor" style="font-size: 32px;">S/ ${formatearNumero(totalGPV_Corriendo)}</div>
         <div class="detalle" style="color: ${color}; font-weight: 600;">
           ${emoji} ${diferencia >= 0 ? '+' : ''}${formatearNumero(diferencia)} (${porcentaje}%) vs M0
-        </div>
-        <div class="detalle" style="font-size: 12px; margin-top: 4px;">
-          GPV actual de estos mismos equipos
         </div>
       </div>
     `;
   }
-
-  // Insertar el HTML en el contenedor
-  const container = document.getElementById('resumenCards');
-  if (container) {
-    container.innerHTML = html;
-  }
+  
+  document.getElementById('resumenCards').innerHTML = html;
 }
 // GRÁFICAS
 function renderizarGraficas() {
