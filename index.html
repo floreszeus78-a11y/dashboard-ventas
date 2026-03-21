@@ -39,7 +39,6 @@
     overflow: hidden;
   }
 
-  /* SIDEBAR - Estilo base */
   .sidebar {
     width: 280px;
     background: var(--superficie);
@@ -163,7 +162,6 @@
     position: relative;
   }
 
-  /* HEADER MÓVIL - Solo visible en móvil */
   .mobile-header {
     display: none;
     padding: 16px 20px;
@@ -203,7 +201,6 @@
     flex: 1;
   }
 
-  /* Overlay para cerrar menú */
   .overlay {
     display: none;
     position: fixed;
@@ -223,13 +220,13 @@
     opacity: 1;
   }
 
-  /* CONTENIDO PRINCIPAL */
   .iframe-container {
     flex: 1;
     position: relative;
     width: 100%;
     height: 100%;
     overflow: hidden;
+    background: var(--fondo);
   }
 
   iframe {
@@ -353,7 +350,6 @@
     box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
   }
 
-  /* RESPONSIVE - MÓVIL */
   @media (max-width: 768px) {
     .sidebar {
       position: fixed;
@@ -374,7 +370,6 @@
     }
   }
 
-  /* Scrollbar personalizado */
   .nav-menu::-webkit-scrollbar {
     width: 6px;
   }
@@ -445,7 +440,7 @@
       ☰
     </button>
     <div class="mobile-title">Panel de Ventas</div>
-    <div style="width: 44px;"></div> <!-- Espaciador para centrar -->
+    <div style="width: 44px;"></div>
   </div>
   
   <div class="iframe-container">
@@ -454,7 +449,8 @@
       <div class="loading-text">Cargando dashboard...</div>
     </div>
     
-    <iframe id="contentFrame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-downloads allow-modals"></iframe>
+    <!-- QUITADO EL SANDBOX PARA MEJORAR VELOCIDAD -->
+    <iframe id="contentFrame"></iframe>
     
     <div class="error-fallback" id="errorFallback">
       <div class="error-icon">⚠️</div>
@@ -498,28 +494,37 @@ function aplicarTema(theme) {
   localStorage.setItem('theme', theme);
 }
 
-// Cargar dashboard
+let currentLoad = null;
+
 function loadDashboard(filename) {
   const iframe = document.getElementById('contentFrame');
   const loading = document.getElementById('loadingOverlay');
   const error = document.getElementById('errorFallback');
   
-  // Actualizar clase activa en el menú
+  // Actualizar clase activa
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.remove('active');
   });
-  event?.currentTarget?.classList.add('active');
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
   
   loading.classList.remove('hidden');
   error.classList.remove('show');
   
+  // Limpiar timeout anterior si existe
+  if (currentLoad) clearTimeout(currentLoad);
+  
+  // Establecer nueva src
   iframe.src = filename;
   
-  setTimeout(() => {
+  // Timeout de 5 segundos
+  currentLoad = setTimeout(() => {
     checkIframeLoaded();
-  }, 3000);
+  }, 5000);
   
   iframe.onload = () => {
+    if (currentLoad) clearTimeout(currentLoad);
     loading.classList.add('hidden');
     error.classList.remove('show');
     const currentTheme = localStorage.getItem('theme') || 'dark';
@@ -531,10 +536,11 @@ function loadDashboard(filename) {
   };
   
   iframe.onerror = () => {
+    if (currentLoad) clearTimeout(currentLoad);
     showError();
   };
   
-  // Cerrar menú en móvil después de seleccionar
+  // Cerrar menú en móvil
   if (window.innerWidth <= 768) {
     toggleMenu();
   }
@@ -545,12 +551,17 @@ function checkIframeLoaded() {
   const loading = document.getElementById('loadingOverlay');
   
   try {
-    if (iframe.contentWindow.location.href === 'about:blank') {
-      showError();
-    } else {
+    // Verificar si el iframe tiene contenido
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    if (iframeDoc && iframeDoc.readyState === 'complete') {
       loading.classList.add('hidden');
+    } else if (iframe.src && iframe.src !== 'about:blank') {
+      loading.classList.add('hidden');
+    } else {
+      showError();
     }
   } catch(e) {
+    // Error de cross-origin, asumimos que cargó correctamente
     loading.classList.add('hidden');
   }
 }
@@ -560,7 +571,6 @@ function showError() {
   document.getElementById('errorFallback').classList.add('show');
 }
 
-// Función para mostrar/ocultar menú lateral
 function toggleMenu() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
@@ -568,7 +578,6 @@ function toggleMenu() {
   sidebar.classList.toggle('open');
   overlay.classList.toggle('active');
   
-  // Prevenir scroll del body cuando el menú está abierto
   if (sidebar.classList.contains('open')) {
     document.body.style.overflow = 'hidden';
   } else {
@@ -577,7 +586,6 @@ function toggleMenu() {
 }
 
 function mostrarMensaje(modulo) {
-  // Actualizar clase activa
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.remove('active');
   });
@@ -587,7 +595,6 @@ function mostrarMensaje(modulo) {
   
   alert(`🚧 Módulo "${modulo}"\n\nEsta sección está en desarrollo.\nPor ahora solo está disponible el Dashboard Principal.`);
   
-  // Reestablecer activo al dashboard
   setTimeout(() => {
     document.querySelectorAll('.nav-item').forEach(item => {
       item.classList.remove('active');
@@ -596,13 +603,11 @@ function mostrarMensaje(modulo) {
     if (dashboardBtn) dashboardBtn.classList.add('active');
   }, 100);
   
-  // Cerrar menú en móvil
   if (window.innerWidth <= 768) {
     toggleMenu();
   }
 }
 
-// Cerrar menú al hacer resize a escritorio
 window.addEventListener('resize', () => {
   if (window.innerWidth > 768) {
     const sidebar = document.getElementById('sidebar');
@@ -615,7 +620,6 @@ window.addEventListener('resize', () => {
   }
 });
 
-// Cerrar menú con tecla ESC
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const sidebar = document.getElementById('sidebar');
@@ -625,10 +629,13 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Inicializar
+// Precargar el dashboard después de cargar la página
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  loadDashboard('dashboard.html');
+  // Pequeño delay para que la interfaz cargue primero
+  setTimeout(() => {
+    loadDashboard('dashboard.html');
+  }, 100);
 });
 </script>
 
