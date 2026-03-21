@@ -39,15 +39,24 @@
     overflow: hidden;
   }
 
+  /* SIDEBAR - Ahora siempre oculto por defecto en todos los dispositivos */
   .sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
     width: 280px;
+    height: 100vh;
     background: var(--superficie);
     border-right: 1px solid var(--borde);
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
-    transition: transform 0.3s ease;
-    z-index: 1000;
+    transition: left 0.3s ease;
+    z-index: 1001;
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar.open {
+    left: 0;
   }
 
   .sidebar-header {
@@ -162,8 +171,9 @@
     position: relative;
   }
 
+  /* HEADER - Siempre visible en todos los dispositivos */
   .mobile-header {
-    display: none;
+    display: flex;
     padding: 16px 20px;
     background: var(--superficie);
     border-bottom: 1px solid var(--borde);
@@ -175,23 +185,25 @@
   }
 
   .menu-toggle {
-    background: none;
-    border: none;
+    background: var(--superficie2);
+    border: 1px solid var(--borde);
     color: var(--texto);
     font-size: 24px;
     cursor: pointer;
-    padding: 8px;
+    padding: 8px 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    transition: background 0.2s;
+    transition: all 0.2s;
   }
 
   .menu-toggle:hover {
-    background: var(--superficie2);
+    background: var(--acento);
+    color: white;
+    border-color: var(--acento);
   }
 
   .mobile-title {
@@ -201,6 +213,7 @@
     flex: 1;
   }
 
+  /* Overlay para cerrar menú al hacer clic fuera */
   .overlay {
     display: none;
     position: fixed;
@@ -210,14 +223,12 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    z-index: 1000;
+    cursor: pointer;
   }
 
   .overlay.active {
     display: block;
-    opacity: 1;
   }
 
   .iframe-container {
@@ -350,26 +361,6 @@
     box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
   }
 
-  @media (max-width: 768px) {
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: -280px;
-      height: 100vh;
-      z-index: 1001;
-      box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
-      transition: left 0.3s ease;
-    }
-    
-    .sidebar.open {
-      left: 0;
-    }
-    
-    .mobile-header {
-      display: flex;
-    }
-  }
-
   .nav-menu::-webkit-scrollbar {
     width: 6px;
   }
@@ -449,7 +440,6 @@
       <div class="loading-text">Cargando dashboard...</div>
     </div>
     
-    <!-- QUITADO EL SANDBOX PARA MEJORAR VELOCIDAD -->
     <iframe id="contentFrame"></iframe>
     
     <div class="error-fallback" id="errorFallback">
@@ -512,13 +502,10 @@ function loadDashboard(filename) {
   loading.classList.remove('hidden');
   error.classList.remove('show');
   
-  // Limpiar timeout anterior si existe
   if (currentLoad) clearTimeout(currentLoad);
   
-  // Establecer nueva src
   iframe.src = filename;
   
-  // Timeout de 5 segundos
   currentLoad = setTimeout(() => {
     checkIframeLoaded();
   }, 5000);
@@ -540,10 +527,8 @@ function loadDashboard(filename) {
     showError();
   };
   
-  // Cerrar menú en móvil
-  if (window.innerWidth <= 768) {
-    toggleMenu();
-  }
+  // Cerrar menú después de seleccionar (en todos los dispositivos)
+  toggleMenu();
 }
 
 function checkIframeLoaded() {
@@ -551,7 +536,6 @@ function checkIframeLoaded() {
   const loading = document.getElementById('loadingOverlay');
   
   try {
-    // Verificar si el iframe tiene contenido
     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
     if (iframeDoc && iframeDoc.readyState === 'complete') {
       loading.classList.add('hidden');
@@ -561,7 +545,6 @@ function checkIframeLoaded() {
       showError();
     }
   } catch(e) {
-    // Error de cross-origin, asumimos que cargó correctamente
     loading.classList.add('hidden');
   }
 }
@@ -603,23 +586,11 @@ function mostrarMensaje(modulo) {
     if (dashboardBtn) dashboardBtn.classList.add('active');
   }, 100);
   
-  if (window.innerWidth <= 768) {
-    toggleMenu();
-  }
+  // Cerrar menú después de mostrar mensaje
+  toggleMenu();
 }
 
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 768) {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    if (sidebar.classList.contains('open')) {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('active');
-      document.body.style.overflow = '';
-    }
-  }
-});
-
+// Cerrar menú con tecla ESC
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const sidebar = document.getElementById('sidebar');
@@ -629,10 +600,9 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Precargar el dashboard después de cargar la página
+// Inicializar
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  // Pequeño delay para que la interfaz cargue primero
   setTimeout(() => {
     loadDashboard('dashboard.html');
   }, 100);
