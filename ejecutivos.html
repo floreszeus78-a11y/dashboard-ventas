@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ejecutivos - Panel Ventas</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
     --fondo: #0a0e1a;
@@ -31,9 +30,6 @@
     --acento: #0284c7;
     --texto: #0f172a;
     --texto-suave: #64748b;
-    --verde: #16a34a;
-    --rojo: #dc2626;
-    --naranja: #ea580c;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -45,13 +41,15 @@
     padding: 24px;
   }
 
-  .contenedor {
-    max-width: 1400px;
-    margin: 0 auto;
-  }
+  .contenedor { max-width: 1600px; margin: 0 auto; }
 
   .header {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
   }
 
   .header h1 {
@@ -60,150 +58,179 @@
     background: linear-gradient(135deg, var(--acento), #7c3aed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
   }
 
   .header p {
     color: var(--texto-suave);
-  }
-
-  .grid-ejecutivos {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
-    margin-bottom: 40px;
-  }
-
-  .tarjeta-ejecutivo {
-    background: var(--superficie);
-    border: 1px solid var(--borde);
-    border-radius: 24px;
-    padding: 24px;
-    transition: all 0.3s;
-    cursor: pointer;
-  }
-
-  .tarjeta-ejecutivo:hover {
-    transform: translateY(-4px);
-    border-color: var(--acento);
-    box-shadow: 0 8px 30px rgba(14,165,233,0.2);
-  }
-
-  .nombre-ejecutivo {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--texto);
-  }
-
-  .badge-total {
-    background: var(--superficie2);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .metricas-principales {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--borde);
-  }
-
-  .metrica-item {
-    text-align: center;
-  }
-
-  .metrica-valor {
-    font-size: 28px;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--acento), #7c3aed);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .metrica-label {
-    font-size: 12px;
-    color: var(--texto-suave);
     margin-top: 4px;
   }
 
-  .insignias-estado {
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    padding: 20px;
+  }
+
+  .stat-number {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--acento);
+  }
+
+  .stat-label {
+    color: var(--texto-suave);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  .filtros {
     display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    align-items: center;
   }
 
-  .insignia {
+  .buscador {
     flex: 1;
-    text-align: center;
-    padding: 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
+    min-width: 250px;
+    padding: 12px 20px;
+    border-radius: 30px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    font-size: 14px;
   }
 
-  .insignia-verde { background: var(--verde-bg); color: var(--verde); }
-  .insignia-naranja { background: var(--naranja-bg); color: var(--naranja); }
-  .insignia-rojo { background: var(--rojo-bg); color: var(--rojo); }
-
-  .detalle-meses {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
+  .select-filtro {
+    padding: 12px 20px;
+    border-radius: 30px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 180px;
   }
 
-  .mes-chip {
-    flex: 1;
-    text-align: center;
-    padding: 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
+  .tabla-container {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    overflow-x: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    background: var(--superficie2);
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--texto-suave);
+    border-bottom: 2px solid var(--borde);
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: middle;
+  }
+
+  tr:hover td {
     background: var(--superficie2);
   }
 
-  .mes-chip.m0 { color: #64748b; }
-  .mes-chip.m1 { color: var(--naranja); }
-  .mes-chip.m2 { color: var(--verde); }
-
-  .equipos-lista {
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid var(--borde);
-    max-height: 200px;
-    overflow-y: auto;
+  .ejecutivo-nombre {
+    font-weight: 700;
+    color: var(--acento);
+    font-size: 15px;
   }
 
-  .equipo-item {
+  .badge-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-activo { background: var(--verde-bg); color: var(--verde); }
+  .badge-regular { background: var(--naranja-bg); color: var(--naranja); }
+  .badge-inactivo { background: var(--rojo-bg); color: var(--rojo); }
+
+  .timeline-mini {
     display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-size: 12px;
-    border-bottom: 1px dashed var(--borde);
+    gap: 6px;
+    font-size: 11px;
+    flex-wrap: wrap;
   }
 
-  .equipo-item:last-child { border-bottom: none; }
-
-  .estado-equipo {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 8px;
+  .timeline-item {
+    background: var(--superficie2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
   }
 
-  .estado-activo { background: var(--verde); }
-  .estado-regular { background: var(--naranja); }
-  .estado-inactivo { background: var(--rojo); }
+  .timeline-item.m0 { color: #64748b; }
+  .timeline-item.m1 { color: var(--naranja); }
+  .timeline-item.m2 { color: var(--verde); }
 
-  .loading, .error {
+  .gpv-valor {
+    font-weight: 700;
+  }
+  .gpv-alto { color: var(--verde); }
+  .gpv-medio { color: var(--naranja); }
+  .gpv-bajo { color: var(--rojo); }
+
+  .paginacion {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+    padding: 16px;
+  }
+
+  .pag-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .pag-btn.active {
+    background: var(--acento);
+    color: white;
+    border-color: var(--acento);
+  }
+
+  .pag-btn:hover:not(.active) {
+    background: var(--superficie);
+  }
+
+  .loading, .empty {
     text-align: center;
     padding: 60px;
     color: var(--texto-suave);
@@ -220,39 +247,75 @@
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 768px) {
+    body { padding: 16px; }
+    th, td { padding: 10px 8px; font-size: 11px; }
+    .timeline-mini { flex-direction: column; gap: 4px; }
+  }
 </style>
 </head>
 <body>
 <div class="contenedor">
   <div class="header">
-    <h1>👥 Ejecutivos Comerciales</h1>
-    <p>Rendimiento detallado por cada asesor de ventas</p>
-  </div>
-
-  <div id="ejecutivosGrid" class="grid-ejecutivos">
-    <div class="loading">
-      <div class="spinner"></div>
-      <div>Cargando datos de ejecutivos...</div>
+    <div>
+      <h1>👥 Gestión de Ejecutivos</h1>
+      <p>Rendimiento detallado por cada asesor comercial</p>
     </div>
   </div>
+
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <div class="filtros">
+    <input type="text" class="buscador" id="buscador" placeholder="🔍 Buscar por ejecutivo, comercio o serie..." onkeyup="filtrarTabla()">
+    <select class="select-filtro" id="filtroEstado" onchange="filtrarTabla()">
+      <option value="todos">📊 Todos los estados</option>
+      <option value="ACTIVO">✅ Activos (GPV ≥ 400)</option>
+      <option value="REGULAR">🟠 Regulares (1-399)</option>
+      <option value="INACTIVO">❌ Inactivos (GPV = 0)</option>
+    </select>
+  </div>
+
+  <div class="tabla-container">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Ejecutivo</th>
+          <th>Comercio</th>
+          <th>Serie POS</th>
+          <th>RUC</th>
+          <th>Fecha Venta</th>
+          <th>Activación</th>
+          <th>Timeline M0/M1/M2</th>
+          <th>GPV Actual</th>
+          <th>TRX</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tablaCuerpo"></tbody>
+    </table>
+  </div>
+
+  <div class="paginacion" id="paginacion"></div>
 </div>
 
 <script>
-// Esperar a que el padre envíe los datos
 let datosCompletos = null;
+let equiposFiltrados = [];
+let paginaActual = 1;
+const itemsPorPagina = 20;
 
 window.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'datos-cargados') {
     datosCompletos = e.data.datos;
-    renderizarEjecutivos();
+    renderizarTodo();
   }
-  
   if (e.data && e.data.type === 'theme-change') {
     document.documentElement.setAttribute('data-theme', e.data.theme);
   }
 });
 
-// También intentar obtener datos del padre si ya están disponibles
 function solicitarDatos() {
   window.parent.postMessage({ type: 'solicitar-datos' }, '*');
 }
@@ -263,187 +326,163 @@ function getEstadoPorGPV(gpv) {
   return 'ACTIVO';
 }
 
+function getGPVClass(gpv) {
+  if (gpv === 0) return 'gpv-bajo';
+  if (gpv < 400) return 'gpv-medio';
+  return 'gpv-alto';
+}
+
 function formatearNumero(num) {
   if (num === null || num === undefined || isNaN(num)) return '0';
   return Number(num).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function renderizarEjecutivos() {
-  if (!datosCompletos || !datosCompletos.equipos) {
-    document.getElementById('ejecutivosGrid').innerHTML = '<div class="error">⚠️ No se pudieron cargar los datos. Intenta recargar la página.</div>';
-    return;
+function formatearFecha(fecha) {
+  if (!fecha) return '-';
+  if (typeof fecha === 'string' && fecha.includes('-')) {
+    const p = fecha.split('-');
+    if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
   }
+  return fecha;
+}
 
+function renderizarStats() {
+  if (!datosCompletos?.equipos) return;
+  
   const equipos = datosCompletos.equipos;
+  const ejecutivosUnicos = [...new Set(equipos.map(e => e.responsable_real).filter(e => e))];
+  let totalGPV = 0, activos = 0, regulares = 0, inactivos = 0;
   
-  // Agrupar por ejecutivo
-  const ejecutivosMap = new Map();
-  
-  equipos.forEach(eq => {
-    const exec = eq.responsable_real || 'SIN ASIGNAR';
-    if (!ejecutivosMap.has(exec)) {
-      ejecutivosMap.set(exec, {
-        nombre: exec,
-        totalEquipos: 0,
-        gpvTotal: 0,
-        trxTotal: 0,
-        activos: 0,
-        regulares: 0,
-        inactivos: 0,
-        enM0: 0,
-        enM1: 0,
-        enM2: 0,
-        equipos: []
-      });
-    }
-    
-    const stats = ejecutivosMap.get(exec);
-    stats.totalEquipos++;
-    
-    const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
-    const trxActual = parseInt(eq.trx_mes_actual_corriendo) || 0;
-    stats.gpvTotal += gpvActual;
-    stats.trxTotal += trxActual;
-    
-    const estado = getEstadoPorGPV(gpvActual);
-    if (estado === 'ACTIVO') stats.activos++;
-    else if (estado === 'REGULAR') stats.regulares++;
-    else stats.inactivos++;
-    
-    const mesIdx = eq.mes_actual_idx || 0;
-    if (mesIdx === 0) stats.enM0++;
-    else if (mesIdx === 1) stats.enM1++;
-    else if (mesIdx === 2) stats.enM2++;
-    
-    stats.equipos.push({
-      comercio: eq.comercio,
-      serie: eq.numero_serie,
-      gpvActual: gpvActual,
-      estado: estado,
-      mesActual: eq.etiqueta_mes_actual
-    });
+  equipos.forEach(e => {
+    const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+    totalGPV += gpv;
+    const estado = getEstadoPorGPV(gpv);
+    if (estado === 'ACTIVO') activos++;
+    else if (estado === 'REGULAR') regulares++;
+    else inactivos++;
   });
   
-  const ejecutivosArray = Array.from(ejecutivosMap.values())
-    .sort((a, b) => b.gpvTotal - a.gpvTotal);
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-number">${ejecutivosUnicos.length}</div><div class="stat-label">Ejecutivos Activos</div></div>
+    <div class="stat-card"><div class="stat-number">${equipos.length}</div><div class="stat-label">Equipos Vendidos</div></div>
+    <div class="stat-card"><div class="stat-number">S/ ${formatearNumero(totalGPV)}</div><div class="stat-label">GPV Total</div></div>
+    <div class="stat-card"><div class="stat-number">${activos}</div><div class="stat-label">Equipos Activos</div></div>
+    <div class="stat-card"><div class="stat-number">${regulares}</div><div class="stat-label">Regulares</div></div>
+    <div class="stat-card"><div class="stat-number">${inactivos}</div><div class="stat-label">Inactivos</div></div>
+  `;
+}
+
+function filtrarTabla() {
+  if (!datosCompletos?.equipos) return;
   
-  const grid = document.getElementById('ejecutivosGrid');
+  const busqueda = document.getElementById('buscador').value.toLowerCase();
+  const estadoFiltro = document.getElementById('filtroEstado').value;
   
-  if (ejecutivosArray.length === 0) {
-    grid.innerHTML = '<div class="error">📭 No hay datos de ejecutivos disponibles</div>';
+  equiposFiltrados = datosCompletos.equipos.filter(e => {
+    const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+    const estado = getEstadoPorGPV(gpv);
+    
+    if (estadoFiltro !== 'todos' && estado !== estadoFiltro) return false;
+    
+    if (busqueda) {
+      const texto = `${e.responsable_real} ${e.comercio} ${e.numero_serie} ${e.ruc}`.toLowerCase();
+      if (!texto.includes(busqueda)) return false;
+    }
+    return true;
+  });
+  
+  // Ordenar por ejecutivo y luego por GPV descendente
+  equiposFiltrados.sort((a, b) => {
+    if (a.responsable_real !== b.responsable_real) {
+      return (a.responsable_real || '').localeCompare(b.responsable_real || '');
+    }
+    return (parseFloat(b.gpv_mes_actual_corriendo) || 0) - (parseFloat(a.gpv_mes_actual_corriendo) || 0);
+  });
+  
+  paginaActual = 1;
+  renderizarTabla();
+  renderizarPaginacion();
+}
+
+function renderizarTabla() {
+  const tbody = document.getElementById('tablaCuerpo');
+  const inicio = (paginaActual - 1) * itemsPorPagina;
+  const fin = inicio + itemsPorPagina;
+  const paginados = equiposFiltrados.slice(inicio, fin);
+  
+  if (paginados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:40px;">📭 No hay equipos para mostrar</td></tr>';
     return;
   }
   
-  grid.innerHTML = ejecutivosArray.map(exec => `
-    <div class="tarjeta-ejecutivo" onclick="mostrarDetalleEjecutivo('${exec.nombre.replace(/'/g, "\\'")}')">
-      <div class="nombre-ejecutivo">
-        ${exec.nombre}
-        <span class="badge-total">${exec.totalEquipos} equipos</span>
-      </div>
-      
-      <div class="metricas-principales">
-        <div class="metrica-item">
-          <div class="metrica-valor">S/ ${formatearNumero(exec.gpvTotal)}</div>
-          <div class="metrica-label">GPV Total</div>
-        </div>
-        <div class="metrica-item">
-          <div class="metrica-valor">${exec.trxTotal.toLocaleString('es-PE')}</div>
-          <div class="metrica-label">Transacciones</div>
-        </div>
-      </div>
-      
-      <div class="insignias-estado">
-        <div class="insignia insignia-verde">✅ ${exec.activos}</div>
-        <div class="insignia insignia-naranja">🟠 ${exec.regulares}</div>
-        <div class="insignia insignia-rojo">❌ ${exec.inactivos}</div>
-      </div>
-      
-      <div class="detalle-meses">
-        <div class="mes-chip m0">📊 M0: ${exec.enM0}</div>
-        <div class="mes-chip m1">🚀 M1: ${exec.enM1}</div>
-        <div class="mes-chip m2">🏆 M2: ${exec.enM2}</div>
-      </div>
-      
-      <div class="equipos-lista">
-        ${exec.equipos.slice(0, 5).map(eq => `
-          <div class="equipo-item">
-            <div>
-              <span class="estado-equipo ${eq.estado === 'ACTIVO' ? 'estado-activo' : (eq.estado === 'REGULAR' ? 'estado-regular' : 'estado-inactivo')}"></span>
-              ${eq.comercio?.substring(0, 25) || 'Sin nombre'}
-            </div>
-            <div style="color: var(--texto-suave);">S/ ${formatearNumero(eq.gpvActual)}</div>
+  tbody.innerHTML = paginados.map((eq, idx) => {
+    const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
+    const estado = getEstadoPorGPV(gpvActual);
+    const gpvClass = getGPVClass(gpvActual);
+    const gpvM0 = parseFloat(eq.gpv_m0) || 0;
+    const gpvM1 = parseFloat(eq.gpv_m1) || 0;
+    const gpvM2 = parseFloat(eq.gpv_m2) || 0;
+    const trxActual = parseInt(eq.trx_mes_actual_corriendo) || 0;
+    
+    let estadoBadge = '';
+    if (estado === 'ACTIVO') estadoBadge = '<span class="badge-estado badge-activo">● Activo</span>';
+    else if (estado === 'REGULAR') estadoBadge = '<span class="badge-estado badge-regular">● Regular</span>';
+    else estadoBadge = '<span class="badge-estado badge-inactivo">● Inactivo</span>';
+    
+    return `
+      <tr>
+        <td>${inicio + idx + 1}</td>
+        <td><span class="ejecutivo-nombre">${eq.responsable_real || 'SIN ASIGNAR'}</span></td>
+        <td><strong>${eq.comercio || '-'}</strong><br><span style="font-size: 11px; color: var(--texto-suave);">${eq.razon_social || ''}</span></td>
+        <td><code style="font-size: 11px;">${eq.numero_serie || '-'}</code></td>
+        <td><code>${eq.ruc || '-'}</code></td>
+        <td class="cell-fecha">${formatearFecha(eq.fecha_venta)}</td>
+        <td class="cell-fecha">${formatearFecha(eq.dia_activo) || 'Pendiente'}</td>
+        <td>
+          <div class="timeline-mini">
+            <span class="timeline-item m0">M0: S/ ${formatearNumero(gpvM0)}</span>
+            <span class="timeline-item m1">M1: S/ ${formatearNumero(gpvM1)}</span>
+            <span class="timeline-item m2">M2: S/ ${formatearNumero(gpvM2)}</span>
           </div>
-        `).join('')}
-        ${exec.equipos.length > 5 ? `<div class="equipo-item" style="color: var(--acento);">... y ${exec.equipos.length - 5} más</div>` : ''}
-      </div>
-    </div>
-  `).join('');
+          <div style="font-size: 10px; color: var(--texto-suave); margin-top: 4px;">${eq.etiqueta_mes_actual || 'M0'}</div>
+        </td>
+        <td class="gpv-valor ${gpvClass}">S/ ${formatearNumero(gpvActual)}</td>
+        <td>${trxActual.toLocaleString('es-PE')}</td>
+        <td>${estadoBadge}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
-function mostrarDetalleEjecutivo(nombre) {
-  if (!datosCompletos || !datosCompletos.equipos) return;
+function renderizarPaginacion() {
+  const totalPaginas = Math.ceil(equiposFiltrados.length / itemsPorPagina);
+  const container = document.getElementById('paginacion');
   
-  const equiposEjecutivo = datosCompletos.equipos.filter(e => e.responsable_real === nombre);
+  if (totalPaginas <= 1) {
+    container.innerHTML = '';
+    return;
+  }
   
-  if (equiposEjecutivo.length === 0) return;
-  
-  // Crear modal con detalle
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(4px);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  `;
-  
-  modal.innerHTML = `
-    <div style="background: var(--superficie); border-radius: 24px; max-width: 800px; width: 90%; max-height: 80vh; overflow: auto; padding: 24px; border: 1px solid var(--borde);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-size: 24px;">👤 ${nombre}</h2>
-        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--texto);">&times;</button>
-      </div>
-      
-      <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background: var(--superficie2);">
-              <th style="padding: 12px; text-align: left;">Comercio</th>
-              <th style="padding: 12px; text-align: left;">Serie</th>
-              <th style="padding: 12px; text-align: right;">GPV Actual</th>
-              <th style="padding: 12px; text-align: center;">Mes</th>
-              <th style="padding: 12px; text-align: center;">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${equiposEjecutivo.map(eq => {
-              const gpv = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
-              const estado = getEstadoPorGPV(gpv);
-              const estadoClass = estado === 'ACTIVO' ? '✅' : (estado === 'REGULAR' ? '🟠' : '❌');
-              return `
-                <tr style="border-bottom: 1px solid var(--borde);">
-                  <td style="padding: 12px;">${eq.comercio || '-'}</td>
-                  <td style="padding: 12px;">${eq.numero_serie || '-'}</td>
-                  <td style="padding: 12px; text-align: right;">S/ ${formatearNumero(gpv)}</td>
-                  <td style="padding: 12px; text-align: center;">${eq.etiqueta_mes_actual || '-'}</td>
-                  <td style="padding: 12px; text-align: center;">${estadoClass}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  let html = '';
+  for (let i = 1; i <= Math.min(totalPaginas, 10); i++) {
+    html += `<button class="pag-btn ${paginaActual === i ? 'active' : ''}" onclick="irPagina(${i})">${i}</button>`;
+  }
+  container.innerHTML = html;
 }
 
-// Solicitar datos al cargar
+function irPagina(pagina) {
+  paginaActual = pagina;
+  renderizarTabla();
+  renderizarPaginacion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderizarTodo() {
+  if (!datosCompletos?.equipos) return;
+  renderizarStats();
+  filtrarTabla();
+}
+
 setTimeout(solicitarDatos, 100);
 </script>
 </body>
