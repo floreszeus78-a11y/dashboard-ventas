@@ -695,7 +695,7 @@
 
 <script>
 // Configuración
-const URL_API = 'https://script.google.com/macros/s/AKfycby9AtSRezAoVj5oslCj5gFDvmCB0Rq0m5nlPfg0O_vrGFkdQOOnBlxthof0Obw6qEQy/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbyFkf0k9u-kF2oaxZ1doSzRjHjurQGwN3Xw5rxVwU157Hkua5au73HP-lsksxy4LMY5/exec';
 const META_VENTAS = 10;
 
 let DATOS_COMPLETOS = null;
@@ -794,8 +794,15 @@ async function cargarDatos(forzar = false) {
   main.style.display = 'none';
   
   try {
+    console.log('Iniciando fetch a:', URL_API);
     const res = await fetch(URL_API);
-    DATOS_COMPLETOS = await res.json();
+    const data = await res.json();
+    
+    console.log('Datos recibidos:', data);
+    console.log('Resumen:', data.resumen);
+    console.log('Total GPV:', data.resumen?.total_gpv);
+    
+    DATOS_COMPLETOS = data;
     
     if (DATOS_COMPLETOS.error) throw new Error(DATOS_COMPLETOS.mensaje);
     
@@ -806,7 +813,8 @@ async function cargarDatos(forzar = false) {
     main.style.display = 'block';
     
   } catch (err) {
-    loading.innerHTML = `<div style="color: var(--rojo); text-align: center;">❌ Error: ${err.message}</div>`;
+    console.error('Error en cargarDatos:', err);
+    loading.innerHTML = `<div style="color: var(--rojo); text-align: center; padding: 20px;">❌ Error: ${err.message}<br><button onclick="cargarDatos()" style="margin-top: 10px; padding: 10px 20px; border-radius: 20px; border: none; background: var(--acento); color: white; cursor: pointer;">Reintentar</button></div>`;
   }
 }
 
@@ -831,25 +839,44 @@ function renderizarTodo() {
   renderizarTabla();
 }
 
-// RESUMEN
+// RESUMEN - CORREGIDO PARA USAR DATOS DEL BACKEND CORRECTAMENTE
 function renderizarResumen() {
+  // Si no hay datos filtrados aún, usar todos los equipos
   let equipos = getEquiposFiltrados();
   
-  const totalGPV = equipos.reduce((sum, e) => sum + (e.gpv_mes_actual || 0), 0);
-  const totalTRX = equipos.reduce((sum, e) => sum + (e.transacciones_mes_actual || 0), 0);
-  const activos = equipos.filter(e => e.estado === 'ACTIVO').length;
-  const ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
+  // Si hay resumen del backend, usar esos totales cuando estemos en TODOS los meses y ejecutivos
+  const resumenBackend = DATOS_COMPLETOS?.resumen;
+  const usarTotalesGlobales = (mesActual === 'TODOS' && ejecutivoActual === 'TODOS' && resumenBackend);
+  
+  let totalGPV, totalTRX, activos, ticketPromedio;
+  
+  if (usarTotalesGlobales) {
+    // Usar los totales ya calculados por el backend
+    totalGPV = resumenBackend.total_gpv || 0;
+    totalTRX = resumenBackend.total_transacciones || 0;
+    activos = resumenBackend.equipos_activos || 0;
+    ticketPromedio = resumenBackend.ticket_promedio_general || 0;
+    console.log('Usando totales del backend:', { totalGPV, totalTRX, activos });
+  } else {
+    // Calcular con los equipos filtrados
+    totalGPV = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_mes_actual) || 0), 0);
+    totalTRX = equipos.reduce((sum, e) => sum + (parseInt(e.transacciones_mes_actual) || 0), 0);
+    activos = equipos.filter(e => e.estado === 'ACTIVO').length;
+    ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
+  }
+  
+  const totalEquipos = equipos.length;
   
   document.getElementById('resumenCards').innerHTML = `
     <div class="tarjeta-resumen">
       <div class="titulo">💰 GPV TOTAL</div>
       <div class="valor">S/ ${formatearNumero(totalGPV)}</div>
-      <div class="detalle">${equipos.length} equipos</div>
+      <div class="detalle">${totalEquipos} equipos</div>
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">🛒 TRANSACCIONES</div>
       <div class="valor">${formatearNumero(totalTRX, 0)}</div>
-      <div class="detalle">${equipos.length > 0 ? (totalTRX / equipos.length).toFixed(1) : '0'} por equipo</div>
+      <div class="detalle">${totalEquipos > 0 ? (totalTRX / totalEquipos).toFixed(1) : '0'} por equipo</div>
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">🎫 TICKET PROMEDIO</div>
@@ -858,8 +885,8 @@ function renderizarResumen() {
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">✅ EQUIPOS ACTIVOS</div>
-      <div class="valor">${activos}/${equipos.length}</div>
-      <div class="detalle">${equipos.length > 0 ? Math.round(activos/equipos.length*100) : 0}% del total</div>
+      <div class="valor">${activos}/${totalEquipos}</div>
+      <div class="detalle">${totalEquipos > 0 ? Math.round(activos/totalEquipos*100) : 0}% del total</div>
     </div>
   `;
 }
@@ -878,7 +905,7 @@ function renderizarGraficas() {
   equipos.forEach(e => {
     const exec = e.responsable_real || 'Sin asignar';
     if (!porEjecutivo[exec]) porEjecutivo[exec] = 0;
-    porEjecutivo[exec] += e.gpv_mes_actual || 0;
+    porEjecutivo[exec] += (parseFloat(e.gpv_mes_actual) || 0);
   });
   
   const ctx1 = document.getElementById('chartEjecutivos').getContext('2d');
@@ -913,10 +940,10 @@ function renderizarGraficas() {
   
   // Distribución (COLORES FIJOS - NO VARIABLES CSS)
   const rangos = [
-    equipos.filter(e => (e.gpv_mes_actual || 0) >= 700).length,
-    equipos.filter(e => { const g = e.gpv_mes_actual || 0; return g >= 400 && g < 700 }).length,
-    equipos.filter(e => { const g = e.gpv_mes_actual || 0; return g > 0 && g < 400 }).length,
-    equipos.filter(e => !e.gpv_mes_actual || e.gpv_mes_actual === 0).length
+    equipos.filter(e => (parseFloat(e.gpv_mes_actual) || 0) >= 700).length,
+    equipos.filter(e => { const g = parseFloat(e.gpv_mes_actual) || 0; return g >= 400 && g < 700 }).length,
+    equipos.filter(e => { const g = parseFloat(e.gpv_mes_actual) || 0; return g > 0 && g < 400 }).length,
+    equipos.filter(e => { const g = parseFloat(e.gpv_mes_actual) || 0; return g === 0 }).length
   ];
   
   const ctx2 = document.getElementById('chartDistribucion').getContext('2d');
@@ -966,8 +993,8 @@ function renderizarEjecutivos() {
     }
     const stats = ejecutivosMap.get(exec);
     stats.total_equipos++;
-    stats.gpv_total += eq.gpv_mes_actual || 0;
-    stats.transacciones_total += eq.transacciones_mes_actual || 0;
+    stats.gpv_total += (parseFloat(eq.gpv_mes_actual) || 0);
+    stats.transacciones_total += (parseInt(eq.transacciones_mes_actual) || 0);
     if (eq.estado === 'ACTIVO') stats.activos++;
     else if (eq.estado === 'REGULAR') stats.regulares++;
     else if (eq.estado === 'INACTIVO') stats.inactivos++;
@@ -1035,7 +1062,7 @@ function renderizarTabla() {
   // Aplicar filtro GPV
   if (filtroGPVActual !== 'todos') {
     equipos = equipos.filter(e => {
-      const gpv = e.gpv_mes_actual || 0;
+      const gpv = parseFloat(e.gpv_mes_actual) || 0;
       switch(filtroGPVActual) {
         case 'meta': return gpv >= 700;
         case 'promedio': return gpv >= 400 && gpv < 700;
@@ -1061,7 +1088,7 @@ function renderizarTabla() {
   }
   
   tbody.innerHTML = equipos.map(eq => {
-    const gpv = eq.gpv_mes_actual || 0;
+    const gpv = parseFloat(eq.gpv_mes_actual) || 0;
     const gpvClass = getGPVClass(gpv);
     const esMulti = comerciosCount[`${eq.ruc}_${eq.comercio}`] > 1;
     
@@ -1160,8 +1187,10 @@ function seleccionarEjecutivo(exec) {
 }
 
 function formatearNumero(num, dec = 2) {
-  if (!num || isNaN(num)) return dec === 0 ? '0' : '0.00';
-  return Number(num).toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  if (num === null || num === undefined || isNaN(num)) return dec === 0 ? '0' : '0.00';
+  const numero = Number(num);
+  if (isNaN(numero)) return dec === 0 ? '0' : '0.00';
+  return numero.toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
 function formatearFecha(fecha) {
