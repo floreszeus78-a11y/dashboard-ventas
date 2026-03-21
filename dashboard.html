@@ -775,7 +775,7 @@
 
 <script>
 // Configuración
-const URL_API = 'https://script.google.com/macros/s/AKfycbwaFxTdGfv9VmqCPvQ_cO8uyLOJjUVeKIAimUmWfI6n1B3zQcucB-y9_V4fDD7Vlh9b/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbwBn_UG1N4N5bLE8TOg7rSgP1tUsPAjUfQDf4Edy7SflAsLyLGe6i-cz31c8ozqA6wd/exec';
 const META_VENTAS = 10;
 
 let DATOS_COMPLETOS = null;
@@ -908,43 +908,50 @@ function renderizarTodo() {
   renderizarTabla();
 }
 
-// RESUMEN - Usa gpv_mes_actual_corriendo del backend
+// RESUMEN - CORREGIDO PARA MOSTRAR M0 CUANDO SE FILTRA POR MES
 function renderizarResumen() {
   let equipos = getEquiposFiltrados();
   const resumenBackend = DATOS_COMPLETOS?.resumen;
   const usarTotalesGlobales = (mesActual === 'TODOS' && ejecutivoActual === 'TODOS' && resumenBackend);
   
-  let totalGPV, totalTRX, activos, ticketPromedio;
+  let totalGPV, totalTRX, activos, ticketPromedio, gpvMesCorriendo;
   
   if (usarTotalesGlobales) {
+    // Cuando es TODOS, mostrar suma de M0 de todos los equipos
     totalGPV = resumenBackend.total_gpv || 0;
     totalTRX = resumenBackend.total_transacciones || 0;
     activos = resumenBackend.equipos_activos || 0;
     ticketPromedio = resumenBackend.ticket_promedio_general || 0;
+    gpvMesCorriendo = null; // No aplica para TODOS
   } else {
-    totalGPV = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_mes_actual_corriendo) || 0), 0);
-    totalTRX = equipos.reduce((sum, e) => sum + (parseInt(e.trx_mes_actual_corriendo) || 0), 0);
+    // CORRECCIÓN: Cuando filtra por mes específico, sumar M0 (mes de prueba)
+    totalGPV = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_m0) || 0), 0);
+    totalTRX = equipos.reduce((sum, e) => sum + (parseInt(e.trx_m0) || 0), 0);
     activos = equipos.filter(e => e.estado === 'ACTIVO').length;
     ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
+    
+    // Calcular también el mes corriendo para mostrar comparación
+    gpvMesCorriendo = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_mes_actual_corriendo) || 0), 0);
   }
   
   const totalEquipos = equipos.length;
   
-  document.getElementById('resumenCards').innerHTML = `
+  // HTML de las tarjetas
+  let html = `
     <div class="tarjeta-resumen">
-      <div class="titulo">💰 GPV TOTAL (Mes Actual)</div>
+      <div class="titulo">💰 GPV M0 (Mes de Prueba)</div>
       <div class="valor">S/ ${formatearNumero(totalGPV)}</div>
-      <div class="detalle">${totalEquipos} equipos</div>
+      <div class="detalle">${totalEquipos} equipos vendidos en ${mesActual === 'TODOS' ? 'total' : mesActual}</div>
     </div>
     <div class="tarjeta-resumen">
-      <div class="titulo">🛒 TRANSACCIONES</div>
+      <div class="titulo">🛒 TRANSACCIONES M0</div>
       <div class="valor">${formatearNumero(totalTRX, 0)}</div>
       <div class="detalle">${totalEquipos > 0 ? (totalTRX / totalEquipos).toFixed(1) : '0'} por equipo</div>
     </div>
     <div class="tarjeta-resumen">
-      <div class="titulo">🎫 TICKET PROMEDIO</div>
+      <div class="titulo">🎫 TICKET PROMEDIO M0</div>
       <div class="valor">S/ ${formatearNumero(ticketPromedio)}</div>
-      <div class="detalle">por transacción</div>
+      <div class="detalle">por transacción en mes de prueba</div>
     </div>
     <div class="tarjeta-resumen">
       <div class="titulo">✅ EQUIPOS ACTIVOS</div>
@@ -952,8 +959,20 @@ function renderizarResumen() {
       <div class="detalle">${totalEquipos > 0 ? Math.round(activos/totalEquipos*100) : 0}% del total</div>
     </div>
   `;
+  
+  // Si hay filtro por mes específico, mostrar también el GPV del mes actual corriendo (M1 o M2)
+  if (mesActual !== 'TODOS' && gpvMesCorriendo !== null) {
+    html += `
+      <div class="tarjeta-resumen" style="border: 2px solid var(--acento);">
+        <div class="titulo">🔄 GPV MES ACTUAL CORRIENDO</div>
+        <div class="valor" style="font-size: 32px;">S/ ${formatearNumero(gpvMesCorriendo)}</div>
+        <div class="detalle">Lo que facturan ahora (${mesActual === 'FEBRERO' ? 'M1 - Marzo' : 'M0'})</div>
+      </div>
+    `;
+  }
+  
+  document.getElementById('resumenCards').innerHTML = html;
 }
-
 // GRÁFICAS
 function renderizarGraficas() {
   const equipos = getEquiposFiltrados();
