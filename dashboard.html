@@ -914,65 +914,81 @@ function renderizarTodo() {
 function renderizarResumen() {
   let equipos = getEquiposFiltrados();
   const resumenBackend = DATOS_COMPLETOS?.resumen;
-  const usarTotalesGlobales = (mesActual === 'TODOS' && ejecutivoActual === 'TODOS' && resumenBackend);
-  
-  let totalGPV, totalTRX, activos, ticketPromedio, gpvMesCorriendo;
-  
-  if (usarTotalesGlobales) {
-    // Cuando es TODOS, mostrar suma de M0 de todos los equipos
-    totalGPV = resumenBackend.total_gpv || 0;
-    totalTRX = resumenBackend.total_transacciones || 0;
-    activos = resumenBackend.equipos_activos || 0;
-    ticketPromedio = resumenBackend.ticket_promedio_general || 0;
-    gpvMesCorriendo = null; // No aplica para TODOS
-  } else {
-    // CORRECCIÓN: Cuando filtra por mes específico, sumar M0 (mes de prueba)
-    totalGPV = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_m0) || 0), 0);
-    totalTRX = equipos.reduce((sum, e) => sum + (parseInt(e.trx_m0) || 0), 0);
-    activos = equipos.filter(e => e.estado === 'ACTIVO').length;
-    ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
-    
-    // Calcular también el mes corriendo para mostrar comparación
-    gpvMesCorriendo = equipos.reduce((sum, e) => sum + (parseFloat(e.gpv_mes_actual_corriendo) || 0), 0);
-  }
-  
+
+  let totalGPV = 0;
+  let totalTRX = 0;
+  let activos = 0;
+
+  let totalGPV_M0 = 0;
+  let totalGPV_M1 = 0;
+  let totalGPV_M2 = 0;
+
+  equipos.forEach(e => {
+    const m0 = parseFloat(e.gpv_m0) || 0;
+    const m1 = parseFloat(e.gpv_m1) || 0;
+    const m2 = parseFloat(e.gpv_m2) || 0;
+
+    const t0 = parseInt(e.trx_m0) || 0;
+    const t1 = parseInt(e.trx_m1) || 0;
+    const t2 = parseInt(e.trx_m2) || 0;
+
+    totalGPV += (m0 + m1 + m2);
+    totalTRX += (t0 + t1 + t2);
+
+    totalGPV_M0 += m0;
+    totalGPV_M1 += m1;
+    totalGPV_M2 += m2;
+
+    if (e.estado === 'ACTIVO') activos++;
+  });
+
+  const ticketPromedio = totalTRX > 0 ? totalGPV / totalTRX : 0;
   const totalEquipos = equipos.length;
-  
-  // HTML de las tarjetas
+
   let html = `
     <div class="tarjeta-resumen">
-      <div class="titulo">💰 GPV M0 (Mes de Prueba)</div>
+      <div class="titulo">💰 GPV TOTAL COHORTE</div>
       <div class="valor">S/ ${formatearNumero(totalGPV)}</div>
-      <div class="detalle">${totalEquipos} equipos vendidos en ${mesActual === 'TODOS' ? 'total' : mesActual}</div>
+      <div class="detalle">M0 + M1 + M2 acumulado</div>
     </div>
+
     <div class="tarjeta-resumen">
-      <div class="titulo">🛒 TRANSACCIONES M0</div>
+      <div class="titulo">🧪 GPV M0 (Prueba)</div>
+      <div class="valor">S/ ${formatearNumero(totalGPV_M0)}</div>
+      <div class="detalle">Primer mes</div>
+    </div>
+
+    <div class="tarjeta-resumen">
+      <div class="titulo">🚀 GPV M1</div>
+      <div class="valor">S/ ${formatearNumero(totalGPV_M1)}</div>
+      <div class="detalle">Segundo mes</div>
+    </div>
+
+    <div class="tarjeta-resumen">
+      <div class="titulo">📈 GPV M2</div>
+      <div class="valor">S/ ${formatearNumero(totalGPV_M2)}</div>
+      <div class="detalle">Tercer mes</div>
+    </div>
+
+    <div class="tarjeta-resumen">
+      <div class="titulo">🛒 TRANSACCIONES</div>
       <div class="valor">${formatearNumero(totalTRX, 0)}</div>
-      <div class="detalle">${totalEquipos > 0 ? (totalTRX / totalEquipos).toFixed(1) : '0'} por equipo</div>
+      <div class="detalle">Total acumulado</div>
     </div>
-    <div class="tarjeta-resumen">
-      <div class="titulo">🎫 TICKET PROMEDIO M0</div>
-      <div class="valor">S/ ${formatearNumero(ticketPromedio)}</div>
-      <div class="detalle">por transacción en mes de prueba</div>
-    </div>
+
     <div class="tarjeta-resumen">
       <div class="titulo">✅ EQUIPOS ACTIVOS</div>
       <div class="valor">${activos}/${totalEquipos}</div>
       <div class="detalle">${totalEquipos > 0 ? Math.round(activos/totalEquipos*100) : 0}% del total</div>
     </div>
+
+    <div class="tarjeta-resumen">
+      <div class="titulo">🎫 TICKET PROMEDIO</div>
+      <div class="valor">S/ ${formatearNumero(ticketPromedio)}</div>
+      <div class="detalle">Sobre todo el cohorte</div>
+    </div>
   `;
-  
-  // Si hay filtro por mes específico, mostrar también el GPV del mes actual corriendo (M1 o M2)
-  if (mesActual !== 'TODOS' && gpvMesCorriendo !== null) {
-    html += `
-      <div class="tarjeta-resumen" style="border: 2px solid var(--acento);">
-        <div class="titulo">🔄 GPV MES ACTUAL CORRIENDO</div>
-        <div class="valor" style="font-size: 32px;">S/ ${formatearNumero(gpvMesCorriendo)}</div>
-        <div class="detalle">Lo que facturan ahora (${mesActual === 'FEBRERO' ? 'M1 - Marzo' : 'M0'})</div>
-      </div>
-    `;
-  }
-  
+
   document.getElementById('resumenCards').innerHTML = html;
 }
 // GRÁFICAS
