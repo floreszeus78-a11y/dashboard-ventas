@@ -2,7 +2,7 @@
 <html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Panel de Ventas - Menú</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -39,6 +39,7 @@
     overflow: hidden;
   }
 
+  /* SIDEBAR - Estilo base */
   .sidebar {
     width: 280px;
     background: var(--superficie);
@@ -47,6 +48,7 @@
     flex-direction: column;
     flex-shrink: 0;
     transition: transform 0.3s ease;
+    z-index: 1000;
   }
 
   .sidebar-header {
@@ -161,6 +163,7 @@
     position: relative;
   }
 
+  /* HEADER MÓVIL - Solo visible en móvil */
   .mobile-header {
     display: none;
     padding: 16px 20px;
@@ -168,6 +171,9 @@
     border-bottom: 1px solid var(--borde);
     align-items: center;
     gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
 
   .menu-toggle {
@@ -176,13 +182,13 @@
     color: var(--texto);
     font-size: 24px;
     cursor: pointer;
-    padding: 4px;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     transition: background 0.2s;
   }
 
@@ -190,6 +196,34 @@
     background: var(--superficie2);
   }
 
+  .mobile-title {
+    color: var(--texto);
+    font-size: 18px;
+    font-weight: 700;
+    flex: 1;
+  }
+
+  /* Overlay para cerrar menú */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .overlay.active {
+    display: block;
+    opacity: 1;
+  }
+
+  /* CONTENIDO PRINCIPAL */
   .iframe-container {
     flex: 1;
     position: relative;
@@ -319,29 +353,16 @@
     box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
   }
 
-  .overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(4px);
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .overlay.active {
-    display: block;
-    opacity: 1;
-  }
-
+  /* RESPONSIVE - MÓVIL */
   @media (max-width: 768px) {
     .sidebar {
       position: fixed;
+      top: 0;
       left: -280px;
       height: 100vh;
-      z-index: 1000;
-      box-shadow: 4px 0 30px rgba(0,0,0,0.5);
+      z-index: 1001;
+      box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+      transition: left 0.3s ease;
     }
     
     .sidebar.open {
@@ -353,6 +374,7 @@
     }
   }
 
+  /* Scrollbar personalizado */
   .nav-menu::-webkit-scrollbar {
     width: 6px;
   }
@@ -419,8 +441,11 @@
 
 <div class="main-content">
   <div class="mobile-header">
-    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-    <h2 style="color: var(--texto); font-size: 18px; font-weight: 700;">Panel de Ventas</h2>
+    <button class="menu-toggle" onclick="toggleMenu()" aria-label="Abrir menú">
+      ☰
+    </button>
+    <div class="mobile-title">Panel de Ventas</div>
+    <div style="width: 44px;"></div> <!-- Espaciador para centrar -->
   </div>
   
   <div class="iframe-container">
@@ -429,7 +454,7 @@
       <div class="loading-text">Cargando dashboard...</div>
     </div>
     
-    <iframe id="contentFrame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-downloads"></iframe>
+    <iframe id="contentFrame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-downloads allow-modals"></iframe>
     
     <div class="error-fallback" id="errorFallback">
       <div class="error-icon">⚠️</div>
@@ -452,18 +477,15 @@
 <script>
 // SINCRONIZACIÓN DE TEMA
 function initTheme() {
-  // 1. Leer tema guardado o usar dark por defecto
   const savedTheme = localStorage.getItem('theme') || 'dark';
   aplicarTema(savedTheme);
   
-  // 2. Escuchar cambios en localStorage (por si el dashboard cambia el tema)
   window.addEventListener('storage', (e) => {
     if (e.key === 'theme') {
       aplicarTema(e.newValue);
     }
   });
   
-  // 3. Escuchar mensajes del iframe (postMessage)
   window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'theme-change') {
       aplicarTema(e.data.theme);
@@ -473,14 +495,20 @@ function initTheme() {
 
 function aplicarTema(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  // También guardar por si acaso
   localStorage.setItem('theme', theme);
 }
 
+// Cargar dashboard
 function loadDashboard(filename) {
   const iframe = document.getElementById('contentFrame');
   const loading = document.getElementById('loadingOverlay');
   const error = document.getElementById('errorFallback');
+  
+  // Actualizar clase activa en el menú
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  event?.currentTarget?.classList.add('active');
   
   loading.classList.remove('hidden');
   error.classList.remove('show');
@@ -494,14 +522,22 @@ function loadDashboard(filename) {
   iframe.onload = () => {
     loading.classList.add('hidden');
     error.classList.remove('show');
-    // Enviar tema actual al iframe después de cargar
     const currentTheme = localStorage.getItem('theme') || 'dark';
-    iframe.contentWindow.postMessage({ type: 'theme-change', theme: currentTheme }, '*');
+    try {
+      iframe.contentWindow.postMessage({ type: 'theme-change', theme: currentTheme }, '*');
+    } catch(e) {
+      console.log('No se pudo enviar mensaje al iframe');
+    }
   };
   
   iframe.onerror = () => {
     showError();
   };
+  
+  // Cerrar menú en móvil después de seleccionar
+  if (window.innerWidth <= 768) {
+    toggleMenu();
+  }
 }
 
 function checkIframeLoaded() {
@@ -524,38 +560,75 @@ function showError() {
   document.getElementById('errorFallback').classList.add('show');
 }
 
+// Función para mostrar/ocultar menú lateral
 function toggleMenu() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('overlay').classList.toggle('active');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+  
+  // Prevenir scroll del body cuando el menú está abierto
+  if (sidebar.classList.contains('open')) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
 }
 
 function mostrarMensaje(modulo) {
-  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  // Actualizar clase activa
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
   
   alert(`🚧 Módulo "${modulo}"\n\nEsta sección está en desarrollo.\nPor ahora solo está disponible el Dashboard Principal.`);
   
+  // Reestablecer activo al dashboard
   setTimeout(() => {
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelector('.nav-item').classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    const dashboardBtn = document.querySelector('.nav-item');
+    if (dashboardBtn) dashboardBtn.classList.add('active');
   }, 100);
   
+  // Cerrar menú en móvil
   if (window.innerWidth <= 768) {
     toggleMenu();
   }
 }
 
+// Cerrar menú al hacer resize a escritorio
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    if (sidebar.classList.contains('open')) {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+});
+
+// Cerrar menú con tecla ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.classList.contains('open')) {
+      toggleMenu();
+    }
+  }
+});
+
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   loadDashboard('dashboard.html');
-});
-
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 768) {
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('overlay').classList.remove('active');
-  }
 });
 </script>
 
