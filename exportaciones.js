@@ -1,15 +1,55 @@
 // ============================================================
 // EXPORTACIONES.JS - Sistema completo de exportación
+// Versión corregida: PDF con fondo blanco, fechas DD/MM/YYYY, columna Mes Venta
 // ============================================================
+
+// Función auxiliar para obtener estado
+function getEstadoPorGPV(gpv) {
+    if (gpv === 0 || gpv === null || gpv === undefined) return 'INACTIVO';
+    if (gpv < 400) return 'REGULAR';
+    return 'ACTIVO';
+}
+
+// Función auxiliar para formatear números
+function formatearNumeroExport(num, dec = 2) {
+    if (num === null || num === undefined || isNaN(num)) return dec === 0 ? '0' : '0.00';
+    const numero = Number(num);
+    if (isNaN(numero)) return dec === 0 ? '0' : '0.00';
+    return numero.toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+// Función para formatear fecha a DD/MM/YYYY
+function formatearFechaExport(fecha) {
+    if (!fecha) return '-';
+    if (typeof fecha === 'string' && fecha.includes('-')) {
+        const partes = fecha.split('-');
+        if (partes.length === 3) {
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+    }
+    if (fecha instanceof Date) {
+        return `${fecha.getDate().toString().padStart(2, '0')}/${(fecha.getMonth() + 1).toString().padStart(2, '0')}/${fecha.getFullYear()}`;
+    }
+    return fecha;
+}
+
+// Función para obtener nombre del mes
+function obtenerNombreMesExport(fecha) {
+    if (!fecha) return '-';
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    if (typeof fecha === 'string' && fecha.includes('-')) {
+        const mes = parseInt(fecha.split('-')[1]);
+        return meses[mes - 1];
+    }
+    return '-';
+}
 
 // Función principal que muestra el diálogo de exportación
 function mostrarDialogoExportacion() {
-    // Obtener datos actuales con filtros aplicados
-    const datosActuales = obtenerDatosConFiltrosAplicados();
-    
     // Obtener lista de ejecutivos únicos
-    const ejecutivos = [...new Set(DATOS_COMPLETOS.equipos.map(e => e.responsable_real).filter(e => e))];
-    const meses = DATOS_COMPLETOS.meses_disponibles || [];
+    const ejecutivos = [...new Set(DATOS_COMPLETOS?.equipos.map(e => e.responsable_real).filter(e => e))];
+    const meses = DATOS_COMPLETOS?.meses_disponibles || [];
     
     // Crear modal personalizado
     const modal = document.createElement('div');
@@ -178,13 +218,13 @@ function obtenerDatosConFiltrosAplicados() {
     let equipos = [...(DATOS_COMPLETOS?.equipos || [])];
     
     // Aplicar filtros actuales del dashboard
-    if (mesActual !== 'TODOS') {
+    if (typeof mesActual !== 'undefined' && mesActual !== 'TODOS') {
         equipos = equipos.filter(e => e.mes_venta === mesActual);
     }
-    if (ejecutivoActual !== 'TODOS') {
+    if (typeof ejecutivoActual !== 'undefined' && ejecutivoActual !== 'TODOS') {
         equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
     }
-    if (filtroGPVActual !== 'todos') {
+    if (typeof filtroGPVActual !== 'undefined' && filtroGPVActual !== 'todos') {
         equipos = equipos.filter(e => {
             const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
             switch(filtroGPVActual) {
@@ -257,7 +297,7 @@ function ejecutarExportacion() {
 }
 
 // ============================================================
-// EXPORTAR EXCEL (CSV) - SIN CAMBIOS
+// EXPORTAR EXCEL (CSV)
 // ============================================================
 function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
     const nombreArchivo = `reporte_ventas_${new Date().toISOString().split('T')[0]}`;
@@ -305,26 +345,31 @@ function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
         contenido.push('');
         
         const headers = [
-            '#', 'Fecha Venta', 'Comercio', 'Serie', 'RUC', 
+            '#', 'Fecha Venta', 'Mes Venta', 'Comercio', 'Serie', 'RUC', 
             'Fecha Activación', 'Ejecutivo', 'GPV M0', 'TRX M0', 
             'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'Mes Actual', 
             'GPV Actual', 'TRX Actual', 'Última Transacción', 'Estado'
         ];
         
-        contenido.push(headers.join(','));
+        contenido.push(headers.map(h => `"${h}"`).join(','));
         
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
             const estado = getEstadoPorGPV(gpvActual);
             const estadoTexto = estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo');
+            const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
+            const mesVenta = obtenerNombreMesExport(item.fecha_venta);
+            const fechaActivacionFormateada = formatearFechaExport(item.dia_activo);
+            const ultimaTransaccionFormateada = formatearFechaExport(item.ultima_transaccion);
             
             const row = [
                 i + 1,
-                item.fecha_venta || '',
+                `"${fechaVentaFormateada}"`,
+                `"${mesVenta}"`,
                 `"${(item.comercio || '').replace(/"/g, '""')}"`,
                 item.numero_serie || '',
                 item.ruc || '',
-                item.dia_activo || '',
+                `"${fechaActivacionFormateada}"`,
                 item.responsable_real || '',
                 item.gpv_m0 || 0,
                 item.trx_m0 || 0,
@@ -335,7 +380,7 @@ function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
                 item.etiqueta_mes_actual || '',
                 gpvActual,
                 item.trx_mes_actual_corriendo || 0,
-                item.ultima_transaccion || '',
+                `"${ultimaTransaccionFormateada}"`,
                 estadoTexto
             ];
             contenido.push(row.join(','));
@@ -347,7 +392,7 @@ function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
 }
 
 // ============================================================
-// EXPORTAR TXT - SIN CAMBIOS
+// EXPORTAR TXT
 // ============================================================
 function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
     const nombreArchivo = `reporte_ventas_${new Date().toISOString().split('T')[0]}`;
@@ -412,6 +457,7 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
         contenido.push(
             pad('#', 5) +
             pad('Fecha Venta', 12) +
+            pad('Mes Venta', 12) +
             pad('Comercio', 28) +
             pad('Serie', 15) +
             pad('RUC', 12) +
@@ -425,16 +471,19 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
             pad('GPV Act', 10) +
             pad('Estado', 10)
         );
-        contenido.push('-'.repeat(176));
+        contenido.push('-'.repeat(190));
         
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
             const estado = getEstadoPorGPV(gpvActual);
             const estadoTexto = estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo');
+            const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
+            const mesVenta = obtenerNombreMesExport(item.fecha_venta);
             
             contenido.push(
                 pad(i + 1, 5) +
-                pad(item.fecha_venta || '-', 12) +
+                pad(fechaVentaFormateada, 12) +
+                pad(mesVenta, 12) +
                 pad(item.comercio || '-', 28) +
                 pad(item.numero_serie || '-', 15) +
                 pad(item.ruc || '-', 12) +
@@ -456,7 +505,7 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
 }
 
 // ============================================================
-// EXPORTAR PDF - SOLO CORREGIDO (COLORES FIJOS PARA TEXTO LEGIBLE)
+// EXPORTAR PDF - CORREGIDO (Fondo blanco, fechas DD/MM/YYYY, columna Mes Venta)
 // ============================================================
 function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
     // Crear un elemento temporal para renderizar el PDF con colores fijos
@@ -465,7 +514,7 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
         position: absolute;
         top: -9999px;
         left: -9999px;
-        width: 1200px;
+        width: 1400px;
         background: white;
         padding: 40px;
         font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
@@ -473,10 +522,10 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
     `;
     
     let contenidoHTML = `
-        <div style="margin-bottom: 30px; text-align: center;">
-            <h1 style="color: #0ea5e9; margin-bottom: 10px;">📊 Reporte de Ventas</h1>
-            <p style="color: #333333;">Fecha de exportación: ${new Date().toLocaleString()}</p>
-            <p style="color: #333333;">Total de registros: ${datos.length}</p>
+        <div style="margin-bottom: 30px; text-align: center; border-bottom: 3px solid #0ea5e9; padding-bottom: 20px;">
+            <h1 style="color: #0ea5e9; margin-bottom: 10px; font-size: 32px; font-weight: 700;">📊 Reporte de Ventas</h1>
+            <p style="color: #4a5568; margin: 6px 0; font-size: 14px;">Fecha de exportación: ${new Date().toLocaleString()}</p>
+            <p style="color: #4a5568; margin: 6px 0; font-size: 14px; font-weight: 500;">Total de registros: ${datos.length}</p>
         </div>
     `;
     
@@ -503,44 +552,61 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
         });
         
         contenidoHTML += `
-            <div style="margin-bottom: 30px;">
-                <h2 style="color: #333333; margin-bottom: 15px;">📈 Resumen General</h2>
-                <table style="width: 100%; border-collapse: collapse; background: white;">
-                    <tr style="background: #f5f5f5;">
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left; color: #000000;">Métrica</th>
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: right; color: #000000;">Valor</th>
-                    </tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd; color: #000000;">💰 GPV Total Cohortes</td><td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #000000;">S/ ${totalGPV.toLocaleString('es-PE')}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd; color: #000000;">🧪 GPV M0 (Prueba)</td><td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #000000;">S/ ${totalGPV_M0.toLocaleString('es-PE')}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd; color: #000000;">🚀 GPV M1</td><td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #000000;">S/ ${totalGPV_M1.toLocaleString('es-PE')}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd; color: #000000;">📈 GPV M2</td><td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #000000;">S/ ${totalGPV_M2.toLocaleString('es-PE')}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd; color: #000000;">🛒 Transacciones Totales</td><td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #000000;">${totalTRX.toLocaleString('es-PE')}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd; color: #000000;">✅ Equipos Activos</td><td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #000000;">${activos}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd; color: #000000;">⚠️ Equipos Regulares</td><td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #000000;">${regulares}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd; color: #000000;">❌ Equipos Inactivos</td><td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #000000;">${inactivos}</td></tr>
-                </table>
+            <div style="margin-bottom: 35px;">
+                <h2 style="color: #1e293b; margin-bottom: 20px; font-size: 22px; font-weight: 600; border-left: 4px solid #0ea5e9; padding-left: 15px;">📈 Resumen General</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div style="background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">💰 GPV Total Cohortes</div>
+                        <div style="color: #0f172a; font-size: 28px; font-weight: 700;">S/ ${formatearNumeroExport(totalGPV)}</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">🧪 GPV M0 (Prueba)</div>
+                        <div style="color: #0f172a; font-size: 28px; font-weight: 700;">S/ ${formatearNumeroExport(totalGPV_M0)}</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">🚀 GPV M1</div>
+                        <div style="color: #0f172a; font-size: 28px; font-weight: 700;">S/ ${formatearNumeroExport(totalGPV_M1)}</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">📈 GPV M2</div>
+                        <div style="color: #0f172a; font-size: 28px; font-weight: 700;">S/ ${formatearNumeroExport(totalGPV_M2)}</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">🛒 Transacciones Totales</div>
+                        <div style="color: #0f172a; font-size: 28px; font-weight: 700;">${formatearNumeroExport(totalTRX, 0)}</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">📊 Distribución de Equipos</div>
+                        <div style="display: flex; gap: 15px; margin-top: 8px;">
+                            <div><span style="color: #22c55e;">✅</span> ${activos}</div>
+                            <div><span style="color: #f97316;">⚠️</span> ${regulares}</div>
+                            <div><span style="color: #ef4444;">❌</span> ${inactivos}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }
     
     if (incluirTabla) {
         contenidoHTML += `
-            <div>
-                <h2 style="color: #333333; margin-bottom: 15px;">📋 Tabla Detallada de Equipos</h2>
+            <div style="margin-top: 25px;">
+                <h2 style="color: #1e293b; margin-bottom: 20px; font-size: 22px; font-weight: 600; border-left: 4px solid #0ea5e9; padding-left: 15px;">📋 Tabla Detallada de Equipos</h2>
                 <table style="width: 100%; border-collapse: collapse; font-size: 9px; background: white;">
                     <thead>
-                        <tr style="background: #f5f5f5;">
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">#</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">Fecha Venta</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">Comercio</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">Serie</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">RUC</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">Ejecutivo</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">GPV M0</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">GPV M1</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">GPV M2</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">GPV Act</th>
-                            <th style="padding: 6px; border: 1px solid #ddd; color: #000000;">Estado</th>
+                        <tr style="background: #ffffff; border-bottom: 2px solid #0ea5e9;">
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">#</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Fecha Venta</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Mes Venta</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Comercio</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Serie</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">RUC</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Ejecutivo</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M0</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M1</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M2</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV Act</th>
+                            <th style="padding: 10px 6px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -549,29 +615,50 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
             const estado = getEstadoPorGPV(gpvActual);
-            const estadoTexto = estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo');
-            const colorEstado = estado === 'ACTIVO' ? '#22c55e' : (estado === 'REGULAR' ? '#f97316' : '#ef4444');
+            let estadoTexto = '';
+            let estadoColor = '';
+            
+            if (estado === 'ACTIVO') {
+                estadoTexto = '✅ Activo';
+                estadoColor = '#22c55e';
+            } else if (estado === 'REGULAR') {
+                estadoTexto = '⚠️ Regular';
+                estadoColor = '#f97316';
+            } else {
+                estadoTexto = '❌ Inactivo';
+                estadoColor = '#ef4444';
+            }
+            
+            const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
+            const mesVenta = obtenerNombreMesExport(item.fecha_venta);
+            
+            // Alternar colores de fila para mejor legibilidad
+            const bgColor = i % 2 === 0 ? '#ffffff' : '#f9fafb';
             
             contenidoHTML += `
-                <tr>
-                    <td style="padding: 4px; border: 1px solid #ddd; color: #000000;">${i + 1}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; color: #000000;">${item.fecha_venta || '-'}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; color: #000000;">${(item.comercio || '-').substring(0, 25)}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; color: #000000;">${item.numero_serie || '-'}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; color: #000000;">${item.ruc || '-'}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; color: #000000;">${item.responsable_real || '-'}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; text-align: right; color: #000000;">${item.gpv_m0 || 0}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; text-align: right; color: #000000;">${item.gpv_m1 || 0}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; text-align: right; color: #000000;">${item.gpv_m2 || 0}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; text-align: right; color: #000000; font-weight: bold;">${gpvActual}</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; text-align: center; color: ${colorEstado}; font-weight: bold;">${estadoTexto}</td>
-                </tr>
+                <tr style="background: ${bgColor};">
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: center; color: #1f2937;">${i + 1}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: center; color: #1f2937;">${fechaVentaFormateada}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: center; color: #1f2937; font-weight: 500;">${mesVenta}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; color: #1f2937; font-weight: 500;">${(item.comercio || '-').substring(0, 35)}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; color: #4b5563; font-family: monospace; font-size: 8px;">${item.numero_serie || '-'}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; color: #4b5563;">${item.ruc || '-'}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; color: #4b5563;">${item.responsable_real || '-'}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #0f172a;">${formatearNumeroExport(gpvActual, 0)}</td>
+                    <td style="padding: 8px 6px; border: 1px solid #ddd; text-align: center; color: ${estadoColor}; font-weight: 600;">${estadoTexto}</td>
+                 </tr>
             `;
         });
         
         contenidoHTML += `
                     </tbody>
-                </table>
+                 </table>
+                <div style="margin-top: 20px; padding: 12px; background: #f8fafc; border-radius: 12px; text-align: center; color: #64748b; font-size: 10px; border: 1px solid #e2e8f0;">
+                    📊 Reporte generado el ${new Date().toLocaleString()} | Total: ${datos.length} registros
+                </div>
             </div>
         `;
     }
@@ -586,40 +673,65 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
     const scriptJspdf = document.createElement('script');
     scriptJspdf.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
     
-    scriptHtml2canvas.onload = () => {
-        scriptJspdf.onload = () => {
+    let scriptsLoaded = 0;
+    
+    function checkAndGeneratePDF() {
+        if (scriptsLoaded === 2 && window.html2canvas && window.jspdf) {
             html2canvas(elementoPDF, {
-                scale: 2,
+                scale: 2.5,
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff'
             }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
+                const imgData = canvas.toDataURL('image/png', 1.0);
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgWidth = 210;
-                const pageHeight = 297;
+                const imgWidth = 190;
+                const pageHeight = 277;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 let heightLeft = imgHeight;
                 let position = 0;
                 
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
                 
                 while (heightLeft > 0) {
                     position = heightLeft - imgHeight;
                     pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
                 }
                 
                 pdf.save(`reporte_ventas_${new Date().toISOString().split('T')[0]}.pdf`);
                 document.body.removeChild(elementoPDF);
+            }).catch(err => {
+                console.error('Error generando PDF:', err);
+                alert('Error al generar el PDF. Por favor intenta con formato CSV o TXT.');
+                document.body.removeChild(elementoPDF);
             });
-        };
-        document.head.appendChild(scriptJspdf);
+        }
+    }
+    
+    scriptHtml2canvas.onload = () => {
+        scriptsLoaded++;
+        checkAndGeneratePDF();
     };
+    
+    scriptJspdf.onload = () => {
+        scriptsLoaded++;
+        checkAndGeneratePDF();
+    };
+    
     document.head.appendChild(scriptHtml2canvas);
+    document.head.appendChild(scriptJspdf);
+    
+    // Timeout por si falla la carga
+    setTimeout(() => {
+        if (scriptsLoaded < 2) {
+            alert('Error: No se pudieron cargar las librerías para generar PDF. Por favor verifica tu conexión a internet.');
+            document.body.removeChild(elementoPDF);
+        }
+    }, 10000);
 }
 
 function descargarArchivo(blob, nombreArchivo) {
@@ -631,10 +743,4 @@ function descargarArchivo(blob, nombreArchivo) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-}
-
-function getEstadoPorGPV(gpv) {
-    if (gpv === 0 || gpv === null || gpv === undefined) return 'INACTIVO';
-    if (gpv < 400) return 'REGULAR';
-    return 'ACTIVO';
 }
