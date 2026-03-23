@@ -1,6 +1,7 @@
 // ============================================================
 // EXPORTACIONES.JS - Sistema completo de exportación
-// Versión corregida: PDF con fondo blanco, fechas DD/MM/YYYY, columna Mes Venta
+// Versión final: PDF con fondo blanco, fechas DD/MM/YYYY, 
+// columna Mes Venta, TRX M0/M1/M2, Fecha Activación, Última Transacción
 // ============================================================
 
 // Función auxiliar para obtener estado
@@ -345,10 +346,10 @@ function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
         contenido.push('');
         
         const headers = [
-            '#', 'Fecha Venta', 'Mes Venta', 'Comercio', 'Serie', 'RUC', 
-            'Fecha Activación', 'Ejecutivo', 'GPV M0', 'TRX M0', 
-            'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 'Mes Actual', 
-            'GPV Actual', 'TRX Actual', 'Última Transacción', 'Estado'
+            '#', 'Fecha Venta', 'Mes Venta', 'Fecha Activación', 'Última Transacción',
+            'Comercio', 'Serie', 'RUC', 'Ejecutivo', 
+            'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 
+            'Mes Actual', 'GPV Actual', 'TRX Actual', 'Estado'
         ];
         
         contenido.push(headers.map(h => `"${h}"`).join(','));
@@ -366,10 +367,11 @@ function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
                 i + 1,
                 `"${fechaVentaFormateada}"`,
                 `"${mesVenta}"`,
+                `"${fechaActivacionFormateada}"`,
+                `"${ultimaTransaccionFormateada}"`,
                 `"${(item.comercio || '').replace(/"/g, '""')}"`,
                 item.numero_serie || '',
                 item.ruc || '',
-                `"${fechaActivacionFormateada}"`,
                 item.responsable_real || '',
                 item.gpv_m0 || 0,
                 item.trx_m0 || 0,
@@ -380,7 +382,6 @@ function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
                 item.etiqueta_mes_actual || '',
                 gpvActual,
                 item.trx_mes_actual_corriendo || 0,
-                `"${ultimaTransaccionFormateada}"`,
                 estadoTexto
             ];
             contenido.push(row.join(','));
@@ -458,6 +459,8 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
             pad('#', 5) +
             pad('Fecha Venta', 12) +
             pad('Mes Venta', 12) +
+            pad('Fecha Activación', 14) +
+            pad('Última Transacción', 16) +
             pad('Comercio', 28) +
             pad('Serie', 15) +
             pad('RUC', 12) +
@@ -471,7 +474,7 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
             pad('GPV Act', 10) +
             pad('Estado', 10)
         );
-        contenido.push('-'.repeat(190));
+        contenido.push('-'.repeat(220));
         
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
@@ -479,11 +482,15 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
             const estadoTexto = estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo');
             const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
             const mesVenta = obtenerNombreMesExport(item.fecha_venta);
+            const fechaActivacionFormateada = formatearFechaExport(item.dia_activo);
+            const ultimaTransaccionFormateada = formatearFechaExport(item.ultima_transaccion);
             
             contenido.push(
                 pad(i + 1, 5) +
                 pad(fechaVentaFormateada, 12) +
                 pad(mesVenta, 12) +
+                pad(fechaActivacionFormateada, 14) +
+                pad(ultimaTransaccionFormateada, 16) +
                 pad(item.comercio || '-', 28) +
                 pad(item.numero_serie || '-', 15) +
                 pad(item.ruc || '-', 12) +
@@ -505,10 +512,7 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
 }
 
 // ============================================================
-// EXPORTAR PDF - CORREGIDO (Fondo blanco, fechas DD/MM/YYYY, columna Mes Venta)
-// ============================================================
-// ============================================================
-// EXPORTAR PDF - CORREGIDO (Con TRX M0, M1, M2 y fondo blanco)
+// EXPORTAR PDF - VERSIÓN FINAL COMPLETA
 // ============================================================
 function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
     // Crear un elemento temporal para renderizar el PDF con colores fijos
@@ -517,7 +521,7 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
         position: absolute;
         top: -9999px;
         left: -9999px;
-        width: 1600px;
+        width: 1800px;
         background: white;
         padding: 40px;
         font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
@@ -604,24 +608,26 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
         contenidoHTML += `
             <div style="margin-top: 25px;">
                 <h2 style="color: #1e293b; margin-bottom: 20px; font-size: 22px; font-weight: 600; border-left: 4px solid #0ea5e9; padding-left: 15px;">📋 Tabla Detallada de Equipos</h2>
-                <table style="width: 100%; border-collapse: collapse; font-size: 8px; background: white;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 7.5px; background: white;">
                     <thead>
                         <tr style="background: #ffffff; border-bottom: 2px solid #0ea5e9;">
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">#</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Fecha Venta</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Mes Venta</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Comercio</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Serie</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">RUC</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Ejecutivo</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M0</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">TRX M0</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M1</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">TRX M1</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M2</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">TRX M2</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV Act</th>
-                            <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Estado</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">#</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Fecha Venta</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Mes Venta</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Fecha Activación</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Última Transacción</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Comercio</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Serie</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">RUC</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: left; font-weight: 700; color: #000000; background: #ffffff;">Ejecutivo</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M0</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">TRX M0</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M1</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">TRX M1</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV M2</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">TRX M2</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #000000; background: #ffffff;">GPV Act</th>
+                            <th style="padding: 8px 3px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #000000; background: #ffffff;">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -646,27 +652,31 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
             
             const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
             const mesVenta = obtenerNombreMesExport(item.fecha_venta);
+            const fechaActivacionFormateada = formatearFechaExport(item.dia_activo);
+            const ultimaTransaccionFormateada = formatearFechaExport(item.ultima_transaccion);
             
             // Alternar colores de fila para mejor legibilidad
             const bgColor = i % 2 === 0 ? '#ffffff' : '#f9fafb';
             
             contenidoHTML += `
                 <tr style="background: ${bgColor};">
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center; color: #1f2937;">${i + 1}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center; color: #1f2937;">${fechaVentaFormateada}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center; color: #1f2937; font-weight: 500;">${mesVenta}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; color: #1f2937; font-weight: 500;">${(item.comercio || '-').substring(0, 30)}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; color: #4b5563; font-family: monospace; font-size: 7px;">${item.numero_serie || '-'}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; color: #4b5563;">${item.ruc || '-'}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; color: #4b5563;">${item.responsable_real || '-'}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right; color: #1f2937; font-weight: ${(item.trx_m0 || 0) > 0 ? '600' : 'normal'};">${item.trx_m0 || 0}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right; color: #1f2937; font-weight: ${(item.trx_m1 || 0) > 0 ? '600' : 'normal'};">${item.trx_m1 || 0}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right; color: #1f2937; font-weight: ${(item.trx_m2 || 0) > 0 ? '600' : 'normal'};">${item.trx_m2 || 0}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #0f172a;">${formatearNumeroExport(gpvActual, 0)}</td>
-                    <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center; color: ${estadoColor}; font-weight: 600;">${estadoTexto}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: center; color: #1f2937;">${i + 1}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: center; color: #1f2937;">${fechaVentaFormateada}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: center; color: #1f2937; font-weight: 500;">${mesVenta}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: center; color: #1f2937;">${fechaActivacionFormateada}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: center; color: #1f2937;">${ultimaTransaccionFormateada}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; color: #1f2937; font-weight: 500;">${(item.comercio || '-').substring(0, 28)}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; color: #4b5563; font-family: monospace; font-size: 6.5px;">${item.numero_serie || '-'}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; color: #4b5563;">${item.ruc || '-'}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; color: #4b5563;">${item.responsable_real || '-'}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: right; color: #1f2937; font-weight: ${(item.trx_m0 || 0) > 0 ? '600' : 'normal'};">${item.trx_m0 || 0}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: right; color: #1f2937; font-weight: ${(item.trx_m1 || 0) > 0 ? '600' : 'normal'};">${item.trx_m1 || 0}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: right; color: #1f2937;">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: right; color: #1f2937; font-weight: ${(item.trx_m2 || 0) > 0 ? '600' : 'normal'};">${item.trx_m2 || 0}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: #0f172a;">${formatearNumeroExport(gpvActual, 0)}</td>
+                    <td style="padding: 5px 3px; border: 1px solid #ddd; text-align: center; color: ${estadoColor}; font-weight: 600;">${estadoTexto}</td>
                 </tr>
             `;
         });
