@@ -45,7 +45,7 @@
   }
 
   .upload-container {
-    max-width: 900px;
+    max-width: 1000px;
     width: 100%;
     background: var(--superficie);
     border: 1px solid var(--borde);
@@ -144,7 +144,7 @@
     border-radius: 16px;
     display: none;
     text-align: left;
-    max-height: 400px;
+    max-height: 500px;
     overflow-y: auto;
   }
 
@@ -163,7 +163,7 @@
 
   .ai-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 12px;
     margin-top: 12px;
   }
@@ -297,18 +297,24 @@
 
   .preview-table {
     margin-top: 16px;
-    overflow-x: auto;
-    font-size: 12px;
+  }
+
+  .preview-table summary {
+    cursor: pointer;
+    margin: 12px 0;
+    color: var(--acento);
+    font-weight: 600;
   }
 
   .preview-table table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 11px;
   }
 
   .preview-table th, .preview-table td {
     border: 1px solid var(--borde);
-    padding: 8px;
+    padding: 6px;
     text-align: left;
   }
 
@@ -353,9 +359,10 @@
 
 <script>
 // Configuración
-const URL_API = 'https://script.google.com/macros/s/AKfycbxrpU-UO0QDoRQ3fvYwYUwi1oe2Ph__9VSWaQklqEReQt1B4qsPpzsFYvBVGDHTnZlz/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbzKPb1KkD0Vl9o36zTwkciNvcLJGE9vDjMlTpOktP6GTED2Dm0f7dZxsVVsEPCvN6og/exec';
 const GEMINI_API_KEY = 'AIzaSyB9D2GyERM-t2JL_qDaMKJUzedDjcPgGuI';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+// URL CORREGIDA para Gemini API
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
 let selectedFile = null;
 let fileDataParsed = null;
@@ -434,10 +441,13 @@ async function handleFile(file) {
   } catch (error) {
     console.error('Error al analizar archivo:', error);
     aiContent.innerHTML = `
-      <div style="color: var(--rojo);">
-        ❌ Error al analizar: ${error.message}
+      <div style="color: var(--amarillo);">
+        ⚠️ Error al analizar: ${error.message}<br>
+        Puedes continuar con la subida manual.
       </div>
+      ${generateBasicStats(fileDataParsed || [])}
     `;
+    uploadBtn.disabled = false;
   }
 }
 
@@ -528,15 +538,39 @@ function parseCSVLine(line) {
   return result.map(v => v.trim().replace(/^"|"$/g, ''));
 }
 
+function generateBasicStats(data) {
+  if (!data || data.length === 0) return '<div>No hay datos para mostrar</div>';
+  
+  const totalRows = data.length;
+  const withNumSerie = data.filter(row => row.num_serie || row.numserie).length;
+  
+  let totalGPV = 0;
+  data.forEach(row => {
+    const gpv = parseFloat(row.gpv_m0) || parseFloat(row.gpv) || 0;
+    totalGPV += gpv;
+  });
+  
+  return `
+    <div class="ai-stats">
+      <div class="stat-card">
+        <div class="stat-label">📊 Registros</div>
+        <div class="stat-value">${totalRows.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🔢 Con Serie</div>
+        <div class="stat-value">${withNumSerie}/${totalRows}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">💰 GPV Estimado</div>
+        <div class="stat-value">S/ ${totalGPV.toLocaleString()}</div>
+      </div>
+    </div>
+  `;
+}
+
 async function analyzeWithGemini(data, filename) {
   const totalRows = data.length;
-  const firstRow = data[0] || {};
-  const columns = Object.keys(firstRow);
-  
-  // Detectar columnas importantes
-  const hasNumSerie = columns.some(c => c.includes('num_serie') || c.includes('numserie'));
-  const hasRUC = columns.some(c => c.includes('identificador') || c.includes('ruc'));
-  const hasComercio = columns.some(c => c.includes('nbr_comercial') || c.includes('comercio'));
+  const columns = Object.keys(data[0] || {});
   
   // Contar calidad de datos
   const withNumSerie = data.filter(row => {
@@ -549,45 +583,39 @@ async function analyzeWithGemini(data, filename) {
     return val && val.toString().trim();
   }).length;
   
-  // Calcular GPV total aproximado
+  // Calcular métricas
   let totalGPV = 0;
+  let totalTRX = 0;
   data.forEach(row => {
     const gpv = parseFloat(row.gpv_m0) || parseFloat(row.gpv) || 0;
+    const trx = parseInt(row.trx_m0) || 0;
     totalGPV += gpv;
+    totalTRX += trx;
   });
   
-  // Preparar prompt para Gemini
-  const sampleData = data.slice(0, 3);
-  
-  const prompt = `
-Eres un experto en análisis de datos de ventas y punto de venta. Analiza el siguiente archivo "${filename}" y proporciona:
+  // Preparar prompt conciso para Gemini
+  const prompt = `Eres un experto en análisis de datos de ventas. Analiza este archivo "${filename}" y responde en español de forma breve:
 
-1. **RESUMEN GENERAL**:
-   - Total de registros: ${totalRows}
-   - Columnas encontradas: ${columns.slice(0, 15).join(', ')}${columns.length > 15 ? '...' : ''}
-   - Calidad de datos: ${Math.round((withNumSerie/totalRows)*100)}% tienen número de serie, ${Math.round((withRUC/totalRows)*100)}% tienen RUC
-   - GPV total estimado: S/ ${totalGPV.toLocaleString()}
+DATOS:
+- Registros: ${totalRows}
+- Con número de serie: ${withNumSerie}/${totalRows}
+- Con RUC: ${withRUC}/${totalRows}
+- GPV total estimado: S/ ${totalGPV.toLocaleString()}
+- Transacciones totales: ${totalTRX}
 
-2. **DETECCIÓN DE PROBLEMAS**:
-   - Valores faltantes en campos críticos
-   - Posibles formatos de fecha incorrectos
-   - Valores atípicos en GPV
+Columnas: ${columns.slice(0, 12).join(', ')}
 
-3. **RECOMENDACIONES**:
-   - Acciones sugeridas antes de subir
-   - Mejoras para futuros reportes
+PRIMER REGISTRO EJEMPLO:
+${JSON.stringify(data[0], null, 2)}
 
-4. **ANÁLISIS DE NEGOCIO**:
-   - Basado en la estructura, ¿qué insights puedes dar?
-   - ¿Hay algún riesgo o alerta importante?
-
-DATOS DE MUESTRA (primeros 3 registros):
-${JSON.stringify(sampleData, null, 2)}
-
-Responde en español, con formato claro y conciso, usando viñetas donde sea apropiado.
-`;
+RESPONDE EN ESTE FORMATO EXACTO:
+📊 RESUMEN: [2 líneas]
+⚠️ PROBLEMAS: [lista de problemas detectados, máximo 3]
+💡 RECOMENDACIÓN: [1 recomendación principal]`;
 
   try {
+    console.log('Enviando solicitud a Gemini API...');
+    
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -601,66 +629,51 @@ Responde en español, con formato claro y conciso, usando viñetas donde sea apr
         }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 500,
         }
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Error API Gemini: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
     }
 
     const result = await response.json();
-    const analysis = result.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar análisis';
+    const analysis = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Análisis generado correctamente';
     
     aiAnalysis = analysis;
     
-    // Mostrar análisis y preview
+    // Mostrar análisis completo
     displayAIAnalysis(analysis, data, {
       totalRows,
       columns,
       withNumSerie,
       withRUC,
       totalGPV,
-      hasNumSerie,
-      hasRUC,
-      hasComercio
+      totalTRX
     });
     
   } catch (error) {
     console.error('Error llamando a Gemini:', error);
     aiContent.innerHTML = `
-      <div style="color: var(--amarillo);">
+      <div style="color: var(--amarillo); margin-bottom: 12px;">
         ⚠️ No se pudo conectar con Gemini AI: ${error.message}<br>
-        Puedes continuar con la subida manual.
+        Mostrando estadísticas básicas del archivo.
       </div>
       ${generateBasicStats(data)}
+      <div class="warning-list">
+        💡 Puedes continuar con la subida manual haciendo clic en "Validar y Subir Datos"
+      </div>
     `;
   }
-}
-
-function generateBasicStats(data) {
-  const totalRows = data.length;
-  const withNumSerie = data.filter(row => row.num_serie || row.numserie).length;
-  
-  return `
-    <div class="ai-stats">
-      <div class="stat-card">
-        <div class="stat-label">📊 Registros</div>
-        <div class="stat-value">${totalRows.toLocaleString()}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">🔢 Con Serie</div>
-        <div class="stat-value">${withNumSerie}/${totalRows}</div>
-      </div>
-    </div>
-  `;
 }
 
 function displayAIAnalysis(analysis, data, stats) {
   // Mostrar preview de los primeros registros
   const previewRows = data.slice(0, 5);
-  const columns = Object.keys(data[0] || {}).slice(0, 8);
+  const previewColumns = Object.keys(data[0] || {}).slice(0, 6);
   
   const html = `
     <div class="ai-stats">
@@ -680,10 +693,14 @@ function displayAIAnalysis(analysis, data, stats) {
         <div class="stat-label">💰 GPV Estimado</div>
         <div class="stat-value">S/ ${stats.totalGPV.toLocaleString()}</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-label">🛒 Transacciones</div>
+        <div class="stat-value">${stats.totalTRX.toLocaleString()}</div>
+      </div>
     </div>
     
     <div class="recommendation-box">
-      <strong>🤖 Análisis Gemini:</strong>
+      <strong>🤖 Análisis Gemini AI:</strong>
       <div style="margin-top: 8px; white-space: pre-wrap; font-size: 12px; line-height: 1.5;">
         ${escapeHtml(analysis)}
       </div>
@@ -692,25 +709,27 @@ function displayAIAnalysis(analysis, data, stats) {
     <div class="warning-list">
       ${stats.withNumSerie < stats.totalRows ? '⚠️ Hay registros sin número de serie. Estos no podrán ser actualizados correctamente.<br>' : ''}
       ${stats.withRUC < stats.totalRows * 0.8 ? '⚠️ Muchos registros sin RUC. Verificar calidad de datos.<br>' : ''}
-      ${!stats.hasNumSerie ? '⚠️ No se detectó columna "num_serie". Verificar que los datos tengan número de serie.<br>' : ''}
+      ${stats.totalRows > 0 ? '✅ Listo para subir. El sistema actualizará automáticamente la base de datos.' : ''}
     </div>
     
     <details class="preview-table">
-      <summary style="cursor: pointer; margin: 12px 0; color: var(--acento);">📋 Vista previa de datos (primeros 5 registros)</summary>
-      <table>
-        <thead>
-          <tr>
-            ${columns.map(col => `<th>${col}</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${previewRows.map(row => `
+      <summary>📋 Vista previa de datos (primeros ${previewRows.length} registros)</summary>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
             <tr>
-              ${columns.map(col => `<td>${escapeHtml(String(row[col] || '-').substring(0, 30))}</td>`).join('')}
+              ${previewColumns.map(col => `<th>${col}</th>`).join('')}
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${previewRows.map(row => `
+              <tr>
+                ${previewColumns.map(col => `<td title="${escapeHtml(String(row[col] || '-'))}">${escapeHtml(String(row[col] || '-').substring(0, 30))}${String(row[col] || '-').length > 30 ? '...' : ''}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
     </details>
   `;
   
@@ -751,7 +770,6 @@ uploadBtn.addEventListener('click', async () => {
     formData.append('usuario', 'dashboard_user');
     formData.append('tipo', selectedFile.name.split('.').pop().toLowerCase());
     
-    // Incluir análisis de IA si existe
     if (aiAnalysis) {
       formData.append('ai_analysis', aiAnalysis.substring(0, 1000));
     }
@@ -776,8 +794,8 @@ uploadBtn.addEventListener('click', async () => {
         <div class="result-details">
           ${result.mensaje || 'Datos actualizados correctamente'}<br>
           ${result.resultado ? `📊 Nuevas filas: ${result.resultado.nuevas} | Actualizadas: ${result.resultado.actualizadas}` : ''}
-          ${result.errores ? `<br>⚠️ Errores: ${result.resultado?.errores || 0}` : ''}
-          ${aiAnalysis ? '<br>🤖 Análisis de IA incluido en el reporte' : ''}
+          ${result.resultado?.errores > 0 ? `<br>⚠️ Errores: ${result.resultado.errores}` : ''}
+          ${aiAnalysis ? '<br>🤖 Análisis de IA incluido en el log' : ''}
         </div>
       `;
       
@@ -785,6 +803,13 @@ uploadBtn.addEventListener('click', async () => {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'datos-actualizados' }, '*');
       }
+      
+      // Limpiar selección después de subida exitosa
+      setTimeout(() => {
+        selectedFile = null;
+        selectedFileDiv.classList.remove('show');
+        uploadBtn.disabled = true;
+      }, 3000);
       
     } else {
       throw new Error(result.mensaje || result.error || 'Error desconocido');
@@ -798,7 +823,11 @@ uploadBtn.addEventListener('click', async () => {
       <div class="result-details">
         ${error.message}<br>
         Verifica que el archivo tenga el formato correcto y vuelve a intentarlo.
-        ${error.stack ? `<details><summary>Detalles técnicos</summary><pre style="font-size: 11px; margin-top: 8px;">${error.stack}</pre></details>` : ''}
+        <br><br>
+        <strong>Posibles soluciones:</strong><br>
+        • Asegúrate que el archivo tenga la estructura correcta (columnas esperadas)<br>
+        • Verifica que el número de serie sea único<br>
+        • Intenta con un archivo más pequeño primero
       </div>
     `;
   } finally {
