@@ -588,6 +588,13 @@
     font-weight: 500;
   }
 
+  .alerta-inactivo {
+    color: #ef4444;
+    font-size: 10px;
+    margin-top: 2px;
+    text-align: right;
+  }
+
   .timeline-trx {
     display: flex;
     gap: 8px;
@@ -713,7 +720,7 @@
   <!-- Gráficas -->
   <div class="grid-graficas">
     <div class="tarjeta-grafica">
-      <div class="titulo-grafica">📈 GPV por Ejecutivo (Mes Actual)</div>
+      <div class="titulo-grafica" id="tituloGraficaEjecutivos">📈 GPV por Ejecutivo (Mes Actual)</div>
       <div class="contenedor-grafica">
         <canvas id="chartEjecutivos"></canvas>
       </div>
@@ -757,9 +764,9 @@
     </div>
     
     <div class="contenedor-tabla">
-      <table>
+       <table>
         <thead>
-          <tr>
+           <tr>
             <th>#</th>
             <th>Fecha Venta</th>
             <th>Comercio</th>
@@ -769,17 +776,17 @@
             <th style="text-align: center;">TRX M0/M1/M2</th>
             <th>Última Transacción</th>
             <th style="text-align: center;">Estado</th>
-          </tr>
+           </tr>
         </thead>
         <tbody id="tablaCuerpo"></tbody>
-      </table>
+       </table>
     </div>
   </div>
 </main>
 
 <script>
 // Configuración
-const URL_API = 'https://script.google.com/macros/s/AKfycbzHasQkanPNk5uNx59ll8dbn0hzw0INba8MHS4_QZaCjPvm4fYkEvnnMrKTvOoPMiiS/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbxBqQwxjp60qJ3YJv0bzT49TL1HczvkyjnzQ4a3JjLh245hh8LRZISBCBjkVFxZJX9T/exec';
 const META_VENTAS = 10;
 
 let DATOS_COMPLETOS = null;
@@ -799,7 +806,30 @@ const COLORES_GRAFICA = {
 };
 
 // ============================================================
-// FUNCIÓN PARA OBTENER ESTADO BASADO EN GPV (NUEVA)
+// 🔥 NUEVA FUNCIÓN PARA OBTENER ETIQUETA DE MES ACTUAL REAL
+// ============================================================
+function obtenerEtiquetaMesReal(gpvActual) {
+  const hoy = new Date();
+  const mesActualTexto = hoy.toLocaleString('es-PE', { month: 'long' }).toUpperCase();
+  
+  if (gpvActual === 0) {
+    return `SIN ACTIVIDAD (${mesActualTexto})`;
+  }
+  return `ACTIVO (${mesActualTexto})`;
+}
+
+// ============================================================
+// 🔥 NUEVA FUNCIÓN PARA OBTENER CLASE DE GPV (MEJORADA)
+// ============================================================
+function getGPVClass(gpv) {
+  if (!gpv || gpv === 0) return 'gpv-inactivo';
+  if (gpv >= 700) return 'gpv-excelente';
+  if (gpv >= 400) return 'gpv-bueno';
+  return 'gpv-bajo';
+}
+
+// ============================================================
+// FUNCIÓN PARA OBTENER ESTADO BASADO EN GPV
 // ============================================================
 function getEstadoPorGPV(gpv) {
   if (gpv === 0) return 'INACTIVO';
@@ -856,17 +886,6 @@ window.addEventListener('load', () => {
   const currentTheme = document.documentElement.getAttribute('data-theme');
   notificarTemaAParent(currentTheme);
 });
-
-// ============================================================
-// FUNCIONES AUXILIARES
-// ============================================================
-
-function getGPVClass(gpv) {
-  if (!gpv || gpv === 0) return 'gpv-inactivo';
-  if (gpv >= 700) return 'gpv-excelente';
-  if (gpv >= 400) return 'gpv-bueno';
-  return 'gpv-bajo';
-}
 
 // CARGA DATOS
 async function cargarDatos(forzar = false) {
@@ -1010,11 +1029,18 @@ function renderizarResumen() {
   document.getElementById('resumenCards').innerHTML = html;
 }
 
-// GRÁFICAS - SIN CAMBIOS
+// 🔥 GRÁFICAS - ACTUALIZADO TÍTULO CON MES REAL
 function renderizarGraficas() {
   const equipos = getEquiposFiltrados();
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const textColor = isDark ? '#94a3b8' : '#64748b';
+  
+  // 🔥 ACTUALIZAR TÍTULO DE LA GRÁFICA CON EL MES REAL
+  const mesActualTexto = new Date().toLocaleString('es-PE', { month: 'long' });
+  const tituloGrafica = document.getElementById('tituloGraficaEjecutivos');
+  if (tituloGrafica) {
+    tituloGrafica.innerText = `📈 GPV por Ejecutivo (${mesActualTexto.toUpperCase()})`;
+  }
   
   if (chartEjecutivos) chartEjecutivos.destroy();
   if (chartDistribucion) chartDistribucion.destroy();
@@ -1208,7 +1234,7 @@ function renderizarEjecutivos() {
   });
 }
 
-// TABLA CON LÍNEA DE TIEMPO M0/M1/M2 - MODIFICADA PARA AÑADIR ENUMERACIÓN Y CORREGIR ESTADO
+// 🔥 TABLA CON LÍNEA DE TIEMPO M0/M1/M2 - MODIFICADA CON NUEVA LÓGICA
 function renderizarTabla() {
   let equipos = getEquiposFiltrados();
   
@@ -1249,14 +1275,27 @@ function renderizarTabla() {
     const trxM2 = parseInt(eq.trx_m2) || 0;
     
     // Determinar mes actual corriendo
-    const mesActualIdx = eq.mes_actual_idx || 0;
+    const mesActualIdx = eq.mes_actual_idx || -1;
     const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
-    const etiquetaMes = eq.etiqueta_mes_actual || 'M0 (Prueba)';
+    
+    // 🔥 NUEVA ETIQUETA BASADA EN MES REAL
+    const etiquetaMesReal = obtenerEtiquetaMesReal(gpvActual);
     
     const gpvClass = getGPVClass(gpvActual);
     const esMulti = comerciosCount[`${eq.ruc}_${eq.comercio}`] > 1;
     
-    // 🔥 NUEVA LÓGICA DE ESTADO BASADA EN GPV ACTUAL (CORREGIDO)
+    // 🔥 NUEVA LÓGICA: SOLO RESALTAR SI HAY ACTIVIDAD EN EL MES ACTUAL
+    let classM0 = '';
+    let classM1 = '';
+    let classM2 = '';
+    
+    if (gpvActual > 0) {
+      if (mesActualIdx === 0) classM0 = 'activo-m0';
+      if (mesActualIdx === 1) classM1 = 'activo-m1';
+      if (mesActualIdx === 2) classM2 = 'activo-m2';
+    }
+    
+    // Estado basado en GPV actual
     const estadoCalculado = getEstadoPorGPV(gpvActual);
     let estadoBadge = '';
     if (estadoCalculado === 'ACTIVO') {
@@ -1267,10 +1306,10 @@ function renderizarTabla() {
       estadoBadge = '<span class="badge-estado badge-inactivo">● Inactivo</span>';
     }
     
-    // Clases para destacar el mes actual
-    const classM0 = mesActualIdx === 0 ? 'activo-m0' : '';
-    const classM1 = mesActualIdx === 1 ? 'activo-m1' : '';
-    const classM2 = mesActualIdx === 2 ? 'activo-m2' : '';
+    // 🔥 ALERTA VISUAL PARA INACTIVOS
+    const alertaInactivo = gpvActual === 0 
+      ? '<div class="alerta-inactivo">⚠️ Sin ventas este mes</div>' 
+      : '';
     
     return `
       <tr>
@@ -1301,7 +1340,8 @@ function renderizarTabla() {
               <span class="mes-badge ${classM1}" title="Mes 1">M1: ${formatearNumero(gpvM1, 0)}</span>
               <span class="mes-badge ${classM2}" title="Mes 2">M2: ${formatearNumero(gpvM2, 0)}</span>
             </div>
-            <div class="etiqueta-mes-actual">🕐 ${etiquetaMes} </div>
+            <div class="etiqueta-mes-actual">🕐 ${etiquetaMesReal}</div>
+            ${alertaInactivo}
           </div>
         </td>
         <td style="text-align: center;">
@@ -1416,7 +1456,7 @@ function exportarExcel() {
       e.trx_m1 || 0,
       e.gpv_m2 || 0,
       e.trx_m2 || 0,
-      e.etiqueta_mes_actual || '',
+      obtenerEtiquetaMesReal(parseFloat(e.gpv_mes_actual_corriendo) || 0),
       e.gpv_mes_actual_corriendo || 0,
       e.trx_mes_actual_corriendo || 0,
       e.ultima_transaccion || '',
