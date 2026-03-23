@@ -1,0 +1,32 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]          # cambia si usas otra rama
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false    # ← Esto evita cancelaciones automáticas
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # No build necesario (HTML/JS/CSS estático)
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .                 # todo el repo (incluye dashboard.html, index.html, etc.)
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
