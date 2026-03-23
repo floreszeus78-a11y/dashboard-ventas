@@ -1,7 +1,6 @@
 // ============================================================
 // EXPORTACIONES.JS - Sistema completo de exportación
-// Versión final: PDF con fondo blanco, fechas DD/MM/YYYY, 
-// columna Mes Venta, TRX M0/M1/M2, Fecha Activación, Última Transacción
+// Versión final: Con nombre de ejecutivo en archivo y contenido
 // ============================================================
 
 // Función auxiliar para obtener estado
@@ -44,6 +43,36 @@ function obtenerNombreMesExport(fecha) {
         return meses[mes - 1];
     }
     return '-';
+}
+
+// Función para obtener el nombre del ejecutivo para el título
+function obtenerNombreEjecutivoParaTitulo() {
+    if (typeof ejecutivoActual !== 'undefined' && ejecutivoActual !== 'TODOS') {
+        return ejecutivoActual;
+    }
+    return null;
+}
+
+// Función para obtener el texto del filtro para el título
+function obtenerTextoFiltroParaTitulo() {
+    let texto = '';
+    if (typeof ejecutivoActual !== 'undefined' && ejecutivoActual !== 'TODOS') {
+        texto += ` - Ejecutivo: ${ejecutivoActual}`;
+    }
+    if (typeof mesActual !== 'undefined' && mesActual !== 'TODOS') {
+        texto += ` - Mes: ${mesActual}`;
+    }
+    if (typeof filtroGPVActual !== 'undefined' && filtroGPVActual !== 'todos') {
+        let gpvTexto = '';
+        switch(filtroGPVActual) {
+            case 'meta': gpvTexto = 'Meta (≥700)'; break;
+            case 'promedio': gpvTexto = 'Promedio (400-699)'; break;
+            case 'bajo': gpvTexto = 'Sin utilidad (1-399)'; break;
+            case 'riesgo': gpvTexto = 'Riesgo (0)'; break;
+        }
+        texto += ` - GPV: ${gpvTexto}`;
+    }
+    return texto;
 }
 
 // Función principal que muestra el diálogo de exportación
@@ -241,6 +270,34 @@ function obtenerDatosConFiltrosAplicados() {
     return equipos;
 }
 
+function obtenerNombreArchivo(baseNombre, datos) {
+    let nombreArchivo = baseNombre;
+    
+    // Verificar si hay un ejecutivo seleccionado en los filtros actuales
+    let ejecutivoSeleccionado = null;
+    
+    // Primero verificar si se seleccionó en el modal
+    const rango = document.getElementById('rangoExportacion')?.value;
+    if (rango === 'ejecutivo') {
+        ejecutivoSeleccionado = document.getElementById('ejecutivoSeleccionado')?.value;
+    }
+    // Si no, verificar los filtros actuales del dashboard
+    else if (typeof ejecutivoActual !== 'undefined' && ejecutivoActual !== 'TODOS') {
+        ejecutivoSeleccionado = ejecutivoActual;
+    }
+    
+    if (ejecutivoSeleccionado && ejecutivoSeleccionado !== '') {
+        // Limpiar nombre para archivo (eliminar caracteres especiales)
+        const nombreLimpio = ejecutivoSeleccionado.replace(/[^a-zA-Z0-9]/g, '_');
+        nombreArchivo += `_${nombreLimpio}`;
+    }
+    
+    // Agregar fecha
+    nombreArchivo += `_${new Date().toISOString().split('T')[0]}`;
+    
+    return nombreArchivo;
+}
+
 function ejecutarExportacion() {
     const formato = document.getElementById('formatoExportacion').value;
     const rango = document.getElementById('rangoExportacion').value;
@@ -248,30 +305,38 @@ function ejecutarExportacion() {
     const incluirTabla = document.getElementById('incluirTabla').checked;
     
     let datos = [];
+    let ejecutivoEspecifico = null;
+    let mesEspecifico = null;
     
     // Obtener datos según el rango seleccionado
     switch(rango) {
         case 'filtros_actuales':
             datos = obtenerDatosConFiltrosAplicados();
+            if (typeof ejecutivoActual !== 'undefined' && ejecutivoActual !== 'TODOS') {
+                ejecutivoEspecifico = ejecutivoActual;
+            }
+            if (typeof mesActual !== 'undefined' && mesActual !== 'TODOS') {
+                mesEspecifico = mesActual;
+            }
             break;
         case 'todos':
             datos = [...(DATOS_COMPLETOS?.equipos || [])];
             break;
         case 'ejecutivo':
-            const ejecutivo = document.getElementById('ejecutivoSeleccionado').value;
-            if (!ejecutivo) {
+            ejecutivoEspecifico = document.getElementById('ejecutivoSeleccionado').value;
+            if (!ejecutivoEspecifico) {
                 alert('Por favor selecciona un ejecutivo');
                 return;
             }
-            datos = DATOS_COMPLETOS.equipos.filter(e => e.responsable_real === ejecutivo);
+            datos = DATOS_COMPLETOS.equipos.filter(e => e.responsable_real === ejecutivoEspecifico);
             break;
         case 'mes':
-            const mes = document.getElementById('mesSeleccionado').value;
-            if (!mes) {
+            mesEspecifico = document.getElementById('mesSeleccionado').value;
+            if (!mesEspecifico) {
                 alert('Por favor selecciona un mes');
                 return;
             }
-            datos = DATOS_COMPLETOS.equipos.filter(e => e.mes_venta === mes);
+            datos = DATOS_COMPLETOS.equipos.filter(e => e.mes_venta === mesEspecifico);
             break;
     }
     
@@ -283,16 +348,23 @@ function ejecutarExportacion() {
     // Cerrar modal
     cerrarModalExportacion();
     
+    // Determinar nombre base del archivo
+    let nombreBase = 'reporte_ventas';
+    if (ejecutivoEspecifico) {
+        const nombreLimpio = ejecutivoEspecifico.replace(/[^a-zA-Z0-9]/g, '_');
+        nombreBase = `REPORTE-${nombreLimpio}`;
+    }
+    
     // Exportar según formato
     switch(formato) {
         case 'excel':
-            exportarExcelCompleto(datos, incluirResumen, incluirTabla);
+            exportarExcelCompleto(datos, incluirResumen, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico);
             break;
         case 'pdf':
-            exportarPDFCompleto(datos, incluirResumen, incluirTabla);
+            exportarPDFCompleto(datos, incluirResumen, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico);
             break;
         case 'txt':
-            exportarTXTCompleto(datos, incluirResumen, incluirTabla);
+            exportarTXTCompleto(datos, incluirResumen, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico);
             break;
     }
 }
@@ -300,9 +372,22 @@ function ejecutarExportacion() {
 // ============================================================
 // EXPORTAR EXCEL (CSV)
 // ============================================================
-function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
-    const nombreArchivo = `reporte_ventas_${new Date().toISOString().split('T')[0]}`;
+function exportarExcelCompleto(datos, incluirResumen, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
+    const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
     let contenido = [];
+    
+    // Título del reporte
+    let tituloReporte = 'REPORTE DE VENTAS';
+    if (ejecutivoEspecifico) {
+        tituloReporte += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
+    }
+    if (mesEspecifico) {
+        tituloReporte += ` - MES: ${mesEspecifico}`;
+    }
+    
+    contenido.push(`=== ${tituloReporte} ===`);
+    contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
+    contenido.push('');
     
     if (incluirResumen) {
         // Calcular totales para resumen
@@ -327,7 +412,6 @@ function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
         });
         
         contenido.push('=== RESUMEN DEL REPORTE ===');
-        contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
         contenido.push(`Total de registros: ${datos.length}`);
         contenido.push(`GPV Total: S/ ${totalGPV.toLocaleString('es-PE')}`);
         contenido.push(`GPV M0: S/ ${totalGPV_M0.toLocaleString('es-PE')}`);
@@ -395,10 +479,25 @@ function exportarExcelCompleto(datos, incluirResumen, incluirTabla) {
 // ============================================================
 // EXPORTAR TXT
 // ============================================================
-function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
-    const nombreArchivo = `reporte_ventas_${new Date().toISOString().split('T')[0]}`;
+function exportarTXTCompleto(datos, incluirResumen, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
+    const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
     let contenido = [];
     const separador = '='.repeat(100);
+    
+    // Título del reporte
+    let tituloReporte = 'REPORTE DE VENTAS';
+    if (ejecutivoEspecifico) {
+        tituloReporte += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
+    }
+    if (mesEspecifico) {
+        tituloReporte += ` - MES: ${mesEspecifico}`;
+    }
+    
+    contenido.push(separador);
+    contenido.push(tituloReporte);
+    contenido.push(separador);
+    contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
+    contenido.push('');
     
     if (incluirResumen) {
         // Calcular totales
@@ -426,7 +525,6 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
         contenido.push('RESUMEN DEL REPORTE');
         contenido.push(separador);
         contenido.push('');
-        contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
         contenido.push(`Total de registros: ${datos.length}`);
         contenido.push('');
         contenido.push('📊 INDICADORES PRINCIPALES:');
@@ -512,9 +610,11 @@ function exportarTXTCompleto(datos, incluirResumen, incluirTabla) {
 }
 
 // ============================================================
-// EXPORTAR PDF - VERSIÓN FINAL COMPLETA
+// EXPORTAR PDF - VERSIÓN FINAL CON NOMBRE DE EJECUTIVO
 // ============================================================
-function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
+function exportarPDFCompleto(datos, incluirResumen, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
+    const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
+    
     // Crear un elemento temporal para renderizar el PDF con colores fijos
     const elementoPDF = document.createElement('div');
     elementoPDF.style.cssText = `
@@ -528,9 +628,21 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
         color: #000000;
     `;
     
+    // Construir título con información del filtro
+    let tituloPrincipal = '📊 Reporte de Ventas';
+    let subtitulo = '';
+    if (ejecutivoEspecifico) {
+        tituloPrincipal = `📊 Reporte de Ventas - ${ejecutivoEspecifico}`;
+        subtitulo = `👤 Ejecutivo: ${ejecutivoEspecifico}`;
+    }
+    if (mesEspecifico) {
+        subtitulo += subtitulo ? ` | 📅 Mes: ${mesEspecifico}` : `📅 Mes: ${mesEspecifico}`;
+    }
+    
     let contenidoHTML = `
         <div style="margin-bottom: 30px; text-align: center; border-bottom: 3px solid #0ea5e9; padding-bottom: 20px;">
-            <h1 style="color: #0ea5e9; margin-bottom: 10px; font-size: 32px; font-weight: 700;">📊 Reporte de Ventas</h1>
+            <h1 style="color: #0ea5e9; margin-bottom: 10px; font-size: 32px; font-weight: 700;">${tituloPrincipal}</h1>
+            ${subtitulo ? `<p style="color: #0ea5e9; margin: 5px 0; font-size: 16px; font-weight: 500;">${subtitulo}</p>` : ''}
             <p style="color: #4a5568; margin: 6px 0; font-size: 14px;">Fecha de exportación: ${new Date().toLocaleString()}</p>
             <p style="color: #4a5568; margin: 6px 0; font-size: 14px; font-weight: 500;">Total de registros: ${datos.length}</p>
         </div>
@@ -730,7 +842,7 @@ function exportarPDFCompleto(datos, incluirResumen, incluirTabla) {
                     heightLeft -= pageHeight;
                 }
                 
-                pdf.save(`reporte_ventas_${new Date().toISOString().split('T')[0]}.pdf`);
+                pdf.save(`${nombreArchivo}.pdf`);
                 document.body.removeChild(elementoPDF);
             }).catch(err => {
                 console.error('Error generando PDF:', err);
