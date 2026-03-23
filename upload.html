@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Subir Reporte - Panel Ventas</title>
+<title>Subir Reporte - Panel Ventas con IA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root {
     --fondo: #0a0e1a;
@@ -16,6 +17,8 @@
     --texto-suave: #94a3b8;
     --verde: #22c55e;
     --rojo: #ef4444;
+    --amarillo: #eab308;
+    --morado: #8b5cf6;
   }
 
   [data-theme="light"] {
@@ -42,33 +45,49 @@
   }
 
   .upload-container {
-    max-width: 600px;
+    max-width: 900px;
     width: 100%;
     background: var(--superficie);
     border: 1px solid var(--borde);
     border-radius: 32px;
     padding: 40px;
-    text-align: center;
   }
 
   .upload-icon {
     font-size: 80px;
     margin-bottom: 20px;
+    text-align: center;
   }
 
   h1 {
     font-size: 28px;
     font-weight: 800;
-    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    background: linear-gradient(135deg, var(--acento), var(--morado));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 12px;
+    text-align: center;
   }
 
   .desc {
     color: var(--texto-suave);
     margin-bottom: 32px;
     line-height: 1.6;
+    text-align: center;
+  }
+
+  .ai-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .drop-area {
@@ -78,6 +97,7 @@
     margin-bottom: 24px;
     transition: all 0.3s;
     cursor: pointer;
+    text-align: center;
   }
 
   .drop-area.drag-over {
@@ -117,6 +137,74 @@
     display: block;
   }
 
+  .ai-preview {
+    margin: 16px 0;
+    padding: 20px;
+    background: var(--superficie2);
+    border-radius: 16px;
+    display: none;
+    text-align: left;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .ai-preview.show {
+    display: block;
+  }
+
+  .ai-preview h4 {
+    color: var(--acento);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+  }
+
+  .ai-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .stat-card {
+    background: var(--superficie);
+    padding: 12px;
+    border-radius: 12px;
+    border-left: 3px solid var(--acento);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--texto);
+    margin-top: 4px;
+  }
+
+  .warning-list {
+    margin-top: 12px;
+    padding-left: 20px;
+    color: var(--amarillo);
+    font-size: 12px;
+  }
+
+  .recommendation-box {
+    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(14,165,233,0.1));
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    border: 1px solid var(--morado);
+  }
+
   .btn-upload {
     width: 100%;
     padding: 16px;
@@ -124,7 +212,7 @@
     font-weight: 700;
     font-size: 16px;
     cursor: pointer;
-    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    background: linear-gradient(135deg, var(--acento), var(--morado));
     color: white;
     border: none;
     margin-top: 16px;
@@ -161,7 +249,7 @@
   .progress-fill {
     width: 0%;
     height: 100%;
-    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    background: linear-gradient(135deg, var(--acento), var(--morado));
     border-radius: 4px;
     transition: width 0.3s;
   }
@@ -190,30 +278,68 @@
   .result-title {
     font-weight: 700;
     margin-bottom: 12px;
+    font-size: 18px;
   }
 
   .result-details {
     font-size: 13px;
     color: var(--texto-suave);
   }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .loading-ai {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .preview-table {
+    margin-top: 16px;
+    overflow-x: auto;
+    font-size: 12px;
+  }
+
+  .preview-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .preview-table th, .preview-table td {
+    border: 1px solid var(--borde);
+    padding: 8px;
+    text-align: left;
+  }
+
+  .preview-table th {
+    background: var(--superficie);
+    font-weight: 600;
+  }
 </style>
 </head>
 <body>
 <div class="upload-container">
-  <div class="upload-icon">📤</div>
-  <h1>Actualizar Reporte de Ventas</h1>
-  <p class="desc">Sube tu archivo Excel o CSV con los datos diarios<br>El sistema validará y actualizará automáticamente la base de datos</p>
+  <div class="upload-icon">🤖📤</div>
+  <h1>Subir Reporte con IA</h1>
+  <div class="ai-badge">✨ Powered by Gemini AI ✨</div>
+  <p class="desc">Sube tu archivo Excel (.xlsx, .xls) o CSV<br>La IA validará, limpiará y enriquecerá los datos automáticamente</p>
 
   <div class="drop-area" id="dropArea">
     <div>📁 Arrastra tu archivo aquí</div>
-    <div style="font-size: 12px; margin-top: 8px; color: var(--texto-suave);">o</div>
-    <input type="file" id="fileInput" class="file-input" accept=".csv,.xlsx,.xls">
+    <div style="font-size: 12px; margin-top: 8px; color: var(--texto-suave);">Soporta Excel (.xlsx, .xls) y CSV</div>
+    <input type="file" id="fileInput" class="file-input" accept=".csv,.xlsx,.xls,.xlsm">
     <label for="fileInput" class="file-label">Seleccionar archivo</label>
   </div>
 
   <div class="selected-file" id="selectedFile"></div>
+  
+  <div class="ai-preview" id="aiPreview">
+    <h4>🤖 Análisis de IA</h4>
+    <div id="aiContent">Cargando análisis...</div>
+  </div>
 
-  <button class="btn-upload" id="uploadBtn" disabled>📤 Subir y Actualizar Datos</button>
+  <button class="btn-upload" id="uploadBtn" disabled>📤 Validar y Subir Datos</button>
 
   <div class="progress" id="progress">
     <div class="progress-bar">
@@ -226,9 +352,14 @@
 </div>
 
 <script>
-const URL_API = 'https://script.google.com/macros/s/AKfycbzRc0WYRBm6dcAxmV9iim7oWNe4R6Hn2mE6LR4HTCH1fpps9KXlbO8HH_gdj7kq9AI_/exec';
+// Configuración
+const URL_API = 'https://script.google.com/macros/s/AKfycbzKPb1KkD0Vl9o36zTwkciNvcLJGE9vDjMlTpOktP6GTED2Dm0f7dZxsVVsEPCvN6og/exec';
+const GEMINI_API_KEY = 'AIzaSyB9D2GyERM-t2JL_qDaMKJUzedDjcPgGuI';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
 let selectedFile = null;
+let fileDataParsed = null;
+let aiAnalysis = null;
 
 // Elementos DOM
 const dropArea = document.getElementById('dropArea');
@@ -239,6 +370,8 @@ const progress = document.getElementById('progress');
 const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
 const resultDiv = document.getElementById('result');
+const aiPreview = document.getElementById('aiPreview');
+const aiContent = document.getElementById('aiContent');
 
 // Eventos de drag & drop
 dropArea.addEventListener('dragover', (e) => {
@@ -259,16 +392,15 @@ dropArea.addEventListener('drop', (e) => {
   }
 });
 
-// Evento de selección de archivo
 fileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     handleFile(e.target.files[0]);
   }
 });
 
-function handleFile(file) {
+async function handleFile(file) {
   const extension = file.name.split('.').pop().toLowerCase();
-  if (!['csv', 'xlsx', 'xls'].includes(extension)) {
+  if (!['csv', 'xlsx', 'xls', 'xlsm'].includes(extension)) {
     alert('Formato no soportado. Usa CSV o Excel (.xlsx, .xls)');
     return;
   }
@@ -276,7 +408,319 @@ function handleFile(file) {
   selectedFile = file;
   selectedFileDiv.innerHTML = `✅ Archivo seleccionado: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
   selectedFileDiv.classList.add('show');
-  uploadBtn.disabled = false;
+  uploadBtn.disabled = true;
+  
+  // Mostrar loading en AI preview
+  aiPreview.classList.add('show');
+  aiContent.innerHTML = '<div class="loading-ai">🤖 Analizando datos con Gemini AI...</div>';
+  
+  try {
+    // Leer y parsear el archivo según su tipo
+    if (extension === 'csv') {
+      fileDataParsed = await parseCSVFile(file);
+    } else {
+      fileDataParsed = await parseExcelFile(file);
+    }
+    
+    if (!fileDataParsed || fileDataParsed.length === 0) {
+      throw new Error('No se pudieron extraer datos del archivo');
+    }
+    
+    // Analizar con Gemini
+    await analyzeWithGemini(fileDataParsed, file.name);
+    
+    uploadBtn.disabled = false;
+    
+  } catch (error) {
+    console.error('Error al analizar archivo:', error);
+    aiContent.innerHTML = `
+      <div style="color: var(--rojo);">
+        ❌ Error al analizar: ${error.message}
+      </div>
+    `;
+  }
+}
+
+function parseCSVFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csvString = e.target.result;
+        const lines = csvString.split(/\r?\n/);
+        if (lines.length < 2) {
+          resolve([]);
+          return;
+        }
+        
+        const headers = parseCSVLine(lines[0]).map(h => 
+          h.toLowerCase().trim().replace(/["']/g, '').replace(/\s+/g, '_')
+        );
+        
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          const values = parseCSVLine(lines[i]);
+          const row = {};
+          headers.forEach((h, idx) => {
+            row[h] = values[idx] || '';
+          });
+          data.push(row);
+        }
+        resolve(data);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+
+function parseExcelFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+        
+        // Normalizar nombres de columnas
+        const normalizedData = jsonData.map(row => {
+          const normalized = {};
+          Object.keys(row).forEach(key => {
+            const newKey = key.toLowerCase().trim().replace(/\s+/g, '_');
+            normalized[newKey] = row[key];
+          });
+          return normalized;
+        });
+        
+        resolve(normalizedData);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+  
+  return result.map(v => v.trim().replace(/^"|"$/g, ''));
+}
+
+async function analyzeWithGemini(data, filename) {
+  const totalRows = data.length;
+  const firstRow = data[0] || {};
+  const columns = Object.keys(firstRow);
+  
+  // Detectar columnas importantes
+  const hasNumSerie = columns.some(c => c.includes('num_serie') || c.includes('numserie'));
+  const hasRUC = columns.some(c => c.includes('identificador') || c.includes('ruc'));
+  const hasComercio = columns.some(c => c.includes('nbr_comercial') || c.includes('comercio'));
+  
+  // Contar calidad de datos
+  const withNumSerie = data.filter(row => {
+    const val = row.num_serie || row.numserie;
+    return val && val.toString().trim();
+  }).length;
+  
+  const withRUC = data.filter(row => {
+    const val = row.identificador_tributario || row.ruc;
+    return val && val.toString().trim();
+  }).length;
+  
+  // Calcular GPV total aproximado
+  let totalGPV = 0;
+  data.forEach(row => {
+    const gpv = parseFloat(row.gpv_m0) || parseFloat(row.gpv) || 0;
+    totalGPV += gpv;
+  });
+  
+  // Preparar prompt para Gemini
+  const sampleData = data.slice(0, 3);
+  
+  const prompt = `
+Eres un experto en análisis de datos de ventas y punto de venta. Analiza el siguiente archivo "${filename}" y proporciona:
+
+1. **RESUMEN GENERAL**:
+   - Total de registros: ${totalRows}
+   - Columnas encontradas: ${columns.slice(0, 15).join(', ')}${columns.length > 15 ? '...' : ''}
+   - Calidad de datos: ${Math.round((withNumSerie/totalRows)*100)}% tienen número de serie, ${Math.round((withRUC/totalRows)*100)}% tienen RUC
+   - GPV total estimado: S/ ${totalGPV.toLocaleString()}
+
+2. **DETECCIÓN DE PROBLEMAS**:
+   - Valores faltantes en campos críticos
+   - Posibles formatos de fecha incorrectos
+   - Valores atípicos en GPV
+
+3. **RECOMENDACIONES**:
+   - Acciones sugeridas antes de subir
+   - Mejoras para futuros reportes
+
+4. **ANÁLISIS DE NEGOCIO**:
+   - Basado en la estructura, ¿qué insights puedes dar?
+   - ¿Hay algún riesgo o alerta importante?
+
+DATOS DE MUESTRA (primeros 3 registros):
+${JSON.stringify(sampleData, null, 2)}
+
+Responde en español, con formato claro y conciso, usando viñetas donde sea apropiado.
+`;
+
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error API Gemini: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const analysis = result.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar análisis';
+    
+    aiAnalysis = analysis;
+    
+    // Mostrar análisis y preview
+    displayAIAnalysis(analysis, data, {
+      totalRows,
+      columns,
+      withNumSerie,
+      withRUC,
+      totalGPV,
+      hasNumSerie,
+      hasRUC,
+      hasComercio
+    });
+    
+  } catch (error) {
+    console.error('Error llamando a Gemini:', error);
+    aiContent.innerHTML = `
+      <div style="color: var(--amarillo);">
+        ⚠️ No se pudo conectar con Gemini AI: ${error.message}<br>
+        Puedes continuar con la subida manual.
+      </div>
+      ${generateBasicStats(data)}
+    `;
+  }
+}
+
+function generateBasicStats(data) {
+  const totalRows = data.length;
+  const withNumSerie = data.filter(row => row.num_serie || row.numserie).length;
+  
+  return `
+    <div class="ai-stats">
+      <div class="stat-card">
+        <div class="stat-label">📊 Registros</div>
+        <div class="stat-value">${totalRows.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🔢 Con Serie</div>
+        <div class="stat-value">${withNumSerie}/${totalRows}</div>
+      </div>
+    </div>
+  `;
+}
+
+function displayAIAnalysis(analysis, data, stats) {
+  // Mostrar preview de los primeros registros
+  const previewRows = data.slice(0, 5);
+  const columns = Object.keys(data[0] || {}).slice(0, 8);
+  
+  const html = `
+    <div class="ai-stats">
+      <div class="stat-card">
+        <div class="stat-label">📊 Registros</div>
+        <div class="stat-value">${stats.totalRows.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🔢 Con Serie</div>
+        <div class="stat-value">${stats.withNumSerie}/${stats.totalRows}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🏢 Con RUC</div>
+        <div class="stat-value">${stats.withRUC}/${stats.totalRows}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">💰 GPV Estimado</div>
+        <div class="stat-value">S/ ${stats.totalGPV.toLocaleString()}</div>
+      </div>
+    </div>
+    
+    <div class="recommendation-box">
+      <strong>🤖 Análisis Gemini:</strong>
+      <div style="margin-top: 8px; white-space: pre-wrap; font-size: 12px; line-height: 1.5;">
+        ${escapeHtml(analysis)}
+      </div>
+    </div>
+    
+    <div class="warning-list">
+      ${stats.withNumSerie < stats.totalRows ? '⚠️ Hay registros sin número de serie. Estos no podrán ser actualizados correctamente.<br>' : ''}
+      ${stats.withRUC < stats.totalRows * 0.8 ? '⚠️ Muchos registros sin RUC. Verificar calidad de datos.<br>' : ''}
+      ${!stats.hasNumSerie ? '⚠️ No se detectó columna "num_serie". Verificar que los datos tengan número de serie.<br>' : ''}
+    </div>
+    
+    <details class="preview-table">
+      <summary style="cursor: pointer; margin: 12px 0; color: var(--acento);">📋 Vista previa de datos (primeros 5 registros)</summary>
+      <table>
+        <thead>
+          <tr>
+            ${columns.map(col => `<th>${col}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${previewRows.map(row => `
+            <tr>
+              ${columns.map(col => `<td>${escapeHtml(String(row[col] || '-').substring(0, 30))}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </details>
+  `;
+  
+  aiContent.innerHTML = html;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 uploadBtn.addEventListener('click', async () => {
@@ -285,11 +729,10 @@ uploadBtn.addEventListener('click', async () => {
   uploadBtn.disabled = true;
   progress.classList.add('show');
   resultDiv.classList.remove('show');
-  progressFill.style.width = '30%';
-  progressText.textContent = 'Validando archivo...';
+  progressFill.style.width = '20%';
+  progressText.textContent = 'Preparando archivo...';
   
   try {
-    // Leer el archivo
     const reader = new FileReader();
     
     const fileData = await new Promise((resolve, reject) => {
@@ -298,20 +741,28 @@ uploadBtn.addEventListener('click', async () => {
       reader.readAsDataURL(selectedFile);
     });
     
-    progressFill.style.width = '60%';
+    progressFill.style.width = '50%';
     progressText.textContent = 'Enviando a Google Sheets...';
     
-    // Enviar al servidor
     const formData = new FormData();
     formData.append('action', 'upload');
     formData.append('archivo', fileData);
     formData.append('nombre', selectedFile.name);
     formData.append('usuario', 'dashboard_user');
+    formData.append('tipo', selectedFile.name.split('.').pop().toLowerCase());
+    
+    // Incluir análisis de IA si existe
+    if (aiAnalysis) {
+      formData.append('ai_analysis', aiAnalysis.substring(0, 1000));
+    }
     
     const response = await fetch(URL_API, {
       method: 'POST',
       body: formData
     });
+    
+    progressFill.style.width = '80%';
+    progressText.textContent = 'Procesando respuesta...';
     
     const result = await response.json();
     
@@ -325,6 +776,8 @@ uploadBtn.addEventListener('click', async () => {
         <div class="result-details">
           ${result.mensaje || 'Datos actualizados correctamente'}<br>
           ${result.resultado ? `📊 Nuevas filas: ${result.resultado.nuevas} | Actualizadas: ${result.resultado.actualizadas}` : ''}
+          ${result.errores ? `<br>⚠️ Errores: ${result.resultado?.errores || 0}` : ''}
+          ${aiAnalysis ? '<br>🤖 Análisis de IA incluido en el reporte' : ''}
         </div>
       `;
       
@@ -345,6 +798,7 @@ uploadBtn.addEventListener('click', async () => {
       <div class="result-details">
         ${error.message}<br>
         Verifica que el archivo tenga el formato correcto y vuelve a intentarlo.
+        ${error.stack ? `<details><summary>Detalles técnicos</summary><pre style="font-size: 11px; margin-top: 8px;">${error.stack}</pre></details>` : ''}
       </div>
     `;
   } finally {
