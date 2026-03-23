@@ -2,8 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"]           # cambia si tu rama es master u otra
-  workflow_dispatch:             # permite correr manual desde Actions
+    branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false      # ← clave: NO cancela jobs anteriores, espera
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -24,11 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # No build necesario (HTML/JS/CSS estático)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .                  # todo el repo (dashboard.html, index.html, etc.)
+          path: .
 
       - name: Deploy to GitHub Pages
         id: deployment
