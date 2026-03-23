@@ -359,10 +359,11 @@
 
 <script>
 // Configuración
-const URL_API = 'https://script.google.com/macros/s/AKfycbyiLRjrmNArkoK0U5ckXdCQQCpxYpgu8oWsGX09YG8qV3Qc1I0O2KhX5rKTcSsJzuK6/exec';
-const GEMINI_API_KEY = 'AIzaSyB9D2GyERM-t2JL_qDaMKJUzedDjcPgGuI';
-// URL CORREGIDA para Gemini API
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+const URL_API = 'https://script.google.com/macros/s/AKfycbxDPMd_ZEm47Op3CMUZgGKmhamovIiILzPwdPe91YXh9Yw2dAJIJVChtPLKomSmZig/exec';
+// API KEY CORRECTA de tu curl
+const GEMINI_API_KEY = 'AIzaSyBf_sWcPRhJfbqzwlxrKozgO9Ca-b5KMW4';
+// URL CORRECTA de Gemini (usando gemini-flash-latest como en tu curl)
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
 let selectedFile = null;
 let fileDataParsed = null;
@@ -433,6 +434,9 @@ async function handleFile(file) {
       throw new Error('No se pudieron extraer datos del archivo');
     }
     
+    console.log('Datos parseados:', fileDataParsed.length, 'registros');
+    console.log('Primer registro:', fileDataParsed[0]);
+    
     // Analizar con Gemini
     await analyzeWithGemini(fileDataParsed, file.name);
     
@@ -441,11 +445,14 @@ async function handleFile(file) {
   } catch (error) {
     console.error('Error al analizar archivo:', error);
     aiContent.innerHTML = `
-      <div style="color: var(--amarillo);">
+      <div style="color: var(--amarillo); margin-bottom: 12px;">
         ⚠️ Error al analizar: ${error.message}<br>
-        Puedes continuar con la subida manual.
+        Mostrando estadísticas básicas del archivo.
       </div>
       ${generateBasicStats(fileDataParsed || [])}
+      <div class="warning-list">
+        💡 Puedes continuar con la subida manual haciendo clic en "Validar y Subir Datos"
+      </div>
     `;
     uploadBtn.disabled = false;
   }
@@ -615,6 +622,7 @@ RESPONDE EN ESTE FORMATO EXACTO:
 
   try {
     console.log('Enviando solicitud a Gemini API...');
+    console.log('URL:', GEMINI_API_URL);
     
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -774,6 +782,9 @@ uploadBtn.addEventListener('click', async () => {
       formData.append('ai_analysis', aiAnalysis.substring(0, 1000));
     }
     
+    console.log('Enviando archivo a:', URL_API);
+    console.log('Tipo:', selectedFile.name.split('.').pop().toLowerCase());
+    
     const response = await fetch(URL_API, {
       method: 'POST',
       body: formData
@@ -783,6 +794,7 @@ uploadBtn.addEventListener('click', async () => {
     progressText.textContent = 'Procesando respuesta...';
     
     const result = await response.json();
+    console.log('Respuesta:', result);
     
     progressFill.style.width = '100%';
     progressText.textContent = 'Procesamiento completado';
@@ -816,7 +828,7 @@ uploadBtn.addEventListener('click', async () => {
     }
     
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error detallado:', error);
     resultDiv.className = 'result error show';
     resultDiv.innerHTML = `
       <div class="result-title">❌ Error al Actualizar</div>
