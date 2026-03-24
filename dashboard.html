@@ -793,7 +793,7 @@
 
 <script>
 // Configuración
-const URL_API = 'https://script.google.com/macros/s/AKfycbyKx4AXs8l5TKUS61pSARE6ibAJuE2vEGrUm1CGOoUiPH6FMbSKOMVOQXdNbjS3wpYh/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbyqipGBxXoQNo5hBw8mtHeJIA_f_ItEmbMD7UFbnv2rB36OUrUu9Z-cOTrnBWfzQDec/exec';
 const META_VENTAS = 10;
 
 let DATOS_COMPLETOS = null;
@@ -814,16 +814,22 @@ const COLORES_GRAFICA = {
 };
 
 // ============================================================
-// 🔥 NUEVA FUNCIÓN PARA OBTENER ETIQUETA DE MES ACTUAL REAL
+// 🔥 CORRECCIÓN: Usar datos del servidor para etiqueta de mes
 // ============================================================
-function obtenerEtiquetaMesReal(gpvActual) {
-  const hoy = new Date();
-  const mesActualTexto = hoy.toLocaleString('es-PE', { month: 'long' }).toUpperCase();
-  
-  if (gpvActual === 0) {
-    return `SIN ACTIVIDAD (${mesActualTexto})`;
+function obtenerEtiquetaMesReal(eq) {
+  // Usar directamente lo que viene del servidor (calculado en Code.gs)
+  if (eq.etiqueta_mes_actual && eq.etiqueta_mes_actual !== 'SIN ACTIVIDAD') {
+    return eq.etiqueta_mes_actual;
   }
-  return `ACTIVO (${mesActualTexto})`;
+  
+  // Fallback: calcular basado en mes_actual_idx
+  const idx = eq.mes_actual_idx;
+  if (idx === 0) return 'M0 (Mes de venta)';
+  if (idx === 1) return 'M1 (Primer mes post-venta)';
+  if (idx === 2) return 'M2 (Segundo mes post-venta)';
+  if (idx === -1) return 'CICLO COMPLETADO';
+  
+  return 'SIN ACTIVIDAD';
 }
 
 // ============================================================
@@ -1383,7 +1389,7 @@ function renderizarEjecutivos() {
   });
 }
 
-// 🔥 TABLA CON LÍNEA DE TIEMPO M0/M1/M2 - MEJORADA CON CLICKS
+// 🔥 TABLA CON LÍNEA DE TIEMPO M0/M1/M2 - CORREGIDA
 function renderizarTabla() {
   let equipos = getEquiposFiltrados();
   
@@ -1411,7 +1417,7 @@ function renderizarTabla() {
   const tbody = document.getElementById('tablaCuerpo');
   
   if (equipos.length === 0) {
-    tbody.innerHTML = '前进<td colspan="9" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos en este filtro</td> </tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos en este filtro</td></tr>';
     return;
   }
   
@@ -1423,44 +1429,37 @@ function renderizarTabla() {
     const trxM1 = parseInt(eq.trx_m1) || 0;
     const trxM2 = parseInt(eq.trx_m2) || 0;
     
-    // Determinar mes actual corriendo
-    const mesActualIdx = eq.mes_actual_idx || -1;
+    // Usar datos del servidor (que ya calculó correctamente el mes)
+    const mesActualIdx = eq.mes_actual_idx !== undefined ? eq.mes_actual_idx : -1;
     const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
     
-    // 🔥 NUEVA ETIQUETA BASADA EN MES REAL
-    const etiquetaMesReal = obtenerEtiquetaMesReal(gpvActual);
+    // 🔥 CORRECCIÓN: Usar la etiqueta que viene del servidor
+    const etiquetaMes = obtenerEtiquetaMesReal(eq);
     
     const gpvClass = getGPVClass(gpvActual);
     const esMulti = comerciosCount[`${eq.ruc}_${eq.comercio}`] > 1;
     
-    // 🔥 NUEVA LÓGICA: SOLO RESALTAR SI HAY ACTIVIDAD EN EL MES ACTUAL
-    let classM0 = '';
-    let classM1 = '';
-    let classM2 = '';
+    // Resaltar el mes que está corriendo actualmente según el servidor
+    let classM0 = '', classM1 = '', classM2 = '';
+    if (mesActualIdx === 0) classM0 = 'activo-m0';
+    else if (mesActualIdx === 1) classM1 = 'activo-m1';
+    else if (mesActualIdx === 2) classM2 = 'activo-m2';
     
-    if (gpvActual > 0) {
-      if (mesActualIdx === 0) classM0 = 'activo-m0';
-      if (mesActualIdx === 1) classM1 = 'activo-m1';
-      if (mesActualIdx === 2) classM2 = 'activo-m2';
-    }
-    
-    // Estado basado en GPV actual
-    const estadoCalculado = getEstadoPorGPV(gpvActual);
+    // Estado basado en GPV actual (del mes que corresponde)
     let estadoBadge = '';
-    if (estadoCalculado === 'ACTIVO') {
+    if (eq.estado === 'ACTIVO') {
       estadoBadge = '<span class="badge-estado badge-activo">● Activo</span>';
-    } else if (estadoCalculado === 'REGULAR') {
+    } else if (eq.estado === 'REGULAR') {
       estadoBadge = '<span class="badge-estado badge-regular">● Regular</span>';
     } else {
       estadoBadge = '<span class="badge-estado badge-inactivo">● Inactivo</span>';
     }
     
-    // 🔥 ALERTA VISUAL PARA INACTIVOS
-    const alertaInactivo = gpvActual === 0 
-      ? '<div class="alerta-inactivo">⚠️ Sin ventas este mes</div>' 
+    // Alerta visual si no hay transacciones en el mes actual que le toca
+    const alertaInactivo = gpvActual === 0 && mesActualIdx >= 0
+      ? `<div class="alerta-inactivo">⚠️ Sin ventas en ${etiquetaMes.split('(')[0]}</div>` 
       : '';
     
-    // Escapar nombre del ejecutivo para el onclick
     const ejecutivoNombre = (eq.responsable_real || 'Sin asignar').replace(/'/g, "\\'");
     
     return `
@@ -1488,19 +1487,19 @@ function renderizarTabla() {
               S/ ${formatearNumero(gpvActual)}
             </div>
             <div class="gpv-historico">
-              <span class="mes-badge ${classM0}" title="Mes de Prueba">M0: ${formatearNumero(gpvM0, 0)}</span>
-              <span class="mes-badge ${classM1}" title="Mes 1">M1: ${formatearNumero(gpvM1, 0)}</span>
-              <span class="mes-badge ${classM2}" title="Mes 2">M2: ${formatearNumero(gpvM2, 0)}</span>
+              <span class="mes-badge ${classM0}" title="Mes de Prueba (Venta)">M0: ${formatearNumero(gpvM0, 0)}</span>
+              <span class="mes-badge ${classM1}" title="Mes 1 Post-venta">M1: ${formatearNumero(gpvM1, 0)}</span>
+              <span class="mes-badge ${classM2}" title="Mes 2 Post-venta">M2: ${formatearNumero(gpvM2, 0)}</span>
             </div>
-            <div class="etiqueta-mes-actual">🕐 ${etiquetaMesReal}</div>
+            <div class="etiqueta-mes-actual">🕐 ${etiquetaMes}</div>
             ${alertaInactivo}
           </div>
         </td>
         <td style="text-align: center;">
           <div class="timeline-trx">
-            <span class="trx-badge" style="${trxM0 > 0 ? 'color: var(--m0-color); font-weight:600;' : ''}">M0:${trxM0}</span>
-            <span class="trx-badge" style="${trxM1 > 0 ? 'color: var(--m1-color); font-weight:600;' : ''}">M1:${trxM1}</span>
-            <span class="trx-badge" style="${trxM2 > 0 ? 'color: var(--m2-color); font-weight:600;' : ''}">M2:${trxM2}</span>
+            <span class="trx-badge ${mesActualIdx === 0 ? 'activo-m0' : ''}" style="${trxM0 > 0 ? 'font-weight:600;' : ''}">M0:${trxM0}</span>
+            <span class="trx-badge ${mesActualIdx === 1 ? 'activo-m1' : ''}" style="${trxM1 > 0 ? 'font-weight:600;' : ''}">M1:${trxM1}</span>
+            <span class="trx-badge ${mesActualIdx === 2 ? 'activo-m2' : ''}" style="${trxM2 > 0 ? 'font-weight:600;' : ''}">M2:${trxM2}</span>
           </div>
         </td>
         <td>${formatearFecha(eq.ultima_transaccion) || '-'}</td>
@@ -1608,11 +1607,11 @@ function exportarExcel() {
       e.trx_m1 || 0,
       e.gpv_m2 || 0,
       e.trx_m2 || 0,
-      obtenerEtiquetaMesReal(parseFloat(e.gpv_mes_actual_corriendo) || 0),
+      obtenerEtiquetaMesReal(e),
       e.gpv_mes_actual_corriendo || 0,
       e.trx_mes_actual_corriendo || 0,
       e.ultima_transaccion || '',
-      getEstadoPorGPV(parseFloat(e.gpv_mes_actual_corriendo) || 0)
+      e.estado || 'INACTIVO'
     ].join(','))
   ].join('\n');
   
