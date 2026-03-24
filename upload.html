@@ -449,9 +449,7 @@ function parseCSVFile(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const lines = e.target.result.split(/
-?
-/);
+        const lines = e.target.result.split(/\r?\n/);
         if (lines.length < 2) return resolve([]);
         const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim().replace(/["']/g, '').replace(/\s+/g, '_'));
         const data = [];
