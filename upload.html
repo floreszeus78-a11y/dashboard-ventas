@@ -562,14 +562,17 @@ uploadBtn.addEventListener('click', async () => {
         </div>
       `;
       
-      aiContent.innerHTML = `
-        <div style="color: var(--verde); text-align: center;">
-          ✅ Gemini IA procesó y limpió los datos correctamente<br>
-          <span style="font-size: 12px; color: var(--texto-suave);">
-            Los datos fueron cruzados con tu base y actualizados automáticamente
-          </span>
-        </div>
-      `;
+      // Dentro de la respuesta exitosa, puedes mostrar más detalles
+aiContent.innerHTML = `
+  <div style="color: var(--verde); text-align: center;">
+    ✅ Gemini IA procesó y limpió los datos correctamente<br>
+    <span style="font-size: 12px; color: var(--texto-suave);">
+      Los datos fueron cruzados con tu base y actualizados automáticamente<br>
+      Se registraron: ${result.resultado?.nuevas || 0} nuevas, ${result.resultado?.actualizadas || 0} actualizadas<br>
+      Fechas registradas: Día Prueba, Día Activo, Última Transacción
+    </span>
+  </div>
+`;
       
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'datos-actualizados' }, '*');
