@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Subir Reporte - Panel Ventas con IA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root {
     --fondo: #0a0e1a;
@@ -32,7 +31,7 @@
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
+  
   body {
     font-family: 'Inter', sans-serif;
     background: var(--fondo);
@@ -144,21 +143,10 @@
     border-radius: 16px;
     display: none;
     text-align: left;
-    max-height: 500px;
-    overflow-y: auto;
   }
 
   .ai-preview.show {
     display: block;
-  }
-
-  .ai-preview h4 {
-    color: var(--acento);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 18px;
   }
 
   .ai-stats {
@@ -187,22 +175,6 @@
     font-weight: 700;
     color: var(--texto);
     margin-top: 4px;
-  }
-
-  .warning-list {
-    margin-top: 12px;
-    padding-left: 20px;
-    color: var(--amarillo);
-    font-size: 12px;
-  }
-
-  .recommendation-box {
-    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(14,165,233,0.1));
-    border-radius: 12px;
-    padding: 12px;
-    margin-top: 12px;
-    font-size: 13px;
-    border: 1px solid var(--morado);
   }
 
   .btn-upload {
@@ -293,44 +265,17 @@
 
   .loading-ai {
     animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  .preview-table {
-    margin-top: 16px;
-  }
-
-  .preview-table summary {
-    cursor: pointer;
-    margin: 12px 0;
-    color: var(--acento);
-    font-weight: 600;
-  }
-
-  .preview-table table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 11px;
-  }
-
-  .preview-table th, .preview-table td {
-    border: 1px solid var(--borde);
-    padding: 6px;
-    text-align: left;
-  }
-
-  .preview-table th {
-    background: var(--superficie);
-    font-weight: 600;
+    text-align: center;
+    padding: 20px;
   }
 </style>
-<base target="_blank">
 </head>
 <body>
 <div class="upload-container">
   <div class="upload-icon">🤖📤</div>
   <h1>Subir Reporte con IA</h1>
   <div class="ai-badge">✨ Powered by Gemini AI ✨</div>
-  <p class="desc">Sube tu archivo Excel (.xlsx, .xls) o CSV<br>La IA validará, limpiará y enriquecerá los datos automáticamente</p>
+  <p class="desc">Sube tu archivo Excel (.xlsx, .xls) o CSV<br>La IA procesará, limpiará y actualizará todo automáticamente</p>
 
   <div class="drop-area" id="dropArea">
     <div>📁 Arrastra tu archivo aquí</div>
@@ -340,13 +285,13 @@
   </div>
 
   <div class="selected-file" id="selectedFile"></div>
-
+  
   <div class="ai-preview" id="aiPreview">
-    <h4>🤖 Análisis de IA</h4>
-    <div id="aiContent">Cargando análisis...</div>
+    <h4 style="color: var(--acento); margin-bottom: 16px;">🤖 Procesando con IA</h4>
+    <div id="aiContent"></div>
   </div>
 
-  <button class="btn-upload" id="uploadBtn" disabled>📤 Validar y Subir Datos</button>
+  <button class="btn-upload" id="uploadBtn" disabled>📤 Procesar con IA</button>
 
   <div class="progress" id="progress">
     <div class="progress-bar">
@@ -360,17 +305,12 @@
 
 <script>
 // ============================================================
-// CONFIGURACIÓN
+// CONFIGURACIÓN - SOLO URL DEL BACKEND
 // ============================================================
-// ⚠️ Asegúrate de usar tu URL_API correcta obtenida al implementar el script
-const URL_API = 'https://script.google.com/macros/s/AKfycbw3H0etPEnm3DvILV8ZJysh4T0savPCtkekWGwx783ynk-5swPj26equ_PiSM-fMaZe/exec';
-const GEMINI_API_KEY = 'AIzaSyBf_sWcPRhJfbqzwlxrKozgO9Ca-b5KMW4'; 
-// URL CORREGIDA según tu curl - usando gemini-flash-latest
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+// ⚠️ REEMPLAZA CON TU URL DE GOOGLE APPS SCRIPT
+const URL_API = 'https://script.google.com/macros/s/AKfycbyKx4AXs8l5TKUS61pSARE6ibAJuE2vEGrUm1CGOoUiPH6FMbSKOMVOQXdNbjS3wpYh/exec';
 
 let selectedFile = null;
-let fileDataParsed = null;
-window.datosLimpiosPorIA = null; // Variable global para guardar el JSON limpio
 
 // Elementos DOM
 const dropArea = document.getElementById('dropArea');
@@ -407,247 +347,140 @@ fileInput.addEventListener('change', (e) => {
 });
 
 // ============================================================
-// LECTURA DEL ARCHIVO
+// MANEJO DE ARCHIVO
 // ============================================================
-async function handleFile(file) {
+function handleFile(file) {
   const extension = file.name.split('.').pop().toLowerCase();
-  if (!['csv', 'xlsx', 'xls'].includes(extension)) {
+  if (!['csv', 'xlsx', 'xls', 'xlsm'].includes(extension)) {
     alert('Formato no soportado. Usa CSV o Excel (.xlsx, .xls)');
     return;
   }
-
+  
   selectedFile = file;
   selectedFileDiv.innerHTML = `✅ Archivo: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
   selectedFileDiv.classList.add('show');
-  uploadBtn.disabled = true;
-
-  aiPreview.classList.add('show');
-  aiContent.innerHTML = '<div class="loading-ai">🤖 Extrayendo y limpiando métricas con Gemini AI...</div>';
-
-  try {
-    if (extension === 'csv') {
-      fileDataParsed = await parseCSVFile(file);
-    } else {
-      fileDataParsed = await parseExcelFile(file);
-    }
-
-    if (!fileDataParsed || fileDataParsed.length === 0) {
-      throw new Error('El archivo está vacío o no se pudo leer.');
-    }
-
-    // Llamar a Gemini para estructurar los datos
-    await analyzeWithGemini(fileDataParsed);
-
-  } catch (error) {
-    console.error('Error:', error);
-    aiContent.innerHTML = `<div class="result error show">❌ Error leyendo archivo: ${error.message}</div>`;
-  }
-}
-
-// (Tus funciones parseCSVFile, parseExcelFile, parseCSVLine se mantienen igual)
-function parseCSVFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const lines = e.target.result.split(/\r?\n/);
-        if (lines.length < 2) return resolve([]);
-        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim().replace(/["']/g, '').replace(/\s+/g, '_'));
-        const data = [];
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
-          const values = parseCSVLine(lines[i]);
-          const row = {};
-          headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
-          data.push(row);
-        }
-        resolve(data);
-      } catch (err) { reject(err); }
-    };
-    reader.onerror = reject;
-    reader.readAsText(file, 'UTF-8');
-  });
-}
-function parseExcelFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '' });
-        resolve(jsonData.map(row => {
-          const normalized = {};
-          Object.keys(row).forEach(key => {
-            normalized[key.toLowerCase().trim().replace(/\s+/g, '_')] = row[key];
-          });
-          return normalized;
-        }));
-      } catch (err) { reject(err); }
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-function parseCSVLine(line) {
-  const result = []; let current = ''; let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') inQuotes = !inQuotes;
-    else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
-    else current += char;
-  }
-  result.push(current);
-  return result.map(v => v.trim().replace(/^"|"$/g, ''));
+  uploadBtn.disabled = false;
+  
+  // Limpiar preview anterior
+  aiPreview.classList.remove('show');
+  resultDiv.classList.remove('show');
 }
 
 // ============================================================
-// MAGIA DE GEMINI: LIMPIEZA DE DATOS
-// ============================================================
-async function analyzeWithGemini(data) {
-  const prompt = `
-    Actúa como un script de limpieza de datos. Recibirás un JSON de ventas POS.
-    Devuelve estrictamente un arreglo JSON válido. NO escribas markdown ni introducciones.
-
-    REGLAS DE EXTRACCIÓN POR OBJETO:
-    1. "numero_serie": Extraer de 'num_serie' o 'numserie'. Si está vacío, ignora la fila entera.
-    2. Fechas ("dia_prueba", "dia_activo", "ultima_trx"): Dejar tal cual o vacío.
-    3. Métricas ("gpv_m0", "trx_m0", "gpv_m0_15d", "trx_m0_15d", "gpv_m1", "trx_m1", "gpv_m2", "trx_m2"): 
-       - Limpia caracteres como "S/", "$" o ",".
-       - Convierte a número (ej. "1,857.00" -> 1857). Si está vacío pon 0.
-
-    IGNORA campos como comercio, dirección, ruc o vendedor. Solo me interesa la serie y las métricas/fechas.
-
-    DATOS A PROCESAR:
-    ${JSON.stringify(data.slice(0, 150))} 
-  `;
-  // Nota: limitamos a 150 filas para no saturar la salida de Gemini. 
-  // Si subes miles de filas, te sugeriré después cómo hacerlo sin IA para esa parte específica.
-
-  try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.0,
-          response_mime_type: "application/json" // ESTO OBLIGA A GEMINI A DEVOLVER JSON PURO
-        }
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error Gemini:', errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
-    }
-
-    const result = await response.json();
-
-    if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
-      throw new Error('Respuesta inesperada de Gemini');
-    }
-
-    const jsonString = result.candidates[0].content.parts[0].text;
-
-    window.datosLimpiosPorIA = JSON.parse(jsonString);
-
-    let gpvTotalLimpio = 0;
-    window.datosLimpiosPorIA.forEach(r => gpvTotalLimpio += (Number(r.gpv_m0) || 0));
-
-    aiContent.innerHTML = `
-      <div class="result success show" style="margin-top: 0;">
-        <h4 style="color: var(--verde); margin-bottom: 12px;">✅ Datos Limpios y Listos</h4>
-        <div class="ai-stats">
-          <div class="stat-card">
-            <div class="stat-label">Filas Encontradas</div>
-            <div class="stat-value" style="color: var(--acento);">${window.datosLimpiosPorIA.length}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">GPV M0 Validado</div>
-            <div class="stat-value">S/ ${gpvTotalLimpio.toLocaleString('es-PE')}</div>
-          </div>
-        </div>
-        <div class="recommendation-box" style="margin-top: 16px;">
-          💡 La IA ha extraído exitosamente los números de serie y las métricas numéricas. 
-          Al hacer clic en "Validar y Subir", el sistema cruzará estos datos con tu hoja BASE.
-        </div>
-      </div>
-    `;
-
-    uploadBtn.disabled = false;
-
-  } catch (error) {
-    console.error('Error completo:', error);
-    aiContent.innerHTML = `<div class="result error show">❌ Error de IA: No se pudo procesar el JSON. ${error.message}</div>`;
-  }
-}
-
-// ============================================================
-// ENVÍO AL BACKEND (APPS SCRIPT)
+// ENVÍO AL BACKEND (CON IA)
 // ============================================================
 uploadBtn.addEventListener('click', async () => {
-  if (!window.datosLimpiosPorIA) return;
-
+  if (!selectedFile) return;
+  
   uploadBtn.disabled = true;
   progress.classList.add('show');
   resultDiv.classList.remove('show');
-
-  progressFill.style.width = '30%';
-  progressText.textContent = 'Enviando a Google Sheets para cruzar datos...';
-
+  aiPreview.classList.add('show');
+  aiContent.innerHTML = '<div class="loading-ai">🤖 La IA está analizando y limpiando tus datos...<br>Esto puede tomar unos segundos</div>';
+  
+  progressFill.style.width = '20%';
+  progressText.textContent = 'Leyendo archivo...';
+  
   try {
+    // Convertir archivo a Base64
+    const fileData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(selectedFile);
+    });
+    
+    progressFill.style.width = '40%';
+    progressText.textContent = 'Enviando a Gemini IA (backend)...';
+    
+    // Preparar FormData
     const formData = new FormData();
-    // Llamamos a la nueva acción que creaste en Code.gs
-    formData.append('action', 'update_data'); 
-    formData.append('payload', JSON.stringify(window.datosLimpiosPorIA));
+    formData.append('action', 'procesar_con_ia'); // 🔥 NUEVA ACCIÓN
+    formData.append('archivo', fileData);
+    formData.append('nombre', selectedFile.name);
     formData.append('usuario', 'Admin_Dashboard');
-
+    formData.append('tipo', selectedFile.name.split('.').pop().toLowerCase());
+    
+    progressFill.style.width = '60%';
+    progressText.textContent = 'Procesando con IA en el servidor...';
+    
     const response = await fetch(URL_API, {
       method: 'POST',
       body: formData
     });
-
+    
     progressFill.style.width = '80%';
-    progressText.textContent = 'Guardando en historial (UPLOAD) y actualizando BASE...';
-
+    progressText.textContent = 'Actualizando base de datos...';
+    
     const result = await response.json();
-
+    
     progressFill.style.width = '100%';
     progressText.textContent = '¡Completado!';
-
+    
     if (result.success) {
+      // Mostrar éxito
       resultDiv.className = 'result success show';
       resultDiv.innerHTML = `
-        <div class="result-title">✅ ¡Reporte Procesado con Éxito!</div>
+        <div class="result-title">✅ ¡Procesado con Éxito!</div>
         <div class="result-details">
           ${result.mensaje}<br><br>
-          <ul style="padding-left: 20px; line-height: 1.6;">
-            <li>📊 Filas cruzadas y guardadas en UPLOAD: <strong>${window.datosLimpiosPorIA.length}</strong></li>
-            <li>🔄 Filas de métricas actualizadas en BASE: <strong>${result.actualizadas || 0}</strong></li>
-            <li>🆕 Equipos nuevos añadidos a BASE: <strong>${result.nuevas || 0}</strong></li>
-          </ul>
+          <div class="ai-stats">
+            <div class="stat-card">
+              <div class="stat-label">Filas Procesadas</div>
+              <div class="stat-value">${result.resultado?.filas_procesadas || 0}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Actualizadas</div>
+              <div class="stat-value" style="color: var(--verde);">${result.resultado?.actualizadas || 0}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Nuevas</div>
+              <div class="stat-value" style="color: var(--acento);">${result.resultado?.nuevas || 0}</div>
+            </div>
+          </div>
         </div>
       `;
-
-      // Actualizar el iframe padre
+      
+      // Actualizar preview de IA
+      aiContent.innerHTML = `
+        <div style="color: var(--verde); text-align: center;">
+          ✅ Gemini IA procesó y limpió los datos correctamente<br>
+          <span style="font-size: 12px; color: var(--texto-suave);">
+            Los datos fueron cruzados con tu base y actualizados automáticamente
+          </span>
+        </div>
+      `;
+      
+      // Notificar al dashboard padre
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'datos-actualizados' }, '*');
       }
-
+      
     } else {
-      throw new Error(result.mensaje || 'Error del servidor');
+      throw new Error(result.mensaje || result.error || 'Error del servidor');
     }
-
+    
   } catch (error) {
+    console.error('Error:', error);
     resultDiv.className = 'result error show';
-    resultDiv.innerHTML = `<div class="result-title">❌ Error al Actualizar</div><div class="result-details">${error.message}</div>`;
+    resultDiv.innerHTML = `
+      <div class="result-title">❌ Error al Procesar</div>
+      <div class="result-details">${error.message}</div>
+    `;
+    
+    aiContent.innerHTML = `
+      <div style="color: var(--rojo); text-align: center;">
+        ❌ Error: ${error.message}
+      </div>
+    `;
   } finally {
     setTimeout(() => {
-      uploadBtn.disabled = true;
-      progress.classList.remove('show');
-      progressFill.style.width = '0%';
-    }, 4000);
+      uploadBtn.disabled = false;
+      setTimeout(() => {
+        progress.classList.remove('show');
+        progressFill.style.width = '0%';
+      }, 2000);
+    }, 1000);
   }
 });
 
