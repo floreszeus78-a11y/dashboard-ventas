@@ -365,7 +365,8 @@
 // ⚠️ Asegúrate de usar tu URL_API correcta obtenida al implementar el script
 const URL_API = 'https://script.google.com/macros/s/AKfycbw3H0etPEnm3DvILV8ZJysh4T0savPCtkekWGwx783ynk-5swPj26equ_PiSM-fMaZe/exec';
 const GEMINI_API_KEY = 'AIzaSyBf_sWcPRhJfbqzwlxrKozgO9Ca-b5KMW4'; 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+// URL CORREGIDA según tu curl - usando gemini-flash-latest
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
 let selectedFile = null;
 let fileDataParsed = null;
@@ -535,9 +536,18 @@ async function analyzeWithGemini(data) {
       })
     });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error Gemini:', errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+    }
 
     const result = await response.json();
+
+    if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
+      throw new Error('Respuesta inesperada de Gemini');
+    }
+
     const jsonString = result.candidates[0].content.parts[0].text;
 
     window.datosLimpiosPorIA = JSON.parse(jsonString);
@@ -568,6 +578,7 @@ async function analyzeWithGemini(data) {
     uploadBtn.disabled = false;
 
   } catch (error) {
+    console.error('Error completo:', error);
     aiContent.innerHTML = `<div class="result error show">❌ Error de IA: No se pudo procesar el JSON. ${error.message}</div>`;
   }
 }
