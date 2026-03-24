@@ -6,17 +6,17 @@ on:
 jobs:
   analizar-completo:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Solo lectura, suficiente para clonar
     
     steps:
     - name: Clonar repositorio
       uses: actions/checkout@v4
-      
+    
     - name: Analizar y generar archivo con todo el contenido
       run: |
         cat > analizador.py << 'EOF'
         import os
-        import sys
-        from pathlib import Path
         from datetime import datetime
         
         archivos_procesados = []
@@ -27,7 +27,7 @@ jobs:
             f.write("=" * 100 + "\n\n")
             
             for root, dirs, files in os.walk(ruta_inicio):
-                dirs[:] = [d for d in dirs if d not in ['.git', '__pycache__', '.github/workflows']]
+                dirs[:] = [d for d in dirs if d not in ['.git', '__pycache__', '.github']]
                 nivel = root.replace(ruta_inicio, '').count(os.sep)
                 indent = '  ' * nivel
                 nombre_carpeta = "📦 " + os.path.basename(os.getcwd()) if nivel == 0 else "📂 " + os.path.basename(root)
@@ -44,15 +44,13 @@ jobs:
             
             extensiones = ['.html', '.js', '.css', '.json', '.md', '.txt', '.yml', '.yaml']
             for root, dirs, files in os.walk(ruta_inicio):
-                dirs[:] = [d for d in dirs if d not in ['.git', '__pycache__', '.github/workflows']]
+                dirs[:] = [d for d in dirs if d not in ['.git', '__pycache__', '.github']]
                 for archivo in sorted(files):
                     ruta_completa = os.path.join(root, archivo)
                     if any(archivo.endswith(ext) for ext in extensiones) and archivo != 'analisis_completo.txt':
                         try:
                             f.write("\n" + "=" * 100 + "\n")
                             f.write(f"📄 ARCHIVO: {ruta_completa}\n")
-                            f.write(f"📏 Tamaño: {os.path.getsize(ruta_completa)} bytes\n")
-                            f.write(f"🕐 Última modificación: {datetime.fromtimestamp(os.path.getmtime(ruta_completa))}\n")
                             f.write("=" * 100 + "\n\n")
                             with open(ruta_completa, 'r', encoding='utf-8') as arch:
                                 f.write(arch.read())
@@ -66,43 +64,27 @@ jobs:
             f.write("📊 RESUMEN DEL ANÁLISIS\n")
             f.write("=" * 100 + "\n\n")
             f.write(f"✅ Archivos procesados: {len(archivos_procesados)}\n")
-            f.write(f"📅 Fecha del análisis: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"📅 Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("\n📋 Lista de archivos analizados:\n")
             for arch in archivos_procesados:
                 f.write(f"   - {arch}\n")
         
         with open('analisis_completo_proyecto.txt', 'w', encoding='utf-8') as f:
             f.write("=" * 100 + "\n")
-            f.write("🎯 ANÁLISIS COMPLETO DEL PROYECTO: floreszeus78-a11y\n")
+            f.write("🎯 ANÁLISIS COMPLETO DEL PROYECTO\n")
             f.write("=" * 100 + "\n\n")
             escribir_estructura(f)
             escribir_contenido_archivos(f)
             escribir_resumen(f)
         
         print(f"✅ Análisis completado. Archivo generado: analisis_completo_proyecto.txt")
-        print(f"📊 Total archivos procesados: {len(archivos_procesados)}")
         EOF
         
         python3 analizador.py
-        
+    
     - name: Subir archivo como artifact
       uses: actions/upload-artifact@v4
       with:
         name: analisis-completo-proyecto
         path: analisis_completo_proyecto.txt
         retention-days: 30
-        
-    - name: Crear release con el análisis
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: analisis-${{ github.run_number }}
-        name: "Análisis Completo del Proyecto #${{ github.run_number }}"
-        body: |
-          📊 **Análisis completo del proyecto**
-          
-          - 📅 Fecha: $(date)
-          - 🔢 Número de ejecución: ${{ github.run_number }}
-          - 📁 Archivo generado: analisis_completo_proyecto.txt
-        files: analisis_completo_proyecto.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
