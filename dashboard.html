@@ -212,41 +212,6 @@
     cursor: pointer;
   }
 
-  /* NUEVOS FILTROS DE MES DE VENTA POR EJECUTIVO */
-  .filtros-mes-ejecutivo {
-    background: var(--superficie2);
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 20px;
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .filtro-mes-btn {
-    padding: 8px 20px;
-    border-radius: 30px;
-    border: 1px solid var(--borde);
-    background: var(--superficie);
-    color: var(--texto);
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-
-  .filtro-mes-btn:hover {
-    border-color: var(--acento);
-    transform: translateY(-1px);
-  }
-
-  .filtro-mes-btn.activo-mes-filtro {
-    background: linear-gradient(135deg, var(--acento), #7c3aed);
-    color: white;
-    border: none;
-  }
-
   .grid-graficas {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -440,6 +405,40 @@
   .chip-filtro.activo[data-filtro="promedio"] { background: var(--gpv-bueno); border-color: var(--gpv-bueno); }
   .chip-filtro.activo[data-filtro="bajo"] { background: var(--gpv-bajo); border-color: var(--gpv-bajo); }
   .chip-filtro.activo[data-filtro="riesgo"] { background: var(--gpv-inactivo); border-color: var(--gpv-inactivo); }
+
+  /* NUEVOS FILTROS DE MES DE VENTA - SIEMPRE VISIBLES */
+  .filtros-mes-venta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--borde);
+  }
+
+  .filtro-mes-btn {
+    padding: 8px 20px;
+    border-radius: 30px;
+    border: 1px solid var(--borde);
+    background: var(--superficie2);
+    color: var(--texto);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .filtro-mes-btn:hover {
+    border-color: var(--acento);
+    transform: translateY(-1px);
+  }
+
+  .filtro-mes-btn.activo-mes-filtro {
+    background: linear-gradient(135deg, var(--acento), #7c3aed);
+    color: white;
+    border: none;
+  }
 
   .buscador {
     padding: 10px 20px;
@@ -665,9 +664,9 @@
     .fila-filtros { flex-direction: column; align-items: stretch; }
     .buscador { width: 100%; }
     .filtros-gpv { width: 100%; justify-content: center; }
+    .filtros-mes-venta { justify-content: center; }
     th, td { padding: 12px 8px; font-size: 12px; }
     .gpv-historico { justify-content: flex-start; }
-    .filtros-mes-ejecutivo { flex-direction: column; align-items: stretch; }
   }
 </style>
 </head>
@@ -761,16 +760,15 @@
             🚨 Riesgo (0)
           </button>
         </div>
+        <!-- NUEVO: Filtros de mes de venta - SIEMPRE VISIBLES -->
+        <div class="filtros-mes-venta">
+          <span style="font-weight: 600;">📅 Filtrar por mes de venta:</span>
+          <button class="filtro-mes-btn activo-mes-filtro" onclick="filtrarPorMesVenta('TODOS')" data-mes-filtro="TODOS">📆 Todos los meses</button>
+          <button class="filtro-mes-btn" onclick="filtrarPorMesVenta('FEBRERO')" data-mes-filtro="FEBRERO">📅 Febrero 2025</button>
+          <button class="filtro-mes-btn" onclick="filtrarPorMesVenta('MARZO')" data-mes-filtro="MARZO">📅 Marzo 2025</button>
+        </div>
       </div>
       <input type="text" class="buscador" id="buscador" placeholder="🔍 Buscar comercio, serie o RUC..." onkeyup="filtrarTabla()">
-    </div>
-    
-    <!-- NUEVO: Filtros para separar equipos por mes de venta (Febrero/Marzo) según ejecutivo -->
-    <div class="filtros-mes-ejecutivo" id="filtrosMesEjecutivo" style="display: none;">
-      <span style="font-weight: 600;">📅 Filtrar por mes de venta:</span>
-      <button class="filtro-mes-btn activo-mes-filtro" onclick="filtrarPorMesVenta('TODOS')" data-mes-filtro="TODOS">📆 Todos los meses</button>
-      <button class="filtro-mes-btn" onclick="filtrarPorMesVenta('FEBRERO')" data-mes-filtro="FEBRERO">📅 Febrero 2025</button>
-      <button class="filtro-mes-btn" onclick="filtrarPorMesVenta('MARZO')" data-mes-filtro="MARZO">📅 Marzo 2025</button>
     </div>
     
     <div class="contenedor-tabla">
@@ -803,7 +801,7 @@ let DATOS_COMPLETOS = null;
 let mesActual = 'TODOS';
 let ejecutivoActual = 'TODOS';
 let filtroGPVActual = 'todos';
-let filtroMesVentaEjecutivo = 'TODOS'; // NUEVO: filtro para mes de venta específico del ejecutivo
+let filtroMesVenta = 'TODOS'; // NUEVO: filtro para mes de venta (siempre visible)
 let chartEjecutivos = null;
 let chartDistribucion = null;
 let chartEstados = null;
@@ -897,17 +895,14 @@ function filtrarPorEjecutivoTabla(exec) {
   if (!exec || exec === 'SIN ASIGNAR') return;
   ejecutivoActual = exec;
   document.getElementById('execSelect').value = exec;
-  // Reiniciar filtro de mes al cambiar ejecutivo
-  filtroMesVentaEjecutivo = 'TODOS';
-  actualizarBotonesFiltroMes();
   renderizarTodo();
 }
 
 // ============================================================
-// 🔥 NUEVA FUNCIÓN: FILTRAR POR MES DE VENTA (FEBRERO/MARZO)
+// 🔥 NUEVA FUNCIÓN: FILTRAR POR MES DE VENTA (SIEMPRE VISIBLE)
 // ============================================================
 function filtrarPorMesVenta(mesVenta) {
-  filtroMesVentaEjecutivo = mesVenta;
+  filtroMesVenta = mesVenta;
   actualizarBotonesFiltroMes();
   renderizarTabla(); // Solo actualizar tabla, no todo el dashboard
 }
@@ -915,7 +910,7 @@ function filtrarPorMesVenta(mesVenta) {
 function actualizarBotonesFiltroMes() {
   document.querySelectorAll('.filtro-mes-btn').forEach(btn => {
     btn.classList.remove('activo-mes-filtro');
-    if (btn.dataset.mesFiltro === filtroMesVentaEjecutivo) {
+    if (btn.dataset.mesFiltro === filtroMesVenta) {
       btn.classList.add('activo-mes-filtro');
     }
   });
@@ -1223,8 +1218,9 @@ function renderizarEjecutivos() {
     stats.transacciones_total += (parseInt(eq.trx_mes_actual_corriendo) || 0);
     
     // Contar equipos por mes de venta
-    if (eq.mes_venta === 'FEBRERO 2025') stats.equipos_febrero++;
-    if (eq.mes_venta === 'MARZO 2025') stats.equipos_marzo++;
+    const mesVenta = (eq.mes_venta || '').toUpperCase();
+    if (mesVenta.includes('FEBRERO')) stats.equipos_febrero++;
+    if (mesVenta.includes('MARZO')) stats.equipos_marzo++;
     
     // Estado basado en GPV actual
     const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
@@ -1307,27 +1303,17 @@ function renderizarEjecutivos() {
   });
 }
 
-// 🔥 TABLA CON LÍNEA DE TIEMPO M0/M1/M2 - CON FILTRO POR MES DE VENTA
+// 🔥 TABLA CON LÍNEA DE TIEMPO M0/M1/M2 - CON FILTRO POR MES DE VENTA (SIEMPRE ACTIVO)
 function renderizarTabla() {
   let equipos = getEquiposFiltrados();
   
-  // Mostrar/ocultar filtros de mes según si hay un ejecutivo seleccionado
-  const filtrosMesDiv = document.getElementById('filtrosMesEjecutivo');
-  if (ejecutivoActual !== 'TODOS') {
-    filtrosMesDiv.style.display = 'flex';
-  } else {
-    filtrosMesDiv.style.display = 'none';
-    // Resetear filtro de mes si no hay ejecutivo seleccionado
-    filtroMesVentaEjecutivo = 'TODOS';
-  }
-  
-  // Aplicar filtro por mes de venta (si hay ejecutivo seleccionado)
-  if (ejecutivoActual !== 'TODOS' && filtroMesVentaEjecutivo !== 'TODOS') {
+  // Aplicar filtro por mes de venta (siempre activo, independientemente del ejecutivo)
+  if (filtroMesVenta !== 'TODOS') {
     equipos = equipos.filter(e => {
       const mesVenta = (e.mes_venta || '').toUpperCase();
-      if (filtroMesVentaEjecutivo === 'FEBRERO') {
+      if (filtroMesVenta === 'FEBRERO') {
         return mesVenta.includes('FEBRERO') || mesVenta === 'FEBRERO 2025';
-      } else if (filtroMesVentaEjecutivo === 'MARZO') {
+      } else if (filtroMesVenta === 'MARZO') {
         return mesVenta.includes('MARZO') || mesVenta === 'MARZO 2025';
       }
       return true;
@@ -1358,7 +1344,7 @@ function renderizarTabla() {
   const tbody = document.getElementById('tablaCuerpo');
   
   if (equipos.length === 0) {
-    tbody.innerHTML = '} <tr><td colspan="9" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos con los filtros actuales</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos con los filtros actuales</td></tr>';
     return;
   }
   
@@ -1487,7 +1473,6 @@ function getEquiposFiltrados() {
 function cambiarMes(mes) {
   mesActual = mes;
   ejecutivoActual = 'TODOS';
-  filtroMesVentaEjecutivo = 'TODOS';
   document.getElementById('execSelect').value = 'TODOS';
   
   document.querySelectorAll('.pestana-mes').forEach(t => {
@@ -1501,16 +1486,12 @@ function cambiarMes(mes) {
 
 function cambiarEjecutivo(val) {
   ejecutivoActual = val;
-  filtroMesVentaEjecutivo = 'TODOS';
-  actualizarBotonesFiltroMes();
   renderizarTodo();
 }
 
 function seleccionarEjecutivo(exec) {
   ejecutivoActual = ejecutivoActual === exec ? 'TODOS' : exec;
-  filtroMesVentaEjecutivo = 'TODOS';
   document.getElementById('execSelect').value = ejecutivoActual;
-  actualizarBotonesFiltroMes();
   renderizarTodo();
 }
 
@@ -1536,13 +1517,13 @@ function formatearFecha(fecha) {
 function exportarExcel() {
   let equipos = getEquiposFiltrados();
   
-  // Aplicar filtro de mes de venta si está activo
-  if (ejecutivoActual !== 'TODOS' && filtroMesVentaEjecutivo !== 'TODOS') {
+  // Aplicar filtro de mes de venta
+  if (filtroMesVenta !== 'TODOS') {
     equipos = equipos.filter(e => {
       const mesVenta = (e.mes_venta || '').toUpperCase();
-      if (filtroMesVentaEjecutivo === 'FEBRERO') {
+      if (filtroMesVenta === 'FEBRERO') {
         return mesVenta.includes('FEBRERO') || mesVenta === 'FEBRERO 2025';
-      } else if (filtroMesVentaEjecutivo === 'MARZO') {
+      } else if (filtroMesVenta === 'MARZO') {
         return mesVenta.includes('MARZO') || mesVenta === 'MARZO 2025';
       }
       return true;
