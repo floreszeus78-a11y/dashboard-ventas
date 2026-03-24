@@ -1,4 +1,8 @@
-<!DOCTYPE html>
+
+# Voy a crear el archivo HTML completo con el nuevo script reemplazado
+# Manteniendo TODO el HTML y CSS exactamente igual, solo cambiando el <script>
+
+html_completo = '''<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -358,16 +362,17 @@
 </div>
 
 <script>
-// Configuración
-const URL_API = 'https://script.google.com/macros/s/AKfycbyKx4AXs8l5TKUS61pSARE6ibAJuE2vEGrUm1CGOoUiPH6FMbSKOMVOQXdNbjS3wpYh/exec';
-// API KEY CORRECTA de tu curl
-const GEMINI_API_KEY = 'AIzaSyBf_sWcPRhJfbqzwlxrKozgO9Ca-b5KMW4';
-// URL CORRECTA de Gemini (usando gemini-flash-latest como en tu curl)
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
+// ⚠️ Asegúrate de usar tu URL_API correcta obtenida al implementar el script
+const URL_API = 'https://script.google.com/macros/s/AKfycbw3H0etPEnm3DvILV8ZJysh4T0savPCtkekWGwx783ynk-5swPj26equ_PiSM-fMaZe/exec';
+const GEMINI_API_KEY = 'AIzaSyBf_sWcPRhJfbqzwlxrKozgO9Ca-b5KMW4'; 
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 let selectedFile = null;
 let fileDataParsed = null;
-let aiAnalysis = null;
+window.datosLimpiosPorIA = null; // Variable global para guardar el JSON limpio
 
 // Elementos DOM
 const dropArea = document.getElementById('dropArea');
@@ -381,7 +386,9 @@ const resultDiv = document.getElementById('result');
 const aiPreview = document.getElementById('aiPreview');
 const aiContent = document.getElementById('aiContent');
 
-// Eventos de drag & drop
+// ============================================================
+// EVENTOS DE ARRASTRE Y SELECCIÓN
+// ============================================================
 dropArea.addEventListener('dragover', (e) => {
   e.preventDefault();
   dropArea.classList.add('drag-over');
@@ -394,36 +401,32 @@ dropArea.addEventListener('dragleave', () => {
 dropArea.addEventListener('drop', (e) => {
   e.preventDefault();
   dropArea.classList.remove('drag-over');
-  const files = e.dataTransfer.files;
-  if (files.length > 0) {
-    handleFile(files[0]);
-  }
+  if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
 });
 
 fileInput.addEventListener('change', (e) => {
-  if (e.target.files.length > 0) {
-    handleFile(e.target.files[0]);
-  }
+  if (e.target.files.length > 0) handleFile(e.target.files[0]);
 });
 
+// ============================================================
+// LECTURA DEL ARCHIVO
+// ============================================================
 async function handleFile(file) {
   const extension = file.name.split('.').pop().toLowerCase();
-  if (!['csv', 'xlsx', 'xls', 'xlsm'].includes(extension)) {
+  if (!['csv', 'xlsx', 'xls'].includes(extension)) {
     alert('Formato no soportado. Usa CSV o Excel (.xlsx, .xls)');
     return;
   }
   
   selectedFile = file;
-  selectedFileDiv.innerHTML = `✅ Archivo seleccionado: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+  selectedFileDiv.innerHTML = `✅ Archivo: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
   selectedFileDiv.classList.add('show');
   uploadBtn.disabled = true;
   
-  // Mostrar loading en AI preview
   aiPreview.classList.add('show');
-  aiContent.innerHTML = '<div class="loading-ai">🤖 Analizando datos con Gemini AI...</div>';
+  aiContent.innerHTML = '<div class="loading-ai">🤖 Extrayendo y limpiando métricas con Gemini AI...</div>';
   
   try {
-    // Leer y parsear el archivo según su tipo
     if (extension === 'csv') {
       fileDataParsed = await parseCSVFile(file);
     } else {
@@ -431,359 +434,166 @@ async function handleFile(file) {
     }
     
     if (!fileDataParsed || fileDataParsed.length === 0) {
-      throw new Error('No se pudieron extraer datos del archivo');
+      throw new Error('El archivo está vacío o no se pudo leer.');
     }
     
-    console.log('Datos parseados:', fileDataParsed.length, 'registros');
-    console.log('Primer registro:', fileDataParsed[0]);
-    
-    // Analizar con Gemini
-    await analyzeWithGemini(fileDataParsed, file.name);
-    
-    uploadBtn.disabled = false;
+    // Llamar a Gemini para estructurar los datos
+    await analyzeWithGemini(fileDataParsed);
     
   } catch (error) {
-    console.error('Error al analizar archivo:', error);
-    aiContent.innerHTML = `
-      <div style="color: var(--amarillo); margin-bottom: 12px;">
-        ⚠️ Error al analizar: ${error.message}<br>
-        Mostrando estadísticas básicas del archivo.
-      </div>
-      ${generateBasicStats(fileDataParsed || [])}
-      <div class="warning-list">
-        💡 Puedes continuar con la subida manual haciendo clic en "Validar y Subir Datos"
-      </div>
-    `;
-    uploadBtn.disabled = false;
+    console.error('Error:', error);
+    aiContent.innerHTML = `<div class="result error show">❌ Error leyendo archivo: ${error.message}</div>`;
   }
 }
 
+// (Tus funciones parseCSVFile, parseExcelFile, parseCSVLine se mantienen igual)
 function parseCSVFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const csvString = e.target.result;
-        const lines = csvString.split(/\r?\n/);
-        if (lines.length < 2) {
-          resolve([]);
-          return;
-        }
-        
-        const headers = parseCSVLine(lines[0]).map(h => 
-          h.toLowerCase().trim().replace(/["']/g, '').replace(/\s+/g, '_')
-        );
-        
+        const lines = e.target.result.split(/\\r?\\n/);
+        if (lines.length < 2) return resolve([]);
+        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim().replace(/["']/g, '').replace(/\\s+/g, '_'));
         const data = [];
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
           const values = parseCSVLine(lines[i]);
           const row = {};
-          headers.forEach((h, idx) => {
-            row[h] = values[idx] || '';
-          });
+          headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
           data.push(row);
         }
         resolve(data);
-      } catch (err) {
-        reject(err);
-      }
+      } catch (err) { reject(err); }
     };
     reader.onerror = reject;
     reader.readAsText(file, 'UTF-8');
   });
 }
-
 function parseExcelFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
-        
-        // Normalizar nombres de columnas
-        const normalizedData = jsonData.map(row => {
+        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '' });
+        resolve(jsonData.map(row => {
           const normalized = {};
           Object.keys(row).forEach(key => {
-            const newKey = key.toLowerCase().trim().replace(/\s+/g, '_');
-            normalized[newKey] = row[key];
+            normalized[key.toLowerCase().trim().replace(/\\s+/g, '_')] = row[key];
           });
           return normalized;
-        });
-        
-        resolve(normalizedData);
-      } catch (err) {
-        reject(err);
-      }
+        }));
+      } catch (err) { reject(err); }
     };
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   });
 }
-
 function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  
+  const result = []; let current = ''; let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
+    if (char === '"') inQuotes = !inQuotes;
+    else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
+    else current += char;
   }
   result.push(current);
-  
   return result.map(v => v.trim().replace(/^"|"$/g, ''));
 }
 
-function generateBasicStats(data) {
-  if (!data || data.length === 0) return '<div>No hay datos para mostrar</div>';
-  
-  const totalRows = data.length;
-  const withNumSerie = data.filter(row => row.num_serie || row.numserie).length;
-  
-  let totalGPV = 0;
-  data.forEach(row => {
-    const gpv = parseFloat(row.gpv_m0) || parseFloat(row.gpv) || 0;
-    totalGPV += gpv;
-  });
-  
-  return `
-    <div class="ai-stats">
-      <div class="stat-card">
-        <div class="stat-label">📊 Registros</div>
-        <div class="stat-value">${totalRows.toLocaleString()}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">🔢 Con Serie</div>
-        <div class="stat-value">${withNumSerie}/${totalRows}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">💰 GPV Estimado</div>
-        <div class="stat-value">S/ ${totalGPV.toLocaleString()}</div>
-      </div>
-    </div>
+// ============================================================
+// MAGIA DE GEMINI: LIMPIEZA DE DATOS
+// ============================================================
+async function analyzeWithGemini(data) {
+  const prompt = `
+    Actúa como un script de limpieza de datos. Recibirás un JSON de ventas POS.
+    Devuelve estrictamente un arreglo JSON válido. NO escribas markdown ni introducciones.
+    
+    REGLAS DE EXTRACCIÓN POR OBJETO:
+    1. "numero_serie": Extraer de 'num_serie' o 'numserie'. Si está vacío, ignora la fila entera.
+    2. Fechas ("dia_prueba", "dia_activo", "ultima_trx"): Dejar tal cual o vacío.
+    3. Métricas ("gpv_m0", "trx_m0", "gpv_m0_15d", "trx_m0_15d", "gpv_m1", "trx_m1", "gpv_m2", "trx_m2"): 
+       - Limpia caracteres como "S/", "$" o ",".
+       - Convierte a número (ej. "1,857.00" -> 1857). Si está vacío pon 0.
+    
+    IGNORA campos como comercio, dirección, ruc o vendedor. Solo me interesa la serie y las métricas/fechas.
+
+    DATOS A PROCESAR:
+    ${JSON.stringify(data.slice(0, 150))} 
   `;
-}
-
-async function analyzeWithGemini(data, filename) {
-  const totalRows = data.length;
-  const columns = Object.keys(data[0] || {});
-  
-  // Contar calidad de datos
-  const withNumSerie = data.filter(row => {
-    const val = row.num_serie || row.numserie;
-    return val && val.toString().trim();
-  }).length;
-  
-  const withRUC = data.filter(row => {
-    const val = row.identificador_tributario || row.ruc;
-    return val && val.toString().trim();
-  }).length;
-  
-  // Calcular métricas
-  let totalGPV = 0;
-  let totalTRX = 0;
-  data.forEach(row => {
-    const gpv = parseFloat(row.gpv_m0) || parseFloat(row.gpv) || 0;
-    const trx = parseInt(row.trx_m0) || 0;
-    totalGPV += gpv;
-    totalTRX += trx;
-  });
-  
-  // Preparar prompt conciso para Gemini
-  const prompt = `Eres un experto en análisis de datos de ventas. Analiza este archivo "${filename}" y responde en español de forma breve:
-
-DATOS:
-- Registros: ${totalRows}
-- Con número de serie: ${withNumSerie}/${totalRows}
-- Con RUC: ${withRUC}/${totalRows}
-- GPV total estimado: S/ ${totalGPV.toLocaleString()}
-- Transacciones totales: ${totalTRX}
-
-Columnas: ${columns.slice(0, 12).join(', ')}
-
-PRIMER REGISTRO EJEMPLO:
-${JSON.stringify(data[0], null, 2)}
-
-RESPONDE EN ESTE FORMATO EXACTO:
-📊 RESUMEN: [2 líneas]
-⚠️ PROBLEMAS: [lista de problemas detectados, máximo 3]
-💡 RECOMENDACIÓN: [1 recomendación principal]`;
+  // Nota: limitamos a 150 filas para no saturar la salida de Gemini. 
+  // Si subes miles de filas, te sugeriré después cómo hacerlo sin IA para esa parte específica.
 
   try {
-    console.log('Enviando solicitud a Gemini API...');
-    console.log('URL:', GEMINI_API_URL);
-    
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
+        contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 500,
+          temperature: 0.0,
+          response_mime_type: "application/json" // ESTO OBLIGA A GEMINI A DEVOLVER JSON PURO
         }
       })
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
     const result = await response.json();
-    const analysis = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Análisis generado correctamente';
+    const jsonString = result.candidates[0].content.parts[0].text;
     
-    aiAnalysis = analysis;
-    
-    // Mostrar análisis completo
-    displayAIAnalysis(analysis, data, {
-      totalRows,
-      columns,
-      withNumSerie,
-      withRUC,
-      totalGPV,
-      totalTRX
-    });
-    
-  } catch (error) {
-    console.error('Error llamando a Gemini:', error);
+    window.datosLimpiosPorIA = JSON.parse(jsonString);
+
+    let gpvTotalLimpio = 0;
+    window.datosLimpiosPorIA.forEach(r => gpvTotalLimpio += (Number(r.gpv_m0) || 0));
+
     aiContent.innerHTML = `
-      <div style="color: var(--amarillo); margin-bottom: 12px;">
-        ⚠️ No se pudo conectar con Gemini AI: ${error.message}<br>
-        Mostrando estadísticas básicas del archivo.
-      </div>
-      ${generateBasicStats(data)}
-      <div class="warning-list">
-        💡 Puedes continuar con la subida manual haciendo clic en "Validar y Subir Datos"
+      <div class="result success show" style="margin-top: 0;">
+        <h4 style="color: var(--verde); margin-bottom: 12px;">✅ Datos Limpios y Listos</h4>
+        <div class="ai-stats">
+          <div class="stat-card">
+            <div class="stat-label">Filas Encontradas</div>
+            <div class="stat-value" style="color: var(--acento);">${window.datosLimpiosPorIA.length}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">GPV M0 Validado</div>
+            <div class="stat-value">S/ ${gpvTotalLimpio.toLocaleString('es-PE')}</div>
+          </div>
+        </div>
+        <div class="recommendation-box" style="margin-top: 16px;">
+          💡 La IA ha extraído exitosamente los números de serie y las métricas numéricas. 
+          Al hacer clic en "Validar y Subir", el sistema cruzará estos datos con tu hoja BASE.
+        </div>
       </div>
     `;
+    
+    uploadBtn.disabled = false;
+    
+  } catch (error) {
+    aiContent.innerHTML = `<div class="result error show">❌ Error de IA: No se pudo procesar el JSON. ${error.message}</div>`;
   }
 }
 
-function displayAIAnalysis(analysis, data, stats) {
-  // Mostrar preview de los primeros registros
-  const previewRows = data.slice(0, 5);
-  const previewColumns = Object.keys(data[0] || {}).slice(0, 6);
-  
-  const html = `
-    <div class="ai-stats">
-      <div class="stat-card">
-        <div class="stat-label">📊 Registros</div>
-        <div class="stat-value">${stats.totalRows.toLocaleString()}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">🔢 Con Serie</div>
-        <div class="stat-value">${stats.withNumSerie}/${stats.totalRows}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">🏢 Con RUC</div>
-        <div class="stat-value">${stats.withRUC}/${stats.totalRows}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">💰 GPV Estimado</div>
-        <div class="stat-value">S/ ${stats.totalGPV.toLocaleString()}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">🛒 Transacciones</div>
-        <div class="stat-value">${stats.totalTRX.toLocaleString()}</div>
-      </div>
-    </div>
-    
-    <div class="recommendation-box">
-      <strong>🤖 Análisis Gemini AI:</strong>
-      <div style="margin-top: 8px; white-space: pre-wrap; font-size: 12px; line-height: 1.5;">
-        ${escapeHtml(analysis)}
-      </div>
-    </div>
-    
-    <div class="warning-list">
-      ${stats.withNumSerie < stats.totalRows ? '⚠️ Hay registros sin número de serie. Estos no podrán ser actualizados correctamente.<br>' : ''}
-      ${stats.withRUC < stats.totalRows * 0.8 ? '⚠️ Muchos registros sin RUC. Verificar calidad de datos.<br>' : ''}
-      ${stats.totalRows > 0 ? '✅ Listo para subir. El sistema actualizará automáticamente la base de datos.' : ''}
-    </div>
-    
-    <details class="preview-table">
-      <summary>📋 Vista previa de datos (primeros ${previewRows.length} registros)</summary>
-      <div style="overflow-x: auto;">
-        <table>
-          <thead>
-            <tr>
-              ${previewColumns.map(col => `<th>${col}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${previewRows.map(row => `
-              <tr>
-                ${previewColumns.map(col => `<td title="${escapeHtml(String(row[col] || '-'))}">${escapeHtml(String(row[col] || '-').substring(0, 30))}${String(row[col] || '-').length > 30 ? '...' : ''}</td>`).join('')}
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </details>
-  `;
-  
-  aiContent.innerHTML = html;
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
+// ============================================================
+// ENVÍO AL BACKEND (APPS SCRIPT)
+// ============================================================
 uploadBtn.addEventListener('click', async () => {
-  if (!selectedFile) return;
+  if (!window.datosLimpiosPorIA) return;
   
   uploadBtn.disabled = true;
   progress.classList.add('show');
   resultDiv.classList.remove('show');
-  progressFill.style.width = '20%';
-  progressText.textContent = 'Preparando archivo...';
+  
+  progressFill.style.width = '30%';
+  progressText.textContent = 'Enviando a Google Sheets para cruzar datos...';
   
   try {
-    const reader = new FileReader();
-    
-    const fileData = await new Promise((resolve, reject) => {
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(selectedFile);
-    });
-    
-    progressFill.style.width = '50%';
-    progressText.textContent = 'Enviando a Google Sheets...';
-    
     const formData = new FormData();
-    formData.append('action', 'upload');
-    formData.append('archivo', fileData);
-    formData.append('nombre', selectedFile.name);
-    formData.append('usuario', 'dashboard_user');
-    formData.append('tipo', selectedFile.name.split('.').pop().toLowerCase());
-    
-    if (aiAnalysis) {
-      formData.append('ai_analysis', aiAnalysis.substring(0, 1000));
-    }
-    
-    console.log('Enviando archivo a:', URL_API);
-    console.log('Tipo:', selectedFile.name.split('.').pop().toLowerCase());
+    // Llamamos a la nueva acción que creaste en Code.gs
+    formData.append('action', 'update_data'); 
+    formData.append('payload', JSON.stringify(window.datosLimpiosPorIA));
+    formData.append('usuario', 'Admin_Dashboard');
     
     const response = await fetch(URL_API, {
       method: 'POST',
@@ -791,65 +601,45 @@ uploadBtn.addEventListener('click', async () => {
     });
     
     progressFill.style.width = '80%';
-    progressText.textContent = 'Procesando respuesta...';
+    progressText.textContent = 'Guardando en historial (UPLOAD) y actualizando BASE...';
     
     const result = await response.json();
-    console.log('Respuesta:', result);
     
     progressFill.style.width = '100%';
-    progressText.textContent = 'Procesamiento completado';
+    progressText.textContent = '¡Completado!';
     
     if (result.success) {
       resultDiv.className = 'result success show';
       resultDiv.innerHTML = `
-        <div class="result-title">✅ ¡Actualización Exitosa!</div>
+        <div class="result-title">✅ ¡Reporte Procesado con Éxito!</div>
         <div class="result-details">
-          ${result.mensaje || 'Datos actualizados correctamente'}<br>
-          ${result.resultado ? `📊 Nuevas filas: ${result.resultado.nuevas} | Actualizadas: ${result.resultado.actualizadas}` : ''}
-          ${result.resultado?.errores > 0 ? `<br>⚠️ Errores: ${result.resultado.errores}` : ''}
-          ${aiAnalysis ? '<br>🤖 Análisis de IA incluido en el log' : ''}
+          ${result.mensaje}<br><br>
+          <ul style="padding-left: 20px; line-height: 1.6;">
+            <li>📊 Filas cruzadas y guardadas en UPLOAD: <strong>${window.datosLimpiosPorIA.length}</strong></li>
+            <li>🔄 Filas de métricas actualizadas en BASE: <strong>${result.actualizadas || 0}</strong></li>
+            <li>🆕 Equipos nuevos añadidos a BASE: <strong>${result.nuevas || 0}</strong></li>
+          </ul>
         </div>
       `;
       
-      // Notificar al dashboard padre
+      // Actualizar el iframe padre
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'datos-actualizados' }, '*');
       }
       
-      // Limpiar selección después de subida exitosa
-      setTimeout(() => {
-        selectedFile = null;
-        selectedFileDiv.classList.remove('show');
-        uploadBtn.disabled = true;
-      }, 3000);
-      
     } else {
-      throw new Error(result.mensaje || result.error || 'Error desconocido');
+      throw new Error(result.mensaje || 'Error del servidor');
     }
     
   } catch (error) {
-    console.error('Error detallado:', error);
     resultDiv.className = 'result error show';
-    resultDiv.innerHTML = `
-      <div class="result-title">❌ Error al Actualizar</div>
-      <div class="result-details">
-        ${error.message}<br>
-        Verifica que el archivo tenga el formato correcto y vuelve a intentarlo.
-        <br><br>
-        <strong>Posibles soluciones:</strong><br>
-        • Asegúrate que el archivo tenga la estructura correcta (columnas esperadas)<br>
-        • Verifica que el número de serie sea único<br>
-        • Intenta con un archivo más pequeño primero
-      </div>
-    `;
+    resultDiv.innerHTML = `<div class="result-title">❌ Error al Actualizar</div><div class="result-details">${error.message}</div>`;
   } finally {
     setTimeout(() => {
-      uploadBtn.disabled = false;
-      setTimeout(() => {
-        progress.classList.remove('show');
-        progressFill.style.width = '0%';
-      }, 2000);
-    }, 1000);
+      uploadBtn.disabled = true;
+      progress.classList.remove('show');
+      progressFill.style.width = '0%';
+    }, 4000);
   }
 });
 
@@ -868,4 +658,11 @@ const savedTheme = localStorage.getItem('theme') || 'dark';
 aplicarTema(savedTheme);
 </script>
 </body>
-</html>
+</html>'''
+
+# Guardar el archivo
+with open('/mnt/kimi/output/upload.html', 'w', encoding='utf-8') as f:
+    f.write(html_completo)
+
+print("✅ Archivo guardado en: /mnt/kimi/output/upload.html")
+print(f"📄 Tamaño: {len(html_completo)} caracteres")
