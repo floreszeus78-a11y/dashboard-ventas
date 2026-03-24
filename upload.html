@@ -1,8 +1,4 @@
-
-# Voy a crear el archivo HTML completo con el nuevo script reemplazado
-# Manteniendo TODO el HTML y CSS exactamente igual, solo cambiando el <script>
-
-html_completo = '''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -36,7 +32,7 @@ html_completo = '''<!DOCTYPE html>
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  
+
   body {
     font-family: 'Inter', sans-serif;
     background: var(--fondo);
@@ -327,6 +323,7 @@ html_completo = '''<!DOCTYPE html>
     font-weight: 600;
   }
 </style>
+<base target="_blank">
 </head>
 <body>
 <div class="upload-container">
@@ -343,7 +340,7 @@ html_completo = '''<!DOCTYPE html>
   </div>
 
   <div class="selected-file" id="selectedFile"></div>
-  
+
   <div class="ai-preview" id="aiPreview">
     <h4>🤖 Análisis de IA</h4>
     <div id="aiContent">Cargando análisis...</div>
@@ -366,7 +363,7 @@ html_completo = '''<!DOCTYPE html>
 // CONFIGURACIÓN
 // ============================================================
 // ⚠️ Asegúrate de usar tu URL_API correcta obtenida al implementar el script
-const URL_API = 'https://script.google.com/macros/s/AKfycbw3H0etPEnm3DvILV8ZJysh4T0savPCtkekWGwx783ynk-5swPj26equ_PiSM-fMaZe/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbyKx4AXs8l5TKUS61pSARE6ibAJuE2vEGrUm1CGOoUiPH6FMbSKOMVOQXdNbjS3wpYh/exec';
 const GEMINI_API_KEY = 'AIzaSyBf_sWcPRhJfbqzwlxrKozgO9Ca-b5KMW4'; 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
@@ -417,29 +414,29 @@ async function handleFile(file) {
     alert('Formato no soportado. Usa CSV o Excel (.xlsx, .xls)');
     return;
   }
-  
+
   selectedFile = file;
   selectedFileDiv.innerHTML = `✅ Archivo: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
   selectedFileDiv.classList.add('show');
   uploadBtn.disabled = true;
-  
+
   aiPreview.classList.add('show');
   aiContent.innerHTML = '<div class="loading-ai">🤖 Extrayendo y limpiando métricas con Gemini AI...</div>';
-  
+
   try {
     if (extension === 'csv') {
       fileDataParsed = await parseCSVFile(file);
     } else {
       fileDataParsed = await parseExcelFile(file);
     }
-    
+
     if (!fileDataParsed || fileDataParsed.length === 0) {
       throw new Error('El archivo está vacío o no se pudo leer.');
     }
-    
+
     // Llamar a Gemini para estructurar los datos
     await analyzeWithGemini(fileDataParsed);
-    
+
   } catch (error) {
     console.error('Error:', error);
     aiContent.innerHTML = `<div class="result error show">❌ Error leyendo archivo: ${error.message}</div>`;
@@ -452,9 +449,11 @@ function parseCSVFile(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const lines = e.target.result.split(/\\r?\\n/);
+        const lines = e.target.result.split(/
+?
+/);
         if (lines.length < 2) return resolve([]);
-        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim().replace(/["']/g, '').replace(/\\s+/g, '_'));
+        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim().replace(/["']/g, '').replace(/\s+/g, '_'));
         const data = [];
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
@@ -480,7 +479,7 @@ function parseExcelFile(file) {
         resolve(jsonData.map(row => {
           const normalized = {};
           Object.keys(row).forEach(key => {
-            normalized[key.toLowerCase().trim().replace(/\\s+/g, '_')] = row[key];
+            normalized[key.toLowerCase().trim().replace(/\s+/g, '_')] = row[key];
           });
           return normalized;
         }));
@@ -509,14 +508,14 @@ async function analyzeWithGemini(data) {
   const prompt = `
     Actúa como un script de limpieza de datos. Recibirás un JSON de ventas POS.
     Devuelve estrictamente un arreglo JSON válido. NO escribas markdown ni introducciones.
-    
+
     REGLAS DE EXTRACCIÓN POR OBJETO:
     1. "numero_serie": Extraer de 'num_serie' o 'numserie'. Si está vacío, ignora la fila entera.
     2. Fechas ("dia_prueba", "dia_activo", "ultima_trx"): Dejar tal cual o vacío.
     3. Métricas ("gpv_m0", "trx_m0", "gpv_m0_15d", "trx_m0_15d", "gpv_m1", "trx_m1", "gpv_m2", "trx_m2"): 
        - Limpia caracteres como "S/", "$" o ",".
        - Convierte a número (ej. "1,857.00" -> 1857). Si está vacío pon 0.
-    
+
     IGNORA campos como comercio, dirección, ruc o vendedor. Solo me interesa la serie y las métricas/fechas.
 
     DATOS A PROCESAR:
@@ -539,10 +538,10 @@ async function analyzeWithGemini(data) {
     });
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
+
     const result = await response.json();
     const jsonString = result.candidates[0].content.parts[0].text;
-    
+
     window.datosLimpiosPorIA = JSON.parse(jsonString);
 
     let gpvTotalLimpio = 0;
@@ -567,9 +566,9 @@ async function analyzeWithGemini(data) {
         </div>
       </div>
     `;
-    
+
     uploadBtn.disabled = false;
-    
+
   } catch (error) {
     aiContent.innerHTML = `<div class="result error show">❌ Error de IA: No se pudo procesar el JSON. ${error.message}</div>`;
   }
@@ -580,34 +579,34 @@ async function analyzeWithGemini(data) {
 // ============================================================
 uploadBtn.addEventListener('click', async () => {
   if (!window.datosLimpiosPorIA) return;
-  
+
   uploadBtn.disabled = true;
   progress.classList.add('show');
   resultDiv.classList.remove('show');
-  
+
   progressFill.style.width = '30%';
   progressText.textContent = 'Enviando a Google Sheets para cruzar datos...';
-  
+
   try {
     const formData = new FormData();
     // Llamamos a la nueva acción que creaste en Code.gs
     formData.append('action', 'update_data'); 
     formData.append('payload', JSON.stringify(window.datosLimpiosPorIA));
     formData.append('usuario', 'Admin_Dashboard');
-    
+
     const response = await fetch(URL_API, {
       method: 'POST',
       body: formData
     });
-    
+
     progressFill.style.width = '80%';
     progressText.textContent = 'Guardando en historial (UPLOAD) y actualizando BASE...';
-    
+
     const result = await response.json();
-    
+
     progressFill.style.width = '100%';
     progressText.textContent = '¡Completado!';
-    
+
     if (result.success) {
       resultDiv.className = 'result success show';
       resultDiv.innerHTML = `
@@ -621,16 +620,16 @@ uploadBtn.addEventListener('click', async () => {
           </ul>
         </div>
       `;
-      
+
       // Actualizar el iframe padre
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'datos-actualizados' }, '*');
       }
-      
+
     } else {
       throw new Error(result.mensaje || 'Error del servidor');
     }
-    
+
   } catch (error) {
     resultDiv.className = 'result error show';
     resultDiv.innerHTML = `<div class="result-title">❌ Error al Actualizar</div><div class="result-details">${error.message}</div>`;
@@ -658,11 +657,4 @@ const savedTheme = localStorage.getItem('theme') || 'dark';
 aplicarTema(savedTheme);
 </script>
 </body>
-</html>'''
-
-# Guardar el archivo
-with open('/mnt/kimi/output/upload.html', 'w', encoding='utf-8') as f:
-    f.write(html_completo)
-
-print("✅ Archivo guardado en: /mnt/kimi/output/upload.html")
-print(f"📄 Tamaño: {len(html_completo)} caracteres")
+</html>
