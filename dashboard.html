@@ -212,44 +212,6 @@
     cursor: pointer;
   }
 
-  .grid-resumen {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-  }
-
-  .tarjeta-resumen {
-    background: var(--superficie);
-    border: 1px solid var(--borde);
-    border-radius: 24px;
-    padding: 24px;
-    box-shadow: var(--sombra);
-  }
-
-  .tarjeta-resumen .titulo {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--texto-suave);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-
-  .tarjeta-resumen .valor {
-    font-size: 42px;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--acento), #7c3aed);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-
-  .tarjeta-resumen .detalle {
-    color: var(--texto-suave);
-    font-size: 14px;
-  }
-
   .grid-graficas {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -715,9 +677,6 @@
     </div>
   </div>
 
-  <!-- KPIs -->
-  <div class="grid-resumen" id="resumenCards"></div>
-
   <!-- Gráficas -->
   <div class="grid-graficas">
     <div class="tarjeta-grafica">
@@ -995,133 +954,15 @@ function inicializarFiltros() {
 }
 
 function renderizarTodo() {
-  renderizarResumen();
+  // La función de resumen está vacía para no mostrar KPIs
   renderizarGraficas();
   renderizarEjecutivos();
   renderizarTabla();
 }
 
-// 🔥 RESUMEN - MEJORADO CON KPI DE RIESGO, BAJO RENDIMIENTO Y EFECTIVIDAD
+// 🔥 RESUMEN - FUNCIÓN VACÍA PARA DESACTIVAR LOS KPIs
 function renderizarResumen() {
-  let equipos = getEquiposFiltrados();
-  
-  // Aplicar filtro GPV al resumen también para sincronización
-  if (filtroGPVActual !== 'todos') {
-    equipos = equipos.filter(e => {
-      const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-      switch(filtroGPVActual) {
-        case 'meta': return gpvActual >= 700;
-        case 'promedio': return gpvActual >= 400 && gpvActual < 700;
-        case 'bajo': return gpvActual > 0 && gpvActual < 400;
-        case 'riesgo': return gpvActual === 0;
-        default: return true;
-      }
-    });
-  }
-
-  let totalGPV = 0;
-  let totalTRX = 0;
-  let activos = 0;
-  let regulares = 0;
-  let inactivos = 0;
-
-  let totalGPV_M0 = 0;
-  let totalGPV_M1 = 0;
-  let totalGPV_M2 = 0;
-
-  equipos.forEach(e => {
-    const m0 = parseFloat(e.gpv_m0) || 0;
-    const m1 = parseFloat(e.gpv_m1) || 0;
-    const m2 = parseFloat(e.gpv_m2) || 0;
-
-    const t0 = parseInt(e.trx_m0) || 0;
-    const t1 = parseInt(e.trx_m1) || 0;
-    const t2 = parseInt(e.trx_m2) || 0;
-
-    totalGPV += (m0 + m1 + m2);
-    totalTRX += (t0 + t1 + t2);
-
-    totalGPV_M0 += m0;
-    totalGPV_M1 += m1;
-    totalGPV_M2 += m2;
-
-    // Estado basado en GPV actual
-    const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-    const estado = getEstadoPorGPV(gpvActual);
-    if (estado === 'ACTIVO') activos++;
-    else if (estado === 'REGULAR') regulares++;
-    else inactivos++;
-  });
-
-  const totalEquipos = equipos.length;
-  
-  // 🔥 NUEVOS KPIS
-  const enRiesgo = inactivos;
-  const bajo = regulares;
-  const efectividad = totalEquipos > 0 ? Math.round((activos / totalEquipos) * 100) : 0;
-  const insight = generarInsight(equipos);
-
-  let html = 
-    `<div class="tarjeta-resumen">
-      <div class="titulo">💰 GPV TOTAL COHORTE</div>
-      <div class="valor">S/ ${formatearNumero(totalGPV)}</div>
-      <div class="detalle">M0 + M1 + M2 acumulado</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">🧪 GPV M0 (Prueba)</div>
-      <div class="valor">S/ ${formatearNumero(totalGPV_M0)}</div>
-      <div class="detalle">Primer mes</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">🚀 GPV M1</div>
-      <div class="valor">S/ ${formatearNumero(totalGPV_M1)}</div>
-      <div class="detalle">Segundo mes</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">📈 GPV M2</div>
-      <div class="valor">S/ ${formatearNumero(totalGPV_M2)}</div>
-      <div class="detalle">Tercer mes</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">🛒 TRANSACCIONES</div>
-      <div class="valor">${formatearNumero(totalTRX, 0)}</div>
-      <div class="detalle">Total acumulado</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">✅ EQUIPOS ACTIVOS</div>
-      <div class="valor">${activos}/${totalEquipos}</div>
-      <div class="detalle">${totalEquipos > 0 ? Math.round(activos/totalEquipos*100) : 0}% del total</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">🚨 EQUIPOS EN RIESGO</div>
-      <div class="valor" style="color: var(--rojo);">${enRiesgo}</div>
-      <div class="detalle">Sin ventas este mes</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">⚠️ BAJO RENDIMIENTO</div>
-      <div class="valor" style="color: var(--naranja);">${bajo}</div>
-      <div class="detalle">GPV menor a 400</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">🎯 EFECTIVIDAD</div>
-      <div class="valor">${efectividad}%</div>
-      <div class="detalle">Equipos activos vs total</div>
-    </div>
-
-    <div class="tarjeta-resumen">
-      <div class="titulo">🧠 INSIGHT</div>
-      <div class="detalle" style="font-size: 14px;">${insight}</div>
-    </div>`;
-
-  document.getElementById('resumenCards').innerHTML = html;
+  // Función desactivada para eliminar las tarjetas de resumen
 }
 
 // 🔥 GRÁFICAS - ACTUALIZADO CON GRÁFICA DE ESTADOS
@@ -1417,7 +1258,7 @@ function renderizarTabla() {
   const tbody = document.getElementById('tablaCuerpo');
   
   if (equipos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos en este filtro</td></tr>';
+    tbody.innerHTML = '}<tr><td colspan="9" style="text-align:center; padding:40px; color: var(--texto-suave);">No hay equipos en este filtro</td></tr>';
     return;
   }
   
