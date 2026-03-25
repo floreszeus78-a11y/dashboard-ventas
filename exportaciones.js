@@ -477,20 +477,20 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
 }
 
 // ============================================================
-// EXPORTAR PDF - TABLA GRANDE Y LEGIBLE
+// EXPORTAR PDF - TABLA MUY GRANDE Y LEGIBLE CON DESPLAZAMIENTO
 // ============================================================
 function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
     
-    // Aumentamos el ancho para que quepa más texto
+    // Ancho muy grande para que quepa todo el contenido
     const elementoPDF = document.createElement('div');
     elementoPDF.style.cssText = `
         position: absolute;
         top: -9999px;
         left: -9999px;
-        width: 2600px;
+        width: 3200px;
         background: white;
-        padding: 60px 50px;
+        padding: 70px 60px;
         font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
         color: #000000;
     `;
@@ -506,39 +506,39 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     }
     
     let contenidoHTML = `
-        <div style="margin-bottom: 50px; text-align: center; border-bottom: 4px solid #0ea5e9; padding-bottom: 30px;">
-            <h1 style="color: #0ea5e9; margin-bottom: 20px; font-size: 48px; font-weight: 800;">${tituloPrincipal}</h1>
-            ${subtitulo ? `<p style="color: #0ea5e9; margin: 10px 0; font-size: 24px; font-weight: 600;">${subtitulo}</p>` : ''}
-            <p style="color: #4a5568; margin: 12px 0; font-size: 18px;">📅 Fecha de exportación: ${new Date().toLocaleString()}</p>
-            <p style="color: #4a5568; margin: 8px 0; font-size: 18px; font-weight: 600;">📋 Total de registros: ${datos.length}</p>
+        <div style="margin-bottom: 60px; text-align: center; border-bottom: 5px solid #0ea5e9; padding-bottom: 35px;">
+            <h1 style="color: #0ea5e9; margin-bottom: 25px; font-size: 56px; font-weight: 800;">${tituloPrincipal}</h1>
+            ${subtitulo ? `<p style="color: #0ea5e9; margin: 12px 0; font-size: 28px; font-weight: 600;">${subtitulo}</p>` : ''}
+            <p style="color: #4a5568; margin: 15px 0; font-size: 20px;">📅 Fecha de exportación: ${new Date().toLocaleString()}</p>
+            <p style="color: #4a5568; margin: 10px 0; font-size: 20px; font-weight: 700;">📋 Total de registros: ${datos.length}</p>
         </div>
     `;
     
     if (incluirTabla) {
         contenidoHTML += `
-            <div style="margin-top: 35px;">
-                <h2 style="color: #1e293b; margin-bottom: 30px; font-size: 32px; font-weight: 700; border-left: 6px solid #0ea5e9; padding-left: 20px;">📋 TABLA DETALLADA DE EQUIPOS</h2>
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <div style="margin-top: 40px;">
+                <h2 style="color: #1e293b; margin-bottom: 35px; font-size: 36px; font-weight: 700; border-left: 8px solid #0ea5e9; padding-left: 25px;">📋 TABLA DETALLADA DE EQUIPOS</h2>
+                <table style="width: 100%; border-collapse: collapse; font-size: 16px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.15);">
                     <thead>
-                        <tr style="background: #1e293b; border-bottom: 3px solid #0ea5e9;">
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: center; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">#</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: center; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">FECHA VENTA</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: center; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">MES VENTA</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: center; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">FECHA ACTIVACIÓN</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: center; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">ÚLTIMA TRANSACCIÓN</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: left; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">COMERCIO</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: left; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">SERIE</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: left; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">RUC</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: left; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">EJECUTIVO</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: right; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">GPV M0</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: right; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">TRX M0</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: right; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">GPV M1</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: right; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">TRX M1</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: right; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">GPV M2</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: right; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">TRX M2</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: right; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">GPV ACTUAL</th>
-                            <th style="padding: 16px 12px; border: 1px solid #334155; text-align: center; font-weight: 700; color: white; background: #1e293b; font-size: 14px;">ESTADO</th>
-                         </tr>
+                        <tr style="background: #0f172a; border-bottom: 4px solid #0ea5e9;">
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">#</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">FECHA VENTA</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">MES VENTA</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">FECHA ACTIVACIÓN</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">ÚLTIMA TRANSACCIÓN</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: left; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">COMERCIO</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: left; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">SERIE</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: left; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">RUC</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: left; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">EJECUTIVO</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">GPV M0</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">TRX M0</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">GPV M1</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">TRX M1</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">GPV M2</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">TRX M2</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">GPV ACTUAL</th>
+                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">ESTADO</th>
+                          </tr>
                     </thead>
                     <tbody>
         `;
@@ -558,23 +558,23 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             
             contenidoHTML += `
                 <tr style="background: ${bgColor};">
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-weight: 600; font-size: 13px;">${i + 1}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 13px;">${fechaVentaFormateada}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-weight: 600; font-size: 13px;">${mesVenta}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 13px;">${fechaActivacionFormateada}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 13px;">${ultimaTransaccionFormateada}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; color: #1f2937; font-weight: 600; font-size: 13px;">${(item.comercio || '-').substring(0, 45)}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; color: #4b5563; font-family: monospace; font-size: 11px;">${item.numero_serie || '-'}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; color: #4b5563; font-size: 12px;">${item.ruc || '-'}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; color: #4b5563; font-weight: 600; font-size: 13px;">${item.responsable_real || '-'}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 13px;">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m0 || 0) > 0 ? '600' : 'normal'}; font-size: 13px;">${item.trx_m0 || 0}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 13px;">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m1 || 0) > 0 ? '600' : 'normal'}; font-size: 13px;">${item.trx_m1 || 0}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 13px;">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m2 || 0) > 0 ? '600' : 'normal'}; font-size: 13px;">${item.trx_m2 || 0}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: right; font-weight: 800; color: #0f172a; font-size: 14px;">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
-                    <td style="padding: 14px 10px; border: 1px solid #e2e8f0; text-align: center; color: ${estadoColor}; font-weight: 700; font-size: 13px;">${estadoTexto}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-weight: 700; font-size: 15px;">${i + 1}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 15px;">${fechaVentaFormateada}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-weight: 700; font-size: 15px;">${mesVenta}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 15px;">${fechaActivacionFormateada}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 15px;">${ultimaTransaccionFormateada}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; color: #1f2937; font-weight: 700; font-size: 15px;">${(item.comercio || '-').substring(0, 55)}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; color: #4b5563; font-family: monospace; font-size: 13px;">${item.numero_serie || '-'}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; color: #4b5563; font-size: 14px;">${item.ruc || '-'}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; color: #4b5563; font-weight: 700; font-size: 15px;">${item.responsable_real || '-'}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 15px;">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m0 || 0) > 0 ? '700' : 'normal'}; font-size: 15px;">${item.trx_m0 || 0}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 15px;">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m1 || 0) > 0 ? '700' : 'normal'}; font-size: 15px;">${item.trx_m1 || 0}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 15px;">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m2 || 0) > 0 ? '700' : 'normal'}; font-size: 15px;">${item.trx_m2 || 0}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; font-weight: 900; color: #0f172a; font-size: 17px;">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
+                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: ${estadoColor}; font-weight: 800; font-size: 15px;">${estadoTexto}</td>
                 </tr>
             `;
         });
@@ -582,7 +582,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         contenidoHTML += `
                     </tbody>
                 </table>
-                <div style="margin-top: 35px; padding: 18px; background: #f1f5f9; border-radius: 16px; text-align: center; color: #475569; font-size: 14px; border: 1px solid #e2e8f0;">
+                <div style="margin-top: 45px; padding: 22px; background: #f1f5f9; border-radius: 20px; text-align: center; color: #475569; font-size: 16px; border: 1px solid #e2e8f0;">
                     📊 Reporte generado el ${new Date().toLocaleString()} | Total: ${datos.length} registros
                 </div>
             </div>
@@ -603,10 +603,12 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     function checkAndGeneratePDF() {
         if (scriptsLoaded === 2 && window.html2canvas && window.jspdf) {
             html2canvas(elementoPDF, {
-                scale: 3.5,
+                scale: 4,
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                windowWidth: 3200,
+                windowHeight: elementoPDF.scrollHeight
             }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png', 1.0);
                 const { jsPDF } = window.jspdf;
@@ -616,6 +618,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 let heightLeft = imgHeight;
                 let position = 0;
+                let pageCount = 1;
                 
                 pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
@@ -625,6 +628,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                     pdf.addPage();
                     pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
+                    pageCount++;
                 }
                 
                 pdf.save(`${nombreArchivo}.pdf`);
