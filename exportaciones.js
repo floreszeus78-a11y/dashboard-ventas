@@ -477,189 +477,263 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
 }
 
 // ============================================================
-// EXPORTAR PDF - TABLA MUY GRANDE Y LEGIBLE CON DESPLAZAMIENTO
+// EXPORTAR PDF - VERSIÓN OPTIMIZADA CON WINDOW.PRINT()
+// Esta versión genera un PDF ligero usando texto nativo en lugar de imágenes
 // ============================================================
 function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
-    const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
-    
-    // Ancho muy grande para que quepa todo el contenido
-    const elementoPDF = document.createElement('div');
-    elementoPDF.style.cssText = `
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-        width: 3200px;
-        background: white;
-        padding: 70px 60px;
-        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-        color: #000000;
-    `;
-    
-    let tituloPrincipal = '📊 REPORTE DE VENTAS';
-    let subtitulo = '';
-    if (ejecutivoEspecifico) {
-        tituloPrincipal = `📊 REPORTE DE VENTAS - ${ejecutivoEspecifico}`;
-        subtitulo = `👤 Ejecutivo: ${ejecutivoEspecifico}`;
+    // Crear una nueva ventana para el reporte
+    const ventanaReporte = window.open('', '_blank');
+    if (!ventanaReporte) {
+        alert('Por favor, permite las ventanas emergentes para generar el reporte en PDF.');
+        return;
     }
-    if (mesEspecifico) {
-        subtitulo += subtitulo ? ` | 📅 Mes: ${mesEspecifico}` : `📅 Mes: ${mesEspecifico}`;
-    }
-    
+
+    // Construir el HTML completo del reporte
+    let tituloPrincipal = 'REPORTE DE VENTAS';
+    if (ejecutivoEspecifico) tituloPrincipal += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
+    if (mesEspecifico) tituloPrincipal += ` - MES: ${mesEspecifico}`;
+
     let contenidoHTML = `
-        <div style="margin-bottom: 60px; text-align: center; border-bottom: 5px solid #0ea5e9; padding-bottom: 35px;">
-            <h1 style="color: #0ea5e9; margin-bottom: 25px; font-size: 56px; font-weight: 800;">${tituloPrincipal}</h1>
-            ${subtitulo ? `<p style="color: #0ea5e9; margin: 12px 0; font-size: 28px; font-weight: 600;">${subtitulo}</p>` : ''}
-            <p style="color: #4a5568; margin: 15px 0; font-size: 20px;">📅 Fecha de exportación: ${new Date().toLocaleString()}</p>
-            <p style="color: #4a5568; margin: 10px 0; font-size: 20px; font-weight: 700;">📋 Total de registros: ${datos.length}</p>
-        </div>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Reporte de Ventas - ${nombreBase}</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background: white;
+                color: #1f2937;
+                font-size: 11px;
+                line-height: 1.4;
+            }
+            
+            .report-container {
+                max-width: 100%;
+                margin: 0 auto;
+            }
+            
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+                border-bottom: 3px solid #0ea5e9;
+            }
+            
+            h1 {
+                color: #0ea5e9;
+                font-size: 24px;
+                font-weight: 800;
+                margin-bottom: 10px;
+            }
+            
+            .subheader {
+                color: #6b7280;
+                font-size: 12px;
+                margin: 5px 0;
+            }
+            
+            .total-registros {
+                font-weight: 700;
+                font-size: 14px;
+                color: #0ea5e9;
+                margin-top: 10px;
+            }
+            
+            h2 {
+                font-size: 16px;
+                font-weight: 700;
+                margin: 20px 0 15px 0;
+                color: #374151;
+                border-left: 4px solid #0ea5e9;
+                padding-left: 12px;
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 15px 0;
+                font-size: 10px;
+            }
+            
+            th {
+                background: #f3f4f6;
+                padding: 10px 8px;
+                text-align: left;
+                font-weight: 700;
+                color: #1f2937;
+                border: 1px solid #e5e7eb;
+                position: sticky;
+                top: 0;
+            }
+            
+            td {
+                padding: 8px;
+                border: 1px solid #e5e7eb;
+                vertical-align: top;
+            }
+            
+            tr:nth-child(even) {
+                background-color: #f9fafb;
+            }
+            
+            .footer {
+                margin-top: 30px;
+                padding-top: 15px;
+                text-align: center;
+                font-size: 9px;
+                color: #9ca3af;
+                border-top: 1px solid #e5e7eb;
+            }
+            
+            .text-right {
+                text-align: right;
+            }
+            
+            .text-center {
+                text-align: center;
+            }
+            
+            .font-bold {
+                font-weight: 700;
+            }
+            
+            .estado-activo {
+                color: #16a34a;
+                font-weight: 700;
+            }
+            
+            .estado-regular {
+                color: #ea580c;
+                font-weight: 700;
+            }
+            
+            .estado-inactivo {
+                color: #dc2626;
+                font-weight: 700;
+            }
+            
+            @media print {
+                body {
+                    margin: 0;
+                    padding: 10px;
+                }
+                .page-break {
+                    page-break-before: always;
+                }
+                th {
+                    background: #f3f4f6;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                tr:nth-child(even) {
+                    background-color: #f9fafb;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="report-container">
+            <div class="header">
+                <h1>📊 ${tituloPrincipal}</h1>
+                <div class="subheader">Fecha de exportación: ${new Date().toLocaleString()}</div>
+                <div class="total-registros">📋 Total de registros: ${datos.length}</div>
+            </div>
     `;
-    
+
     if (incluirTabla) {
         contenidoHTML += `
-            <div style="margin-top: 40px;">
-                <h2 style="color: #1e293b; margin-bottom: 35px; font-size: 36px; font-weight: 700; border-left: 8px solid #0ea5e9; padding-left: 25px;">📋 TABLA DETALLADA DE EQUIPOS</h2>
-                <table style="width: 100%; border-collapse: collapse; font-size: 16px; background: white; box-shadow: 0 6px 18px rgba(0,0,0,0.15);">
+            <h2>📋 Tabla Detallada de Equipos</h2>
+            <div style="overflow-x: auto;">
+                <table>
                     <thead>
-                        <tr style="background: #0f172a; border-bottom: 4px solid #0ea5e9;">
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">#</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">FECHA VENTA</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">MES VENTA</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">FECHA ACTIVACIÓN</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">ÚLTIMA TRANSACCIÓN</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: left; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">COMERCIO</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: left; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">SERIE</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: left; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">RUC</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: left; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">EJECUTIVO</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">GPV M0</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">TRX M0</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">GPV M1</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">TRX M1</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">GPV M2</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">TRX M2</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: right; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">GPV ACTUAL</th>
-                            <th style="padding: 20px 15px; border: 1px solid #334155; text-align: center; font-weight: 800; color: white; background: #0f172a; font-size: 16px;">ESTADO</th>
-                          </tr>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha Venta</th>
+                            <th>Comercio</th>
+                            <th>Serie</th>
+                            <th>RUC</th>
+                            <th>Ejecutivo</th>
+                            <th class="text-right">GPV M0</th>
+                            <th class="text-right">GPV M1</th>
+                            <th class="text-right">GPV M2</th>
+                            <th class="text-right">GPV Actual</th>
+                            <th>Estado</th>
+                        </tr>
                     </thead>
                     <tbody>
         `;
-        
+
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
             const estado = getEstadoPorGPV(gpvActual);
-            const estadoTexto = estado === 'ACTIVO' ? '✅ ACTIVO' : (estado === 'REGULAR' ? '⚠️ REGULAR' : '❌ INACTIVO');
-            const estadoColor = estado === 'ACTIVO' ? '#16a34a' : (estado === 'REGULAR' ? '#ea580c' : '#dc2626');
+            let estadoClass = '';
+            let estadoTexto = '';
             
-            const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
-            const mesVenta = obtenerNombreMesExport(item.fecha_venta);
-            const fechaActivacionFormateada = formatearFechaExport(item.dia_activo);
-            const ultimaTransaccionFormateada = formatearFechaExport(item.ultima_transaccion);
-            
-            const bgColor = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+            if (estado === 'ACTIVO') {
+                estadoClass = 'estado-activo';
+                estadoTexto = '✅ Activo';
+            } else if (estado === 'REGULAR') {
+                estadoClass = 'estado-regular';
+                estadoTexto = '⚠️ Regular';
+            } else {
+                estadoClass = 'estado-inactivo';
+                estadoTexto = '❌ Inactivo';
+            }
             
             contenidoHTML += `
-                <tr style="background: ${bgColor};">
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-weight: 700; font-size: 15px;">${i + 1}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 15px;">${fechaVentaFormateada}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-weight: 700; font-size: 15px;">${mesVenta}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 15px;">${fechaActivacionFormateada}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: #1f2937; font-size: 15px;">${ultimaTransaccionFormateada}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; color: #1f2937; font-weight: 700; font-size: 15px;">${(item.comercio || '-').substring(0, 55)}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; color: #4b5563; font-family: monospace; font-size: 13px;">${item.numero_serie || '-'}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; color: #4b5563; font-size: 14px;">${item.ruc || '-'}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; color: #4b5563; font-weight: 700; font-size: 15px;">${item.responsable_real || '-'}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 15px;">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m0 || 0) > 0 ? '700' : 'normal'}; font-size: 15px;">${item.trx_m0 || 0}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 15px;">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m1 || 0) > 0 ? '700' : 'normal'}; font-size: 15px;">${item.trx_m1 || 0}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-size: 15px;">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; color: #1f2937; font-weight: ${(item.trx_m2 || 0) > 0 ? '700' : 'normal'}; font-size: 15px;">${item.trx_m2 || 0}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: right; font-weight: 900; color: #0f172a; font-size: 17px;">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
-                    <td style="padding: 18px 12px; border: 1px solid #e2e8f0; text-align: center; color: ${estadoColor}; font-weight: 800; font-size: 15px;">${estadoTexto}</td>
+                <tr>
+                    <td class="text-center">${i + 1}</td>
+                    <td>${formatearFechaExport(item.fecha_venta)}</td>
+                    <td>${(item.comercio || '-').substring(0, 45)}</td>
+                    <td><code style="font-family: monospace;">${item.numero_serie || '-'}</code></td>
+                    <td>${item.ruc || '-'}</td>
+                    <td>${item.responsable_real || '-'}</td>
+                    <td class="text-right">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
+                    <td class="text-right">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
+                    <td class="text-right">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
+                    <td class="text-right font-bold">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
+                    <td class="text-center ${estadoClass}">${estadoTexto}</td>
                 </tr>
             `;
         });
-        
+
         contenidoHTML += `
                     </tbody>
                 </table>
-                <div style="margin-top: 45px; padding: 22px; background: #f1f5f9; border-radius: 20px; text-align: center; color: #475569; font-size: 16px; border: 1px solid #e2e8f0;">
-                    📊 Reporte generado el ${new Date().toLocaleString()} | Total: ${datos.length} registros
-                </div>
             </div>
         `;
     }
+
+    contenidoHTML += `
+            <div class="footer">
+                Reporte generado automáticamente el ${new Date().toLocaleString()} | Sistema de Gestión de Ventas Culqi
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+
+    // Escribir el HTML en la nueva ventana
+    ventanaReporte.document.write(contenidoHTML);
+    ventanaReporte.document.close();
     
-    elementoPDF.innerHTML = contenidoHTML;
-    document.body.appendChild(elementoPDF);
-    
-    const scriptHtml2canvas = document.createElement('script');
-    scriptHtml2canvas.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    
-    const scriptJspdf = document.createElement('script');
-    scriptJspdf.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    
-    let scriptsLoaded = 0;
-    
-    function checkAndGeneratePDF() {
-        if (scriptsLoaded === 2 && window.html2canvas && window.jspdf) {
-            html2canvas(elementoPDF, {
-                scale: 4,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                windowWidth: 3200,
-                windowHeight: elementoPDF.scrollHeight
-            }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png', 1.0);
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgWidth = 190;
-                const pageHeight = 277;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0;
-                let pageCount = 1;
-                
-                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                
-                while (heightLeft > 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                    pageCount++;
-                }
-                
-                pdf.save(`${nombreArchivo}.pdf`);
-                document.body.removeChild(elementoPDF);
-            }).catch(err => {
-                console.error('Error generando PDF:', err);
-                alert('Error al generar el PDF. Por favor intenta con formato CSV o TXT.');
-                document.body.removeChild(elementoPDF);
-            });
-        }
-    }
-    
-    scriptHtml2canvas.onload = () => {
-        scriptsLoaded++;
-        checkAndGeneratePDF();
+    // Esperar a que todo esté cargado y luego abrir el diálogo de impresión
+    ventanaReporte.onload = function() {
+        ventanaReporte.print();
+        // Opcional: cerrar la ventana después de imprimir (descomentar si se desea)
+        // ventanaReporte.onafterprint = function() { ventanaReporte.close(); };
     };
-    
-    scriptJspdf.onload = () => {
-        scriptsLoaded++;
-        checkAndGeneratePDF();
-    };
-    
-    document.head.appendChild(scriptHtml2canvas);
-    document.head.appendChild(scriptJspdf);
-    
-    setTimeout(() => {
-        if (scriptsLoaded < 2) {
-            alert('Error: No se pudieron cargar las librerías para generar PDF. Por favor verifica tu conexión a internet.');
-            document.body.removeChild(elementoPDF);
-        }
-    }, 10000);
 }
 
 function descargarArchivo(blob, nombreArchivo) {
