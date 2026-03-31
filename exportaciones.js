@@ -1,6 +1,7 @@
 // ============================================================
 // EXPORTACIONES.JS - Sistema completo de exportación
 // Versión con lógica de estado basada en GPV (no días)
+// CON NUEVAS COLUMNAS: Mes Venta, Fecha Activación, Última Transacción y TRX por mes
 // ============================================================
 
 // ============================================================
@@ -322,7 +323,7 @@ function ejecutarExportacion() {
 }
 
 // ============================================================
-// EXPORTAR EXCEL (CSV)
+// EXPORTAR EXCEL (CSV) - CON NUEVAS COLUMNAS
 // ============================================================
 function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
@@ -342,11 +343,27 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
         contenido.push('=== TABLA DETALLADA ===');
         contenido.push('');
         
+        // HEADERS ACTUALIZADOS CON NUEVAS COLUMNAS
         const headers = [
-            '#', 'Fecha Venta', 'Mes Venta', 'Fecha Activación', 'Última Transacción',
-            'Comercio', 'Serie', 'RUC', 'Ejecutivo', 
-            'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 'GPV M2', 'TRX M2', 
-            'Mes Actual', 'GPV Actual', 'TRX Actual', 'Estado'
+            '#', 
+            'Fecha Venta', 
+            'Mes Venta',
+            'Comercio', 
+            'Serie', 
+            'RUC', 
+            'Ejecutivo',
+            'Fecha Activación',
+            'Última Transacción',
+            'GPV M0', 
+            'TRX M0', 
+            'GPV M1', 
+            'TRX M1', 
+            'GPV M2', 
+            'TRX M2',
+            'Mes Actual',
+            'GPV Actual', 
+            'TRX Actual', 
+            'Estado'
         ];
         
         contenido.push(headers.map(h => `"${h}"`).join(','));
@@ -364,12 +381,12 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
                 i + 1,
                 `"${fechaVentaFormateada}"`,
                 `"${mesVenta}"`,
-                `"${fechaActivacionFormateada}"`,
-                `"${ultimaTransaccionFormateada}"`,
                 `"${(item.comercio || '').replace(/"/g, '""')}"`,
                 item.numero_serie || '',
                 item.ruc || '',
                 item.responsable_real || '',
+                `"${fechaActivacionFormateada}"`,
+                `"${ultimaTransaccionFormateada}"`,
                 item.gpv_m0 || 0,
                 item.trx_m0 || 0,
                 item.gpv_m1 || 0,
@@ -390,7 +407,7 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
 }
 
 // ============================================================
-// EXPORTAR TXT
+// EXPORTAR TXT - CON NUEVAS COLUMNAS
 // ============================================================
 function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
@@ -420,16 +437,17 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             return str.length > ancho ? str.substring(0, ancho - 3) + '...' : str.padEnd(ancho);
         };
         
+        // HEADERS ACTUALIZADOS PARA TXT
         contenido.push(
             pad('#', 5) +
             pad('Fecha Venta', 12) +
             pad('Mes Venta', 12) +
-            pad('Fecha Activación', 14) +
-            pad('Última Transacción', 16) +
-            pad('Comercio', 28) +
+            pad('Comercio', 30) +
             pad('Serie', 15) +
             pad('RUC', 12) +
             pad('Ejecutivo', 20) +
+            pad('Fecha Activación', 16) +
+            pad('Última Transacción', 18) +
             pad('GPV M0', 10) +
             pad('TRX M0', 8) +
             pad('GPV M1', 10) +
@@ -437,9 +455,10 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             pad('GPV M2', 10) +
             pad('TRX M2', 8) +
             pad('GPV Act', 10) +
+            pad('TRX Act', 8) +
             pad('Estado', 10)
         );
-        contenido.push('-'.repeat(220));
+        contenido.push('-'.repeat(240));
         
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
@@ -454,12 +473,12 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 pad(i + 1, 5) +
                 pad(fechaVentaFormateada, 12) +
                 pad(mesVenta, 12) +
-                pad(fechaActivacionFormateada, 14) +
-                pad(ultimaTransaccionFormateada, 16) +
-                pad(item.comercio || '-', 28) +
+                pad(item.comercio || '-', 30) +
                 pad(item.numero_serie || '-', 15) +
                 pad(item.ruc || '-', 12) +
                 pad(item.responsable_real || '-', 20) +
+                pad(fechaActivacionFormateada, 16) +
+                pad(ultimaTransaccionFormateada, 18) +
                 pad(item.gpv_m0 || 0, 10) +
                 pad(item.trx_m0 || 0, 8) +
                 pad(item.gpv_m1 || 0, 10) +
@@ -467,7 +486,43 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 pad(item.gpv_m2 || 0, 10) +
                 pad(item.trx_m2 || 0, 8) +
                 pad(gpvActual, 10) +
+                pad(item.trx_mes_actual_corriendo || 0, 8) +
                 pad(estadoTexto, 10)
+            );
+        });
+        
+        // AGREGAR SECCIÓN DE TRANSACCIONES POR MES
+        contenido.push('');
+        contenido.push(separador);
+        contenido.push('DETALLE DE TRANSACCIONES POR MES (PRIMEROS 20 REGISTROS)');
+        contenido.push(separador);
+        contenido.push('');
+        
+        const padDetalle = (texto, ancho) => {
+            const str = String(texto || '-');
+            return str.length > ancho ? str.substring(0, ancho - 3) + '...' : str.padEnd(ancho);
+        };
+        
+        contenido.push(
+            padDetalle('#', 5) +
+            padDetalle('Serie', 15) +
+            padDetalle('Comercio', 30) +
+            padDetalle('TRX M0', 8) +
+            padDetalle('TRX M1', 8) +
+            padDetalle('TRX M2', 8) +
+            padDetalle('TRX Actual', 12)
+        );
+        contenido.push('-'.repeat(86));
+        
+        datos.slice(0, 20).forEach((item, i) => {
+            contenido.push(
+                padDetalle(i + 1, 5) +
+                padDetalle(item.numero_serie || '-', 15) +
+                padDetalle(item.comercio || '-', 30) +
+                padDetalle(item.trx_m0 || 0, 8) +
+                padDetalle(item.trx_m1 || 0, 8) +
+                padDetalle(item.trx_m2 || 0, 8) +
+                padDetalle(item.trx_mes_actual_corriendo || 0, 12)
             );
         });
     }
@@ -478,7 +533,7 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
 
 // ============================================================
 // EXPORTAR PDF - VERSIÓN OPTIMIZADA CON WINDOW.PRINT()
-// Esta versión genera un PDF ligero usando texto nativo en lugar de imágenes
+// CON NUEVAS COLUMNAS
 // ============================================================
 function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     // Crear una nueva ventana para el reporte
@@ -512,8 +567,8 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 padding: 20px;
                 background: white;
                 color: #1f2937;
-                font-size: 11px;
-                line-height: 1.4;
+                font-size: 10px;
+                line-height: 1.3;
             }
             
             .report-container {
@@ -537,13 +592,13 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             
             .subheader {
                 color: #6b7280;
-                font-size: 12px;
+                font-size: 11px;
                 margin: 5px 0;
             }
             
             .total-registros {
                 font-weight: 700;
-                font-size: 14px;
+                font-size: 13px;
                 color: #0ea5e9;
                 margin-top: 10px;
             }
@@ -561,12 +616,12 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 width: 100%;
                 border-collapse: collapse;
                 margin: 15px 0;
-                font-size: 10px;
+                font-size: 9px;
             }
             
             th {
                 background: #f3f4f6;
-                padding: 10px 8px;
+                padding: 8px 6px;
                 text-align: left;
                 font-weight: 700;
                 color: #1f2937;
@@ -576,7 +631,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             }
             
             td {
-                padding: 8px;
+                padding: 6px;
                 border: 1px solid #e5e7eb;
                 vertical-align: top;
             }
@@ -589,7 +644,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 margin-top: 30px;
                 padding-top: 15px;
                 text-align: center;
-                font-size: 9px;
+                font-size: 8px;
                 color: #9ca3af;
                 border-top: 1px solid #e5e7eb;
             }
@@ -621,13 +676,14 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 font-weight: 700;
             }
             
+            .page-break {
+                page-break-before: always;
+            }
+            
             @media print {
                 body {
                     margin: 0;
                     padding: 10px;
-                }
-                .page-break {
-                    page-break-before: always;
                 }
                 th {
                     background: #f3f4f6;
@@ -655,19 +711,26 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         contenidoHTML += `
             <h2>📋 Tabla Detallada de Equipos</h2>
             <div style="overflow-x: auto;">
-                <table>
+                 <table>
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Fecha Venta</th>
+                            <th>Mes Venta</th>
                             <th>Comercio</th>
                             <th>Serie</th>
                             <th>RUC</th>
                             <th>Ejecutivo</th>
+                            <th>Fecha Activación</th>
+                            <th>Última Transacción</th>
                             <th class="text-right">GPV M0</th>
+                            <th class="text-right">TRX M0</th>
                             <th class="text-right">GPV M1</th>
+                            <th class="text-right">TRX M1</th>
                             <th class="text-right">GPV M2</th>
+                            <th class="text-right">TRX M2</th>
                             <th class="text-right">GPV Actual</th>
+                            <th class="text-right">TRX Actual</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
@@ -695,14 +758,21 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 <tr>
                     <td class="text-center">${i + 1}</td>
                     <td>${formatearFechaExport(item.fecha_venta)}</td>
-                    <td>${(item.comercio || '-').substring(0, 45)}</td>
+                    <td>${obtenerNombreMesExport(item.fecha_venta)}</td>
+                    <td>${(item.comercio || '-').substring(0, 35)}</td>
                     <td><code style="font-family: monospace;">${item.numero_serie || '-'}</code></td>
                     <td>${item.ruc || '-'}</td>
                     <td>${item.responsable_real || '-'}</td>
+                    <td>${formatearFechaExport(item.dia_activo)}</td>
+                    <td>${formatearFechaExport(item.ultima_transaccion)}</td>
                     <td class="text-right">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
+                    <td class="text-right">${item.trx_m0 || 0}</td>
                     <td class="text-right">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
+                    <td class="text-right">${item.trx_m1 || 0}</td>
                     <td class="text-right">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
+                    <td class="text-right">${item.trx_m2 || 0}</td>
                     <td class="text-right font-bold">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
+                    <td class="text-right">${item.trx_mes_actual_corriendo || 0}</td>
                     <td class="text-center ${estadoClass}">${estadoTexto}</td>
                 </tr>
             `;
@@ -711,6 +781,47 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         contenidoHTML += `
                     </tbody>
                 </table>
+            </div>
+        `;
+        
+        // AGREGAR SECCIÓN DE TRANSACCIONES POR MES EN PDF
+        contenidoHTML += `
+            <div class="page-break"></div>
+            <h2>📊 Detalle de Transacciones por Mes</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Serie</th>
+                            <th>Comercio</th>
+                            <th class="text-right">TRX M0</th>
+                            <th class="text-right">TRX M1</th>
+                            <th class="text-right">TRX M2</th>
+                            <th class="text-right">TRX Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        datos.slice(0, 50).forEach((item, i) => {
+            contenidoHTML += `
+                <tr>
+                    <td class="text-center">${i + 1}</td>
+                    <td><code>${item.numero_serie || '-'}</code></td>
+                    <td>${(item.comercio || '-').substring(0, 35)}</td>
+                    <td class="text-right">${item.trx_m0 || 0}</td>
+                    <td class="text-right">${item.trx_m1 || 0}</td>
+                    <td class="text-right">${item.trx_m2 || 0}</td>
+                    <td class="text-right font-bold">${item.trx_mes_actual_corriendo || 0}</td>
+                </tr>
+            `;
+        });
+        
+        contenidoHTML += `
+                    </tbody>
+                </table>
+                ${datos.length > 50 ? '<p style="font-size: 9px; color: #6b7280; margin-top: 10px;">* Mostrando primeros 50 registros de transacciones</p>' : ''}
             </div>
         `;
     }
@@ -731,8 +842,6 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     // Esperar a que todo esté cargado y luego abrir el diálogo de impresión
     ventanaReporte.onload = function() {
         ventanaReporte.print();
-        // Opcional: cerrar la ventana después de imprimir (descomentar si se desea)
-        // ventanaReporte.onafterprint = function() { ventanaReporte.close(); };
     };
 }
 
