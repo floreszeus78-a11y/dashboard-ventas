@@ -1,16 +1,18 @@
 // ============================================================
 // EXPORTACIONES.JS - Sistema completo de exportación
-// Versión con lógica de estado basada en GPV (no días)
-// CON NUEVAS COLUMNAS: Mes Venta, Fecha Activación, Última Transacción y TRX por mes
+// Versión con lógica de estado basada en GPV (según especificación)
+// ACTIVO: ≥ 700 | REGULAR: 400-699 | SIN TANTO USO: 1-399 | INACTIVO: 0
 // ============================================================
 
 // ============================================================
-// FUNCIÓN DE ESTADO BASADA EN GPV (MISMA QUE EL DASHBOARD)
+// FUNCIÓN DE ESTADO BASADA EN GPV (ACTUALIZADA)
 // ============================================================
 function getEstadoPorGPV(gpv) {
     if (gpv === 0 || gpv === null || gpv === undefined) return 'INACTIVO';
-    if (gpv < 400) return 'REGULAR';
-    return 'ACTIVO';
+    if (gpv >= 700) return 'ACTIVO';
+    if (gpv >= 400 && gpv <= 699) return 'REGULAR';
+    if (gpv >= 1 && gpv <= 399) return 'SIN TANTO USO';
+    return 'INACTIVO';
 }
 
 // ============================================================
@@ -18,9 +20,10 @@ function getEstadoPorGPV(gpv) {
 // ============================================================
 function obtenerEstadoTexto(estado) {
     switch(estado) {
-        case 'ACTIVO': return '✅ Activo';
-        case 'REGULAR': return '⚠️ Regular';
-        case 'INACTIVO': return '❌ Inactivo';
+        case 'ACTIVO': return '✅ Activo (≥ S/700)';
+        case 'REGULAR': return '⚠️ Regular (S/400-699)';
+        case 'SIN TANTO USO': return '📉 Sin tanto uso (S/1-399)';
+        case 'INACTIVO': return '❌ Inactivo (S/0)';
         default: return '⚪ Sin datos';
     }
 }
@@ -29,6 +32,7 @@ function obtenerColorEstado(estado) {
     switch(estado) {
         case 'ACTIVO': return '#22c55e';
         case 'REGULAR': return '#f97316';
+        case 'SIN TANTO USO': return '#eab308';
         case 'INACTIVO': return '#ef4444';
         default: return '#64748b';
     }
@@ -323,7 +327,7 @@ function ejecutarExportacion() {
 }
 
 // ============================================================
-// EXPORTAR EXCEL (CSV) - CON NUEVAS COLUMNAS
+// EXPORTAR EXCEL (CSV)
 // ============================================================
 function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
@@ -343,7 +347,6 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
         contenido.push('=== TABLA DETALLADA ===');
         contenido.push('');
         
-        // HEADERS ACTUALIZADOS CON NUEVAS COLUMNAS
         const headers = [
             '#', 
             'Fecha Venta', 
@@ -371,7 +374,12 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
             const estado = getEstadoPorGPV(gpvActual);
-            const estadoTexto = estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo');
+            let estadoTexto = '';
+            if (estado === 'ACTIVO') estadoTexto = 'Activo (≥ S/700)';
+            else if (estado === 'REGULAR') estadoTexto = 'Regular (S/400-699)';
+            else if (estado === 'SIN TANTO USO') estadoTexto = 'Sin tanto uso (S/1-399)';
+            else estadoTexto = 'Inactivo (S/0)';
+            
             const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
             const mesVenta = obtenerNombreMesExport(item.fecha_venta);
             const fechaActivacionFormateada = formatearFechaExport(item.dia_activo);
@@ -407,7 +415,7 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
 }
 
 // ============================================================
-// EXPORTAR TXT - CON NUEVAS COLUMNAS
+// EXPORTAR TXT
 // ============================================================
 function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
@@ -437,7 +445,6 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             return str.length > ancho ? str.substring(0, ancho - 3) + '...' : str.padEnd(ancho);
         };
         
-        // HEADERS ACTUALIZADOS PARA TXT
         contenido.push(
             pad('#', 5) +
             pad('Fecha Venta', 12) +
@@ -456,14 +463,19 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             pad('TRX M2', 8) +
             pad('GPV Act', 10) +
             pad('TRX Act', 8) +
-            pad('Estado', 10)
+            pad('Estado', 12)
         );
-        contenido.push('-'.repeat(240));
+        contenido.push('-'.repeat(250));
         
         datos.forEach((item, i) => {
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
             const estado = getEstadoPorGPV(gpvActual);
-            const estadoTexto = estado === 'ACTIVO' ? 'Activo' : (estado === 'REGULAR' ? 'Regular' : 'Inactivo');
+            let estadoTexto = '';
+            if (estado === 'ACTIVO') estadoTexto = 'Activo';
+            else if (estado === 'REGULAR') estadoTexto = 'Regular';
+            else if (estado === 'SIN TANTO USO') estadoTexto = 'Sin tanto uso';
+            else estadoTexto = 'Inactivo';
+            
             const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
             const mesVenta = obtenerNombreMesExport(item.fecha_venta);
             const fechaActivacionFormateada = formatearFechaExport(item.dia_activo);
@@ -487,11 +499,39 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 pad(item.trx_m2 || 0, 8) +
                 pad(gpvActual, 10) +
                 pad(item.trx_mes_actual_corriendo || 0, 8) +
-                pad(estadoTexto, 10)
+                pad(estadoTexto, 12)
             );
         });
         
-        // AGREGAR SECCIÓN DE TRANSACCIONES POR MES
+        // Agregar resumen de estados
+        contenido.push('');
+        contenido.push(separador);
+        contenido.push('RESUMEN POR ESTADO');
+        contenido.push(separador);
+        
+        const activos = datos.filter(e => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            return getEstadoPorGPV(gpv) === 'ACTIVO';
+        }).length;
+        const regulares = datos.filter(e => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            return getEstadoPorGPV(gpv) === 'REGULAR';
+        }).length;
+        const sinUso = datos.filter(e => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            return getEstadoPorGPV(gpv) === 'SIN TANTO USO';
+        }).length;
+        const inactivos = datos.filter(e => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            return getEstadoPorGPV(gpv) === 'INACTIVO';
+        }).length;
+        
+        contenido.push(`✅ ACTIVOS (≥ S/700): ${activos} equipos`);
+        contenido.push(`⚠️ REGULARES (S/400-699): ${regulares} equipos`);
+        contenido.push(`📉 SIN TANTO USO (S/1-399): ${sinUso} equipos`);
+        contenido.push(`❌ INACTIVOS (S/0): ${inactivos} equipos`);
+        
+        // Agregar detalle de transacciones por mes
         contenido.push('');
         contenido.push(separador);
         contenido.push('DETALLE DE TRANSACCIONES POR MES (PRIMEROS 20 REGISTROS)');
@@ -533,17 +573,14 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
 
 // ============================================================
 // EXPORTAR PDF - VERSIÓN OPTIMIZADA CON WINDOW.PRINT()
-// CON NUEVAS COLUMNAS
 // ============================================================
 function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
-    // Crear una nueva ventana para el reporte
     const ventanaReporte = window.open('', '_blank');
     if (!ventanaReporte) {
         alert('Por favor, permite las ventanas emergentes para generar el reporte en PDF.');
         return;
     }
 
-    // Construir el HTML completo del reporte
     let tituloPrincipal = 'REPORTE DE VENTAS';
     if (ejecutivoEspecifico) tituloPrincipal += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
     if (mesEspecifico) tituloPrincipal += ` - MES: ${mesEspecifico}`;
@@ -555,12 +592,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         <meta charset="UTF-8">
         <title>Reporte de Ventas - ${nombreBase}</title>
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
                 font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
                 margin: 0;
@@ -570,39 +602,30 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 font-size: 10px;
                 line-height: 1.3;
             }
-            
-            .report-container {
-                max-width: 100%;
-                margin: 0 auto;
-            }
-            
+            .report-container { max-width: 100%; margin: 0 auto; }
             .header {
                 text-align: center;
                 margin-bottom: 30px;
                 padding-bottom: 20px;
                 border-bottom: 3px solid #0ea5e9;
             }
-            
             h1 {
                 color: #0ea5e9;
                 font-size: 24px;
                 font-weight: 800;
                 margin-bottom: 10px;
             }
-            
             .subheader {
                 color: #6b7280;
                 font-size: 11px;
                 margin: 5px 0;
             }
-            
             .total-registros {
                 font-weight: 700;
                 font-size: 13px;
                 color: #0ea5e9;
                 margin-top: 10px;
             }
-            
             h2 {
                 font-size: 16px;
                 font-weight: 700;
@@ -611,14 +634,12 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 border-left: 4px solid #0ea5e9;
                 padding-left: 12px;
             }
-            
             table {
                 width: 100%;
                 border-collapse: collapse;
                 margin: 15px 0;
                 font-size: 9px;
             }
-            
             th {
                 background: #f3f4f6;
                 padding: 8px 6px;
@@ -626,20 +647,13 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 font-weight: 700;
                 color: #1f2937;
                 border: 1px solid #e5e7eb;
-                position: sticky;
-                top: 0;
             }
-            
             td {
                 padding: 6px;
                 border: 1px solid #e5e7eb;
                 vertical-align: top;
             }
-            
-            tr:nth-child(even) {
-                background-color: #f9fafb;
-            }
-            
+            tr:nth-child(even) { background-color: #f9fafb; }
             .footer {
                 margin-top: 30px;
                 padding-top: 15px;
@@ -648,53 +662,18 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 color: #9ca3af;
                 border-top: 1px solid #e5e7eb;
             }
-            
-            .text-right {
-                text-align: right;
-            }
-            
-            .text-center {
-                text-align: center;
-            }
-            
-            .font-bold {
-                font-weight: 700;
-            }
-            
-            .estado-activo {
-                color: #16a34a;
-                font-weight: 700;
-            }
-            
-            .estado-regular {
-                color: #ea580c;
-                font-weight: 700;
-            }
-            
-            .estado-inactivo {
-                color: #dc2626;
-                font-weight: 700;
-            }
-            
-            .page-break {
-                page-break-before: always;
-            }
-            
+            .text-right { text-align: right; }
+            .text-center { text-align: center; }
+            .font-bold { font-weight: 700; }
+            .estado-activo { color: #16a34a; font-weight: 700; }
+            .estado-regular { color: #ea580c; font-weight: 700; }
+            .estado-sin-uso { color: #eab308; font-weight: 700; }
+            .estado-inactivo { color: #dc2626; font-weight: 700; }
+            .page-break { page-break-before: always; }
             @media print {
-                body {
-                    margin: 0;
-                    padding: 10px;
-                }
-                th {
-                    background: #f3f4f6;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                tr:nth-child(even) {
-                    background-color: #f9fafb;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
+                body { margin: 0; padding: 10px; }
+                th { background: #f3f4f6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                tr:nth-child(even) { background-color: #f9fafb; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
         </style>
     </head>
@@ -708,10 +687,50 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     `;
 
     if (incluirTabla) {
+        // Calcular resumen de estados
+        const activos = datos.filter(e => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            return getEstadoPorGPV(gpv) === 'ACTIVO';
+        }).length;
+        const regulares = datos.filter(e => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            return getEstadoPorGPV(gpv) === 'REGULAR';
+        }).length;
+        const sinUso = datos.filter(e => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            return getEstadoPorGPV(gpv) === 'SIN TANTO USO';
+        }).length;
+        const inactivos = datos.filter(e => {
+            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            return getEstadoPorGPV(gpv) === 'INACTIVO';
+        }).length;
+        
         contenidoHTML += `
+            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px;">📊 Resumen por Estado</h3>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                    <div style="background: #dcfce7; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 20px; font-weight: 700; color: #16a34a;">${activos}</div>
+                        <div style="font-size: 10px;">Activos (≥ S/700)</div>
+                    </div>
+                    <div style="background: #ffedd5; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 20px; font-weight: 700; color: #ea580c;">${regulares}</div>
+                        <div style="font-size: 10px;">Regulares (S/400-699)</div>
+                    </div>
+                    <div style="background: #fef9c3; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 20px; font-weight: 700; color: #eab308;">${sinUso}</div>
+                        <div style="font-size: 10px;">Sin tanto uso (S/1-399)</div>
+                    </div>
+                    <div style="background: #fee2e2; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 20px; font-weight: 700; color: #dc2626;">${inactivos}</div>
+                        <div style="font-size: 10px;">Inactivos (S/0)</div>
+                    </div>
+                </div>
+            </div>
+            
             <h2>📋 Tabla Detallada de Equipos</h2>
             <div style="overflow-x: auto;">
-                 <table>
+                <table>
                     <thead>
                         <tr>
                             <th>#</th>
@@ -749,6 +768,9 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             } else if (estado === 'REGULAR') {
                 estadoClass = 'estado-regular';
                 estadoTexto = '⚠️ Regular';
+            } else if (estado === 'SIN TANTO USO') {
+                estadoClass = 'estado-sin-uso';
+                estadoTexto = '📉 Sin tanto uso';
             } else {
                 estadoClass = 'estado-inactivo';
                 estadoTexto = '❌ Inactivo';
@@ -760,7 +782,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                     <td>${formatearFechaExport(item.fecha_venta)}</td>
                     <td>${obtenerNombreMesExport(item.fecha_venta)}</td>
                     <td>${(item.comercio || '-').substring(0, 35)}</td>
-                    <td><code style="font-family: monospace;">${item.numero_serie || '-'}</code></td>
+                    <td><code>${item.numero_serie || '-'}</code></td>
                     <td>${item.ruc || '-'}</td>
                     <td>${item.responsable_real || '-'}</td>
                     <td>${formatearFechaExport(item.dia_activo)}</td>
@@ -774,7 +796,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                     <td class="text-right font-bold">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
                     <td class="text-right">${item.trx_mes_actual_corriendo || 0}</td>
                     <td class="text-center ${estadoClass}">${estadoTexto}</td>
-                </tr>
+                 </tr>
             `;
         });
 
@@ -784,7 +806,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             </div>
         `;
         
-        // AGREGAR SECCIÓN DE TRANSACCIONES POR MES EN PDF
+        // Agregar detalle de transacciones
         contenidoHTML += `
             <div class="page-break"></div>
             <h2>📊 Detalle de Transacciones por Mes</h2>
@@ -835,11 +857,9 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     </html>
     `;
 
-    // Escribir el HTML en la nueva ventana
     ventanaReporte.document.write(contenidoHTML);
     ventanaReporte.document.close();
     
-    // Esperar a que todo esté cargado y luego abrir el diálogo de impresión
     ventanaReporte.onload = function() {
         ventanaReporte.print();
     };
