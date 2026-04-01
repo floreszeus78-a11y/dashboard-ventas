@@ -306,15 +306,13 @@
 
 <script>
 // ============================================================
-// CONFIGURACIÓN - URL DEL BACKEND
+// CONFIGURACIÓN - URL CORRECTA DEL BACKEND
 // ============================================================
-// ⚠️ REEMPLAZA CON TU URL DE GOOGLE APPS SCRIPT
-const URL_API = 'https://script.google.com/macros/s/AKfycbz9RyXVIVkz4MHQLWtlfZ0e27FzKFttV_kyk2fe7bryGBzHetmG72icJCacJ-tQ3zbr/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbxh9WVEfPx1EtowPC9KueWi2wVrVaBrSzdL9Tp64QQayebeiSL_pUJS3AX8Ufkuzrlh/exec';
 
 let selectedFile = null;
-let fileDataJSON = null; // Guardará los datos parseados
+let fileDataJSON = null;
 
-// Elementos DOM
 const dropArea = document.getElementById('dropArea');
 const fileInput = document.getElementById('fileInput');
 const selectedFileDiv = document.getElementById('selectedFile');
@@ -326,9 +324,6 @@ const resultDiv = document.getElementById('result');
 const aiPreview = document.getElementById('aiPreview');
 const aiContent = document.getElementById('aiContent');
 
-// ============================================================
-// EVENTOS DE ARRASTRE Y SELECCIÓN
-// ============================================================
 dropArea.addEventListener('dragover', (e) => {
   e.preventDefault();
   dropArea.classList.add('drag-over');
@@ -348,9 +343,6 @@ fileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) handleFile(e.target.files[0]);
 });
 
-// ============================================================
-// FUNCIÓN PARA PARSEAR CSV
-// ============================================================
 function parseCSVFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -403,9 +395,6 @@ function parseCSVLine(line) {
   return result.map(v => v.trim().replace(/^"|"$/g, ''));
 }
 
-// ============================================================
-// FUNCIÓN PARA PARSEAR EXCEL CON SHEETJS
-// ============================================================
 function parseExcelFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -416,7 +405,6 @@ function parseExcelFile(file) {
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
         
-        // Normalizar nombres de columnas
         const normalizedData = jsonData.map(row => {
           const normalized = {};
           Object.keys(row).forEach(key => {
@@ -436,9 +424,6 @@ function parseExcelFile(file) {
   });
 }
 
-// ============================================================
-// MANEJO DE ARCHIVO - LECTURA Y PARSEO
-// ============================================================
 async function handleFile(file) {
   const extension = file.name.split('.').pop().toLowerCase();
   if (!['csv', 'xlsx', 'xls', 'xlsm'].includes(extension)) {
@@ -450,7 +435,6 @@ async function handleFile(file) {
   selectedFileDiv.innerHTML = `✅ Archivo: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
   selectedFileDiv.classList.add('show');
   
-  // Deshabilitar botón mientras parseamos
   uploadBtn.disabled = true;
   aiPreview.classList.remove('show');
   resultDiv.classList.remove('show');
@@ -458,7 +442,6 @@ async function handleFile(file) {
   aiPreview.classList.add('show');
   
   try {
-    // 🔥 PARSEAR EL ARCHIVO EN EL FRONTEND CON SHEETJS
     if (extension === 'csv') {
       fileDataJSON = await parseCSVFile(file);
     } else {
@@ -470,9 +453,7 @@ async function handleFile(file) {
     }
     
     console.log('✅ Archivo parseado:', fileDataJSON.length, 'registros');
-    console.log('🔍 Primer registro:', fileDataJSON[0]);
     
-    // Mostrar preview de los datos
     aiContent.innerHTML = `
       <div style="color: var(--verde); margin-bottom: 12px;">
         ✅ Archivo leído correctamente: ${fileDataJSON.length} registros
@@ -480,9 +461,18 @@ async function handleFile(file) {
       <div style="font-size: 12px; color: var(--texto-suave);">
         Muestra: ${JSON.stringify(fileDataJSON[0]).substring(0, 150)}...
       </div>
+      <div class="ai-stats" style="margin-top: 12px;">
+        <div class="stat-card">
+          <div class="stat-label">Columnas detectadas</div>
+          <div class="stat-value">${Object.keys(fileDataJSON[0]).length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Registros a procesar</div>
+          <div class="stat-value">${fileDataJSON.length}</div>
+        </div>
+      </div>
     `;
     
-    // Habilitar botón
     uploadBtn.disabled = false;
     
   } catch (error) {
@@ -497,9 +487,6 @@ async function handleFile(file) {
   }
 }
 
-// ============================================================
-// ENVÍO AL BACKEND (CON DATOS JSON PARSEADOS)
-// ============================================================
 uploadBtn.addEventListener('click', async () => {
   if (!fileDataJSON || fileDataJSON.length === 0) {
     alert('No hay datos para procesar. Por favor selecciona un archivo válido.');
@@ -516,10 +503,9 @@ uploadBtn.addEventListener('click', async () => {
   progressText.textContent = 'Enviando datos al servidor...';
   
   try {
-    // 🔥 ENVIAR EL JSON PARSEADO, NO EL ARCHIVO CRUDO
     const formData = new FormData();
     formData.append('action', 'procesar_con_ia');
-    formData.append('datos_json', JSON.stringify(fileDataJSON)); // Enviamos el JSON ya parseado
+    formData.append('datos_json', JSON.stringify(fileDataJSON));
     formData.append('nombre', selectedFile.name);
     formData.append('usuario', 'Admin_Dashboard');
     
@@ -562,17 +548,15 @@ uploadBtn.addEventListener('click', async () => {
         </div>
       `;
       
-      // Dentro de la respuesta exitosa, puedes mostrar más detalles
-aiContent.innerHTML = `
-  <div style="color: var(--verde); text-align: center;">
-    ✅ Gemini IA procesó y limpió los datos correctamente<br>
-    <span style="font-size: 12px; color: var(--texto-suave);">
-      Los datos fueron cruzados con tu base y actualizados automáticamente<br>
-      Se registraron: ${result.resultado?.nuevas || 0} nuevas, ${result.resultado?.actualizadas || 0} actualizadas<br>
-      Fechas registradas: Día Prueba, Día Activo, Última Transacción
-    </span>
-  </div>
-`;
+      aiContent.innerHTML = `
+        <div style="color: var(--verde); text-align: center;">
+          ✅ Gemini IA procesó y limpió los datos correctamente<br>
+          <span style="font-size: 12px; color: var(--texto-suave);">
+            Los datos fueron cruzados con tu base y actualizados automáticamente<br>
+            Se registraron: ${result.resultado?.nuevas || 0} nuevas, ${result.resultado?.actualizadas || 0} actualizadas
+          </span>
+        </div>
+      `;
       
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'datos-actualizados' }, '*');
@@ -606,7 +590,6 @@ aiContent.innerHTML = `
   }
 });
 
-// Sincronizar tema
 window.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'theme-change') {
     document.documentElement.setAttribute('data-theme', e.data.theme);
