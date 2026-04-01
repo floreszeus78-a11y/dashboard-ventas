@@ -236,7 +236,7 @@
     flex: 1;
     position: relative;
     width: 100%;
-    height: calc(100vh - 77px); /* Altura total menos el header */
+    height: calc(100vh - 77px);
     overflow: hidden;
     background: var(--fondo);
   }
@@ -413,7 +413,7 @@
     </button>
     
     <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--borde); margin-top: 20px;">
-      <a href="https://github.com/floreszeus78-a11y/dashboard-ventas" target="_blank" class="nav-item" style="text-decoration: none; color: inherit;">
+      <a href="#" class="nav-item" style="text-decoration: none; color: inherit;">
         <span class="nav-icon">⚙️</span>
         <span>Configuración</span>
       </a>
@@ -422,7 +422,7 @@
   
   <div class="sidebar-footer">
     <div>© 2026 · Dashboard Ventas</div>
-    <div style="margin-top: 4px; font-size: 11px; opacity: 0.7;">v2.0</div>
+    <div style="margin-top: 4px; font-size: 11px; opacity: 0.7;">v3.0 - Cohorte 3 Meses</div>
   </div>
 </aside>
 
@@ -463,9 +463,9 @@
 
 <script>
 // ============================================================
-// CONFIGURACIÓN GLOBAL
+// CONFIGURACIÓN GLOBAL - URL CORRECTA DE LA API
 // ============================================================
-const URL_API = 'https://script.google.com/macros/s/AKfycbz9RyXVIVkz4MHQLWtlfZ0e27FzKFttV_kyk2fe7bryGBzHetmG72icJCacJ-tQ3zbr/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbxh9WVEfPx1EtowPC9KueWi2wVrVaBrSzdL9Tp64QQayebeiSL_pUJS3AX8Ufkuzrlh/exec';
 let datosGlobales = null;
 let currentLoad = null;
 
@@ -509,6 +509,7 @@ async function cargarDatosGlobales() {
     }
     
     console.log('✅ Datos cargados correctamente:', data.equipos?.length, 'equipos');
+    console.log('📊 GPV Total Cohorte:', data.kpis?.gpv_cohorte_total);
     return data;
   } catch (err) {
     console.error('❌ Error cargando datos:', err);
@@ -520,7 +521,6 @@ async function cargarDatosGlobales() {
 // COMUNICACIÓN CON IFRAMES
 // ============================================================
 window.addEventListener('message', async (e) => {
-  // Si el iframe solicita datos y ya los tenemos, se los enviamos
   if (e.data && e.data.type === 'solicitar-datos') {
     if (datosGlobales) {
       e.source.postMessage({
@@ -529,7 +529,6 @@ window.addEventListener('message', async (e) => {
       }, '*');
       console.log('📤 Datos enviados al iframe');
     } else {
-      // Si aún no tenemos datos, los cargamos y luego enviamos
       console.log('⏳ Cargando datos para el iframe...');
       datosGlobales = await cargarDatosGlobales();
       if (datosGlobales) {
@@ -550,12 +549,10 @@ function loadDashboard(filename) {
   const loading = document.getElementById('loadingOverlay');
   const error = document.getElementById('errorFallback');
   
-  // Actualizar clase activa en el menú
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.remove('active');
   });
   
-  // Buscar el botón que corresponde al archivo y marcarlo como activo
   const buttons = document.querySelectorAll('.nav-item');
   for (let btn of buttons) {
     const onclickAttr = btn.getAttribute('onclick');
@@ -565,7 +562,6 @@ function loadDashboard(filename) {
     }
   }
   
-  // Actualizar título del header
   const titleMap = {
     'dashboard.html': 'Dashboard Principal',
     'equipos.html': 'Equipos Culqi',
@@ -583,7 +579,6 @@ function loadDashboard(filename) {
   
   if (currentLoad) clearTimeout(currentLoad);
   
-  // Configurar evento onload ANTES de cambiar el src
   iframe.onload = () => {
     if (currentLoad) clearTimeout(currentLoad);
     loading.classList.add('hidden');
@@ -592,17 +587,14 @@ function loadDashboard(filename) {
     const currentTheme = localStorage.getItem('theme') || 'dark';
     
     try {
-      // Enviar tema al iframe
       iframe.contentWindow.postMessage({ type: 'theme-change', theme: currentTheme }, '*');
       
-      // Enviar datos al iframe si ya están disponibles
       if (datosGlobales) {
         iframe.contentWindow.postMessage({
           type: 'datos-cargados',
           datos: datosGlobales
         }, '*');
       } else {
-        // Si no hay datos, cargarlos y enviarlos
         cargarDatosGlobales().then(data => {
           if (data) {
             datosGlobales = data;
@@ -625,14 +617,12 @@ function loadDashboard(filename) {
     showError();
   };
   
-  // Cambiar el src del iframe
   iframe.src = filename;
   
   currentLoad = setTimeout(() => {
     checkIframeLoaded();
   }, 5000);
   
-  // Cerrar menú después de seleccionar
   toggleMenu();
 }
 
@@ -659,9 +649,6 @@ function showError() {
   document.getElementById('errorFallback').classList.add('show');
 }
 
-// ============================================================
-// FUNCIONES DE MENÚ Y UI
-// ============================================================
 function toggleMenu() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
@@ -676,7 +663,6 @@ function toggleMenu() {
   }
 }
 
-// Cerrar menú con tecla ESC
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const sidebar = document.getElementById('sidebar');
@@ -686,21 +672,14 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ============================================================
-// INICIALIZACIÓN
-// ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   
-  // Precargar datos globales para tenerlos listos
   console.log('🚀 Inicializando panel...');
   datosGlobales = await cargarDatosGlobales();
   
-  // El iframe ya tiene src="dashboard.html" desde el HTML,
-  // solo necesitamos enviarle los datos cuando esté listo
   const iframe = document.getElementById('contentFrame');
   
-  // Configurar el evento de carga del iframe después de que el DOM esté listo
   if (iframe) {
     iframe.onload = () => {
       console.log('✅ Iframe cargado inicialmente');
@@ -721,7 +700,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     };
     
-    // Si el iframe ya está cargado (por caché), ejecutar manualmente
     if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') {
       console.log('⚠️ Iframe ya estaba cargado, ejecutando onload manualmente');
       iframe.onload();
