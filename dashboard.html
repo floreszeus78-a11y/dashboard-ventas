@@ -213,7 +213,6 @@
     cursor: pointer;
   }
 
-  /* KPIs Grid - Estilos mejorados */
   .kpis-container {
     margin-bottom: 30px;
   }
@@ -303,7 +302,7 @@
 
   .grid-ejecutivos {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
   }
@@ -811,7 +810,7 @@
     </div>
     
     <div class="contenedor-tabla">
-      <table>
+       <table>
         <thead>
           <tr>
             <th>#</th>
@@ -826,14 +825,14 @@
           </tr>
         </thead>
         <tbody id="tablaCuerpo"></tbody>
-      </table>
+       </table>
     </div>
   </div>
 </main>
 
 <script>
 // ============================================================
-// CONFIGURACIÓN
+// CONFIGURACIÓN - URL CORRECTA DE LA API
 // ============================================================
 const URL_API = 'https://script.google.com/macros/s/AKfycbxh9WVEfPx1EtowPC9KueWi2wVrVaBrSzdL9Tp64QQayebeiSL_pUJS3AX8Ufkuzrlh/exec';
 const META_VENTAS = 10;
@@ -901,7 +900,7 @@ function getEquiposFiltrados() {
 }
 
 // ============================================================
-// 🔥 KPI 1: COHORTE COMPLETA (siempre muestra el valor total)
+// 🔥 KPI 1: COHORTE COMPLETA - MUESTRA GPV REAL POR ETAPA
 // ============================================================
 function renderizarKPIsEternos(equipos) {
   const totalEquipos = equipos.length;
@@ -909,14 +908,30 @@ function renderizarKPIsEternos(equipos) {
   const gpvTotalCohorte = equipos.reduce((sum, e) => sum + (e.gpv_total_cohorte || 0), 0);
   const trxTotalCohorte = equipos.reduce((sum, e) => sum + (e.trx_total_cohorte || 0), 0);
   
+  // 🔥 GPV GENERADO en cada ETAPA (independientemente de si ya pasó o no)
   const gpvM0 = equipos.reduce((sum, e) => sum + (e.gpv_m0 || 0), 0);
   const gpvM1 = equipos.reduce((sum, e) => sum + (e.gpv_m1 || 0), 0);
   const gpvM2 = equipos.reduce((sum, e) => sum + (e.gpv_m2 || 0), 0);
   
-  const enM0 = equipos.filter(e => e.mes_actual_idx === 0).length;
-  const enM1 = equipos.filter(e => e.mes_actual_idx === 1).length;
-  const enM2 = equipos.filter(e => e.mes_actual_idx === 2).length;
+  // 🔥 Equipos que HAN TENIDO actividad en cada etapa
+  const equiposConM0 = equipos.filter(e => (e.gpv_m0 || 0) > 0).length;
+  const equiposConM1 = equipos.filter(e => (e.gpv_m1 || 0) > 0).length;
+  const equiposConM2 = equipos.filter(e => (e.gpv_m2 || 0) > 0).length;
+  
+  // Equipos por etapa ACTUAL
+  const enM0Actual = equipos.filter(e => e.mes_actual_idx === 0).length;
+  const enM1Actual = equipos.filter(e => e.mes_actual_idx === 1).length;
+  const enM2Actual = equipos.filter(e => e.mes_actual_idx === 2).length;
   const cicloCompletado = equipos.filter(e => e.mes_actual_idx === -1).length;
+  
+  // Ticket promedio por etapa
+  const trxM0 = equipos.reduce((sum, e) => sum + (e.trx_m0 || 0), 0);
+  const trxM1 = equipos.reduce((sum, e) => sum + (e.trx_m1 || 0), 0);
+  const trxM2 = equipos.reduce((sum, e) => sum + (e.trx_m2 || 0), 0);
+  
+  const ticketM0 = trxM0 > 0 ? gpvM0 / trxM0 : 0;
+  const ticketM1 = trxM1 > 0 ? gpvM1 / trxM1 : 0;
+  const ticketM2 = trxM2 > 0 ? gpvM2 / trxM2 : 0;
   
   return `
     <div class="kpis-eternos">
@@ -924,34 +939,44 @@ function renderizarKPIsEternos(equipos) {
         <div class="stat-number">${totalEquipos}</div>
         <div class="stat-label">📦 Equipos Totales</div>
       </div>
+      
       <div class="stat-card cohorte">
         <div class="stat-number" style="color: var(--acento);">S/ ${formatearNumero(gpvTotalCohorte)}</div>
         <div class="stat-label">💰 GPV TOTAL COHORTE</div>
-        <div class="stat-sub">M0: S/ ${formatearNumero(gpvM0)} | M1: S/ ${formatearNumero(gpvM1)} | M2: S/ ${formatearNumero(gpvM2)}</div>
+        <div class="stat-sub">Suma de M0 + M1 + M2</div>
       </div>
+      
       <div class="stat-card">
         <div class="stat-number">${trxTotalCohorte.toLocaleString('es-PE')}</div>
         <div class="stat-label">🛒 Transacciones Totales</div>
         <div class="stat-sub">Ticket: S/ ${formatearNumero(gpvTotalCohorte / (trxTotalCohorte || 1))}</div>
       </div>
+      
       <div class="stat-card">
-        <div class="stat-number" style="color: #64748b;">${enM0}</div>
-        <div class="stat-label">📅 M0 (Mes de Prueba)</div>
-        <div class="stat-sub">GPV: S/ ${formatearNumero(gpvM0)}</div>
+        <div class="stat-number" style="color: #64748b;">S/ ${formatearNumero(gpvM0)}</div>
+        <div class="stat-label">📅 GPV GENERADO EN M0</div>
+        <div class="stat-sub">${equiposConM0} equipos | Ticket: S/ ${formatearNumero(ticketM0)}</div>
+        <div class="stat-sub" style="font-size: 9px;">🟢 ${enM0Actual} equipos en M0 ahora</div>
       </div>
+      
       <div class="stat-card">
-        <div class="stat-number" style="color: var(--naranja);">${enM1}</div>
-        <div class="stat-label">📈 M1 (Primer Mes)</div>
-        <div class="stat-sub">GPV: S/ ${formatearNumero(gpvM1)}</div>
+        <div class="stat-number" style="color: var(--naranja);">S/ ${formatearNumero(gpvM1)}</div>
+        <div class="stat-label">📈 GPV GENERADO EN M1</div>
+        <div class="stat-sub">${equiposConM1} equipos | Ticket: S/ ${formatearNumero(ticketM1)}</div>
+        <div class="stat-sub" style="font-size: 9px;">🟠 ${enM1Actual} equipos en M1 ahora</div>
       </div>
+      
       <div class="stat-card">
-        <div class="stat-number" style="color: var(--verde);">${enM2}</div>
-        <div class="stat-label">📈 M2 (Segundo Mes)</div>
-        <div class="stat-sub">GPV: S/ ${formatearNumero(gpvM2)}</div>
+        <div class="stat-number" style="color: var(--verde);">S/ ${formatearNumero(gpvM2)}</div>
+        <div class="stat-label">📈 GPV GENERADO EN M2</div>
+        <div class="stat-sub">${equiposConM2} equipos | Ticket: S/ ${formatearNumero(ticketM2)}</div>
+        <div class="stat-sub" style="font-size: 9px;">🟢 ${enM2Actual} equipos en M2 ahora</div>
       </div>
+      
       <div class="stat-card">
         <div class="stat-number">${cicloCompletado}</div>
         <div class="stat-label">✅ Ciclo Completado</div>
+        <div class="stat-sub">Equipos que terminaron M0+M1+M2</div>
       </div>
     </div>
   `;
@@ -1101,7 +1126,7 @@ function renderizarGraficas(equipos) {
 }
 
 // ============================================================
-// EJECUTIVOS
+// EJECUTIVOS - CON GPV REAL POR ETAPA
 // ============================================================
 function renderizarEjecutivos(equipos) {
   const grid = document.getElementById('ejecutivosGrid');
@@ -1121,10 +1146,15 @@ function renderizarEjecutivos(equipos) {
         total_equipos: 0, 
         gpv_total_cohorte: 0, 
         trx_total_cohorte: 0,
+        gpv_m0: 0,
+        gpv_m1: 0,
+        gpv_m2: 0,
+        equipos_con_m0: 0,
+        equipos_con_m1: 0,
+        equipos_con_m2: 0,
         activos: 0, 
         regulares: 0, 
-        inactivos: 0,
-        en_m0: 0, en_m1: 0, en_m2: 0
+        inactivos: 0
       });
     }
     const stats = ejecutivosMap.get(exec);
@@ -1132,15 +1162,19 @@ function renderizarEjecutivos(equipos) {
     stats.gpv_total_cohorte += (parseFloat(eq.gpv_total_cohorte) || 0);
     stats.trx_total_cohorte += (parseInt(eq.trx_total_cohorte) || 0);
     
+    stats.gpv_m0 += (parseFloat(eq.gpv_m0) || 0);
+    stats.gpv_m1 += (parseFloat(eq.gpv_m1) || 0);
+    stats.gpv_m2 += (parseFloat(eq.gpv_m2) || 0);
+    
+    if ((eq.gpv_m0 || 0) > 0) stats.equipos_con_m0++;
+    if ((eq.gpv_m1 || 0) > 0) stats.equipos_con_m1++;
+    if ((eq.gpv_m2 || 0) > 0) stats.equipos_con_m2++;
+    
     const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
     const estado = getEstadoPorGPV(gpvActual);
     if (estado === 'ACTIVO') stats.activos++;
     else if (estado === 'REGULAR') stats.regulares++;
     else stats.inactivos++;
-    
-    if (eq.mes_actual_idx === 0) stats.en_m0++;
-    else if (eq.mes_actual_idx === 1) stats.en_m1++;
-    else if (eq.mes_actual_idx === 2) stats.en_m2++;
   });
   
   const ejecutivosArray = Array.from(ejecutivosMap.entries())
@@ -1158,12 +1192,21 @@ function renderizarEjecutivos(equipos) {
       <div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${nombreEscapado}')" style="${borderStyle}">
         <div class="nombre-ejecutivo">${exec.nombre}</div>
         <div style="font-size: 28px; font-weight: 800; color: var(--acento);">S/ ${formatearNumero(exec.gpv_total_cohorte)}</div>
-        <div style="color: var(--texto-suave); margin-bottom: 16px;">GPV Total Cohorte · ${exec.total_equipos} equipos</div>
+        <div style="color: var(--texto-suave); margin-bottom: 12px;">GPV Total Cohorte · ${exec.total_equipos} equipos</div>
         
-        <div style="display: flex; gap: 8px; margin-bottom: 12px; font-size: 11px;">
-          <span style="padding: 4px 8px; background: rgba(100,116,139,0.2); border-radius: 12px;">M0: ${exec.en_m0}</span>
-          <span style="padding: 4px 8px; background: rgba(249,115,22,0.2); border-radius: 12px;">M1: ${exec.en_m1}</span>
-          <span style="padding: 4px 8px; background: rgba(34,197,94,0.2); border-radius: 12px;">M2: ${exec.en_m2}</span>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; text-align: center;">
+          <div style="background: rgba(100,116,139,0.1); padding: 8px; border-radius: 12px;">
+            <div style="font-weight: 800; color: #64748b;">S/ ${formatearNumero(exec.gpv_m0)}</div>
+            <div style="font-size: 10px; color: var(--texto-suave);">M0 · ${exec.equipos_con_m0} eq</div>
+          </div>
+          <div style="background: rgba(249,115,22,0.1); padding: 8px; border-radius: 12px;">
+            <div style="font-weight: 800; color: var(--naranja);">S/ ${formatearNumero(exec.gpv_m1)}</div>
+            <div style="font-size: 10px; color: var(--texto-suave);">M1 · ${exec.equipos_con_m1} eq</div>
+          </div>
+          <div style="background: rgba(34,197,94,0.1); padding: 8px; border-radius: 12px;">
+            <div style="font-weight: 800; color: var(--verde);">S/ ${formatearNumero(exec.gpv_m2)}</div>
+            <div style="font-size: 10px; color: var(--texto-suave);">M2 · ${exec.equipos_con_m2} eq</div>
+          </div>
         </div>
         
         <div class="metricas-rapidas">
@@ -1408,6 +1451,7 @@ async function cargarDatos(forzar = false) {
   
   try {
     const url = forzar ? URL_API + '?nocache=true' : URL_API;
+    console.log('🔄 Cargando datos desde:', url);
     const res = await fetch(url);
     const data = await res.json();
     
