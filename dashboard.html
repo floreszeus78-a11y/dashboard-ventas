@@ -471,44 +471,6 @@
     border-color: var(--acento);
   }
 
-  /* Filtros de etapa (M0, M1, M2, COMPLETADO) */
-  .filtros-etapa {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--borde);
-  }
-
-  .chip-etapa {
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: 1px solid var(--borde);
-    background: var(--superficie2);
-    color: var(--texto);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .chip-etapa:hover {
-    border-color: var(--acento);
-    transform: translateY(-1px);
-  }
-
-  .chip-etapa.activo {
-    background: var(--acento);
-    color: white;
-    border-color: var(--acento);
-  }
-
-  .chip-etapa.m0 { border-left: 3px solid #64748b; }
-  .chip-etapa.m1 { border-left: 3px solid #f97316; }
-  .chip-etapa.m2 { border-left: 3px solid #22c55e; }
-  .chip-etapa.completado { border-left: 3px solid #a855f7; }
-
   .filtros-mes-venta {
     display: flex;
     gap: 12px;
@@ -733,7 +695,6 @@
     .filtros-avanzados { flex-direction: column; align-items: stretch; }
     .buscador { width: 100%; }
     .filtros-gpv { width: 100%; justify-content: center; }
-    .filtros-etapa { width: 100%; justify-content: center; }
     th, td { padding: 12px 8px; font-size: 12px; }
     .gpv-historico { justify-content: flex-start; }
   }
@@ -833,16 +794,6 @@
           <button class="chip-filtro" onclick="filtrarPorGPV('riesgo')" data-filtro="riesgo">🚨 Riesgo (0)</button>
         </div>
         
-        <!-- Filtros de etapa (M0, M1, M2, COMPLETADO) - basados en GPV de cada etapa -->
-        <div class="filtros-etapa">
-          <span class="etiqueta-filtro" style="margin-right: 8px;">📊 Etapa:</span>
-          <button class="chip-etapa activo" onclick="filtrarPorEtapa('todas')" data-etapa="todas">📋 Todas</button>
-          <button class="chip-etapa m0" onclick="filtrarPorEtapa('m0')" data-etapa="m0">🆕 M0 (Mes Venta)</button>
-          <button class="chip-etapa m1" onclick="filtrarPorEtapa('m1')" data-etapa="m1">📈 M1 (Primer Mes)</button>
-          <button class="chip-etapa m2" onclick="filtrarPorEtapa('m2')" data-etapa="m2">📈 M2 (Segundo Mes)</button>
-          <button class="chip-etapa completado" onclick="filtrarPorEtapa('completado')" data-etapa="completado">✅ Ciclo Completado</button>
-        </div>
-        
         <!-- Selector de Mes de Venta -->
         <div class="filtros-mes-venta">
           <span class="etiqueta-filtro" style="margin-right: 8px;">📆 Filtrar por Mes de Venta:</span>
@@ -896,7 +847,6 @@ let anioActual = 'TODOS';
 let mesFiltroActual = 'TODOS';
 let ejecutivoActual = 'TODOS';
 let filtroGPVActual = 'todos';
-let filtroEtapaActual = 'todas';
 let chartEjecutivos = null;
 let chartDistribucion = null;
 let chartEstados = null;
@@ -910,11 +860,6 @@ function getEstadoPorGPV(gpv) {
   return 'ACTIVO';
 }
 
-function getEstadoCompleto(eq) {
-  if (eq.mes_actual_idx === -1) return 'COMPLETADO';
-  return getEstadoPorGPV(eq.gpv_mes_actual_corriendo || 0);
-}
-
 function getGPVClass(gpv) {
   if (!gpv || gpv === 0) return 'gpv-inactivo';
   if (gpv >= 700) return 'gpv-excelente';
@@ -923,7 +868,6 @@ function getGPVClass(gpv) {
 }
 
 function obtenerEtiquetaMesReal(eq) {
-  if (eq.mes_actual_idx === -1) return '✅ CICLO COMPLETADO';
   if (eq.etiqueta_mes_actual && eq.etiqueta_mes_actual !== 'SIN ACTIVIDAD') {
     return eq.etiqueta_mes_actual;
   }
@@ -1230,11 +1174,13 @@ function renderizarEjecutivos(equipos) {
     stats.total_equipos++;
     stats.gpv_total_cohorte += (parseFloat(eq.gpv_total_cohorte) || 0);
     
-    const estado = getEstadoCompleto(eq);
+    const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
+    const estado = getEstadoPorGPV(gpvActual);
     if (estado === 'ACTIVO') stats.activos++;
     else if (estado === 'REGULAR') stats.regulares++;
-    else if (estado === 'INACTIVO') stats.inactivos++;
-    else if (estado === 'COMPLETADO') stats.completados++;
+    else stats.inactivos++;
+    
+    if (eq.mes_actual_idx === -1) stats.completados++;
   });
   
   const ejecutivosArray = Array.from(ejecutivosMap.entries())
@@ -1285,12 +1231,11 @@ function renderizarEjecutivos(equipos) {
 }
 
 // ============================================================
-// TABLA - CON FILTROS COMBINADOS (GPV + ETAPA)
+// TABLA
 // ============================================================
 function renderizarTabla(equipos) {
   let equiposFiltrados = [...equipos];
   
-  // FILTRO 1: Por GPV del mes actual
   if (filtroGPVActual !== 'todos') {
     equiposFiltrados = equiposFiltrados.filter(e => {
       const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
@@ -1299,23 +1244,6 @@ function renderizarTabla(equipos) {
         case 'promedio': return gpvActual >= 400 && gpvActual < 700;
         case 'bajo': return gpvActual > 0 && gpvActual < 400;
         case 'riesgo': return gpvActual === 0;
-        default: return true;
-      }
-    });
-  }
-  
-  // FILTRO 2: Por etapa (basado en GPV de M0, M1, M2)
-  if (filtroEtapaActual !== 'todas') {
-    equiposFiltrados = equiposFiltrados.filter(e => {
-      const gpvM0 = parseFloat(e.gpv_m0) || 0;
-      const gpvM1 = parseFloat(e.gpv_m1) || 0;
-      const gpvM2 = parseFloat(e.gpv_m2) || 0;
-      
-      switch(filtroEtapaActual) {
-        case 'm0': return gpvM0 > 0;
-        case 'm1': return gpvM1 > 0;
-        case 'm2': return gpvM2 > 0;
-        case 'completado': return gpvM0 > 0 && gpvM1 > 0 && gpvM2 > 0;
         default: return true;
       }
     });
@@ -1424,15 +1352,6 @@ function filtrarPorGPVClick(gpv) {
   else if (gpv < 400) filtrarPorGPV('bajo');
   else if (gpv < 700) filtrarPorGPV('promedio');
   else filtrarPorGPV('meta');
-}
-
-function filtrarPorEtapa(etapa) {
-  filtroEtapaActual = etapa;
-  document.querySelectorAll('.chip-etapa').forEach(chip => {
-    chip.classList.remove('activo');
-    if (chip.dataset.etapa === etapa) chip.classList.add('activo');
-  });
-  renderizarTodo();
 }
 
 function filtrarPorEjecutivoTabla(exec) {
