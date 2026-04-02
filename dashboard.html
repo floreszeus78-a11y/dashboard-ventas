@@ -240,11 +240,49 @@
     cursor: pointer;
   }
 
+  /* KPIS - NUEVOS */
   .kpis-container {
     margin-bottom: 30px;
   }
 
-  /* Las tarjetas KPI han sido ELIMINADAS - el contenedor está vacío */
+  .kpis-eternos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    padding: 20px;
+    transition: all 0.3s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--acento);
+  }
+
+  .stat-number {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--acento);
+  }
+
+  .stat-label {
+    color: var(--texto-suave);
+    font-size: 12px;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .stat-sub {
+    font-size: 10px;
+    margin-top: 4px;
+    color: var(--texto-suave);
+  }
 
   .grid-graficas {
     display: grid;
@@ -736,7 +774,7 @@
     </div>
   </div>
 
-  <!-- KPIs Container - VACÍO (tarjetas eliminadas) -->
+  <!-- KPIs Container - NUEVOS KPIS DE EQUIPOS POR ETAPA -->
   <div class="kpis-container" id="kpisContainer"></div>
 
   <!-- Gráficas -->
@@ -837,6 +875,11 @@ function getEstadoPorGPV(gpv) {
   return 'ACTIVO';
 }
 
+function getEstadoCompleto(eq) {
+  if (eq.mes_actual_idx === -1) return 'COMPLETADO';
+  return getEstadoPorGPV(eq.gpv_mes_actual_corriendo || 0);
+}
+
 function getGPVClass(gpv) {
   if (!gpv || gpv === 0) return 'gpv-inactivo';
   if (gpv >= 700) return 'gpv-excelente';
@@ -845,6 +888,7 @@ function getGPVClass(gpv) {
 }
 
 function obtenerEtiquetaMesReal(eq) {
+  if (eq.mes_actual_idx === -1) return '✅ CICLO COMPLETADO';
   if (eq.etiqueta_mes_actual && eq.etiqueta_mes_actual !== 'SIN ACTIVIDAD') {
     return eq.etiqueta_mes_actual;
   }
@@ -895,12 +939,10 @@ function formatearFecha(fecha) {
 function getEquiposFiltrados() {
   let equipos = DATOS_COMPLETOS?.equipos || [];
   
-  // Filtrar por ejecutivo
   if (ejecutivoActual !== 'TODOS') {
     equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
   }
   
-  // Filtrar por año
   if (anioActual !== 'TODOS') {
     equipos = equipos.filter(e => {
       const anio = obtenerAnioDesdeFecha(e.fecha_venta);
@@ -908,7 +950,6 @@ function getEquiposFiltrados() {
     });
   }
   
-  // Filtrar por mes
   if (mesFiltroActual !== 'TODOS') {
     equipos = equipos.filter(e => {
       const mes = obtenerMesDesdeFecha(e.fecha_venta);
@@ -922,7 +963,6 @@ function getEquiposFiltrados() {
 function actualizarFiltrosDinamicos() {
   const equipos = DATOS_COMPLETOS?.equipos || [];
   
-  // Obtener años únicos
   const añosSet = new Set();
   equipos.forEach(e => {
     const anio = obtenerAnioDesdeFecha(e.fecha_venta);
@@ -936,7 +976,6 @@ function actualizarFiltrosDinamicos() {
     anioSelect.innerHTML += `<option value="${anio}">${anio}</option>`;
   });
   
-  // Obtener meses únicos (orden cronológico)
   const mesesOrden = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
   const mesesSet = new Set();
   equipos.forEach(e => {
@@ -953,11 +992,62 @@ function actualizarFiltrosDinamicos() {
 }
 
 // ============================================================
-// KPI: COHORTE COMPLETA - ELIMINADO (función vacía)
+// KPI: NUEVOS - EQUIPOS POR ETAPA (M0, M1, M2, COMPLETADO)
 // ============================================================
-function renderizarKPIsEternos(equipos) {
-  // FUNCIÓN VACÍA - LAS TARJETAS KPI HAN SIDO ELIMINADAS
-  return '';
+function renderizarKPIs(equipos) {
+  const totalEquipos = equipos.length;
+  
+  // Contar equipos por etapa actual (mes_actual_idx)
+  const enM0 = equipos.filter(e => e.mes_actual_idx === 0).length;
+  const enM1 = equipos.filter(e => e.mes_actual_idx === 1).length;
+  const enM2 = equipos.filter(e => e.mes_actual_idx === 2).length;
+  const completados = equipos.filter(e => e.mes_actual_idx === -1).length;
+  
+  // Calcular GPV total por etapa
+  const gpvM0 = equipos.reduce((sum, e) => sum + (e.gpv_m0 || 0), 0);
+  const gpvM1 = equipos.reduce((sum, e) => sum + (e.gpv_m1 || 0), 0);
+  const gpvM2 = equipos.reduce((sum, e) => sum + (e.gpv_m2 || 0), 0);
+  const gpvTotalCohorte = equipos.reduce((sum, e) => sum + (e.gpv_total_cohorte || 0), 0);
+  
+  return `
+    <div class="kpis-eternos">
+      <div class="stat-card">
+        <div class="stat-number">${totalEquipos}</div>
+        <div class="stat-label">📦 Equipos Vendidos</div>
+        <div class="stat-sub">Total en el período</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number" style="color: #64748b;">${enM0}</div>
+        <div class="stat-label">🆕 En M0 (Mes de Venta)</div>
+        <div class="stat-sub">S/ ${formatearNumero(gpvM0)} generados</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number" style="color: var(--naranja);">${enM1}</div>
+        <div class="stat-label">📈 En M1 (Primer Mes)</div>
+        <div class="stat-sub">S/ ${formatearNumero(gpvM1)} generados</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number" style="color: var(--verde);">${enM2}</div>
+        <div class="stat-label">📈 En M2 (Segundo Mes)</div>
+        <div class="stat-sub">S/ ${formatearNumero(gpvM2)} generados</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number" style="color: var(--morado);">${completados}</div>
+        <div class="stat-label">✅ Ciclo Completado</div>
+        <div class="stat-sub">Terminaron M0+M1+M2</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number" style="color: var(--acento);">S/ ${formatearNumero(gpvTotalCohorte)}</div>
+        <div class="stat-label">💰 GPV Total Cohorte</div>
+        <div class="stat-sub">Suma M0+M1+M2</div>
+      </div>
+    </div>
+  `;
 }
 
 // ============================================================
@@ -1072,7 +1162,7 @@ function renderizarGraficas(equipos) {
 }
 
 // ============================================================
-// EJECUTIVOS
+// EJECUTIVOS - SIN LOS CUADROS CONFUSOS DE M0/M1/M2
 // ============================================================
 function renderizarEjecutivos(equipos) {
   const grid = document.getElementById('ejecutivosGrid');
@@ -1090,35 +1180,22 @@ function renderizarEjecutivos(equipos) {
     if (!ejecutivosMap.has(exec)) {
       ejecutivosMap.set(exec, { 
         total_equipos: 0, 
-        gpv_total_cohorte: 0, 
-        gpv_m0: 0,
-        gpv_m1: 0,
-        gpv_m2: 0,
-        equipos_con_m0: 0,
-        equipos_con_m1: 0,
-        equipos_con_m2: 0,
+        gpv_total_cohorte: 0,
         activos: 0, 
         regulares: 0, 
-        inactivos: 0
+        inactivos: 0,
+        completados: 0
       });
     }
     const stats = ejecutivosMap.get(exec);
     stats.total_equipos++;
     stats.gpv_total_cohorte += (parseFloat(eq.gpv_total_cohorte) || 0);
     
-    stats.gpv_m0 += (parseFloat(eq.gpv_m0) || 0);
-    stats.gpv_m1 += (parseFloat(eq.gpv_m1) || 0);
-    stats.gpv_m2 += (parseFloat(eq.gpv_m2) || 0);
-    
-    if ((eq.gpv_m0 || 0) > 0) stats.equipos_con_m0++;
-    if ((eq.gpv_m1 || 0) > 0) stats.equipos_con_m1++;
-    if ((eq.gpv_m2 || 0) > 0) stats.equipos_con_m2++;
-    
-    const gpvActual = parseFloat(eq.gpv_mes_actual_corriendo) || 0;
-    const estado = getEstadoPorGPV(gpvActual);
+    const estado = getEstadoCompleto(eq);
     if (estado === 'ACTIVO') stats.activos++;
     else if (estado === 'REGULAR') stats.regulares++;
-    else stats.inactivos++;
+    else if (estado === 'INACTIVO') stats.inactivos++;
+    else if (estado === 'COMPLETADO') stats.completados++;
   });
   
   const ejecutivosArray = Array.from(ejecutivosMap.entries())
@@ -1129,29 +1206,12 @@ function renderizarEjecutivos(equipos) {
     const pct = Math.min(100, Math.round((exec.total_equipos / META_VENTAS) * 100));
     const seleccionado = ejecutivoActual === exec.nombre ? 'seleccionado' : '';
     const nombreEscapado = exec.nombre.replace(/'/g, "\\'");
-    const riesgoPct = exec.total_equipos > 0 ? exec.inactivos / exec.total_equipos : 0;
-    const borderStyle = riesgoPct > 0.4 ? `border: 2px solid var(--rojo);` : '';
     
     grid.innerHTML += `
-      <div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${nombreEscapado}')" style="${borderStyle}">
+      <div class="tarjeta-ejecutivo ${seleccionado}" onclick="seleccionarEjecutivo('${nombreEscapado}')">
         <div class="nombre-ejecutivo">${exec.nombre}</div>
         <div style="font-size: 28px; font-weight: 800; color: var(--acento);">S/ ${formatearNumero(exec.gpv_total_cohorte)}</div>
         <div style="color: var(--texto-suave); margin-bottom: 12px;">GPV Total Cohorte · ${exec.total_equipos} equipos</div>
-        
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; text-align: center;">
-          <div style="background: rgba(100,116,139,0.1); padding: 8px; border-radius: 12px;">
-            <div style="font-weight: 800; color: #64748b;">S/ ${formatearNumero(exec.gpv_m0)}</div>
-            <div style="font-size: 10px; color: var(--texto-suave);">M0 · ${exec.equipos_con_m0} eq</div>
-          </div>
-          <div style="background: rgba(249,115,22,0.1); padding: 8px; border-radius: 12px;">
-            <div style="font-weight: 800; color: var(--naranja);">S/ ${formatearNumero(exec.gpv_m1)}</div>
-            <div style="font-size: 10px; color: var(--texto-suave);">M1 · ${exec.equipos_con_m1} eq</div>
-          </div>
-          <div style="background: rgba(34,197,94,0.1); padding: 8px; border-radius: 12px;">
-            <div style="font-weight: 800; color: var(--verde);">S/ ${formatearNumero(exec.gpv_m2)}</div>
-            <div style="font-size: 10px; color: var(--texto-suave);">M2 · ${exec.equipos_con_m2} eq</div>
-          </div>
-        </div>
         
         <div class="metricas-rapidas">
           <div class="metrica">
@@ -1178,6 +1238,7 @@ function renderizarEjecutivos(equipos) {
           <div class="insignia insignia-verde">✅ ${exec.activos}</div>
           <div class="insignia insignia-naranja">🟠 ${exec.regulares}</div>
           <div class="insignia insignia-rojo">❌ ${exec.inactivos}</div>
+          <div class="insignia" style="background: var(--morado-bg); color: var(--morado);">🎯 ${exec.completados}</div>
         </div>
       </div>
     `;
@@ -1297,7 +1358,7 @@ function renderizarTodo() {
   
   const kpisContainer = document.getElementById('kpisContainer');
   if (kpisContainer) {
-    kpisContainer.innerHTML = renderizarKPIsEternos(equipos); // Ahora retorna string vacío
+    kpisContainer.innerHTML = renderizarKPIs(equipos);
   }
   
   renderizarGraficas(equipos);
