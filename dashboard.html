@@ -98,6 +98,33 @@
     margin-top: 4px;
   }
 
+  /* NUEVO: Badge de fecha de actualización */
+  .fecha-actualizacion {
+    margin-top: 8px;
+  }
+
+  .fecha-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--verde-bg);
+    border: 1px solid var(--verde);
+    border-radius: 40px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--verde);
+  }
+
+  .fecha-badge .fecha-valor {
+    color: var(--texto);
+    font-weight: 700;
+    background: var(--superficie2);
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 4px;
+  }
+
   .botones {
     display: flex;
     gap: 12px;
@@ -711,6 +738,8 @@
   <div class="titulo">
     <h1>📊 Dashboard de Ventas</h1>
     <p>Punto de Venta · Ciclo de 3 meses por equipo (M0 → M1 → M2)</p>
+    <!-- NUEVO: Badge de fecha de actualización -->
+    <div class="fecha-actualizacion" id="fechaActualizacion"></div>
   </div>
   <div class="botones">
     <button class="btn" onclick="exportarExcel()">📥 Exportar Excel</button>
@@ -850,6 +879,87 @@ let filtroGPVActual = 'todos';
 let chartEjecutivos = null;
 let chartDistribucion = null;
 let chartEstados = null;
+
+// ============================================================
+// NUEVA FUNCIÓN: Obtener la fecha más reciente de ultima_trx
+// ============================================================
+function obtenerFechaActualizacion(equipos) {
+  if (!equipos || equipos.length === 0) return null;
+  
+  let fechaMax = null;
+  
+  equipos.forEach(equipo => {
+    const ultimaTrx = equipo.ultima_transaccion;
+    if (ultimaTrx && ultimaTrx !== '' && ultimaTrx !== null) {
+      let fechaObj = null;
+      
+      // Intentar parsear la fecha en diferentes formatos
+      if (typeof ultimaTrx === 'string' && ultimaTrx.includes('-')) {
+        // Formato YYYY-MM-DD
+        fechaObj = new Date(ultimaTrx);
+      } else if (typeof ultimaTrx === 'string' && ultimaTrx.includes('/')) {
+        // Formato DD/MM/YYYY o MM/DD/YYYY
+        const partes = ultimaTrx.split('/');
+        if (partes.length === 3) {
+          // Intentar YYYY-MM-DD
+          fechaObj = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
+          if (isNaN(fechaObj.getTime())) {
+            // Intentar con orden alternativo
+            fechaObj = new Date(`${partes[2]}-${partes[0]}-${partes[1]}`);
+          }
+        }
+      } else if (ultimaTrx instanceof Date) {
+        fechaObj = ultimaTrx;
+      } else if (typeof ultimaTrx === 'number') {
+        // Número de serie de Excel
+        const epoch = new Date(1899, 11, 30);
+        fechaObj = new Date(epoch.getTime() + (ultimaTrx * 86400 * 1000));
+      }
+      
+      if (fechaObj && !isNaN(fechaObj.getTime())) {
+        if (!fechaMax || fechaObj > fechaMax) {
+          fechaMax = fechaObj;
+        }
+      }
+    }
+  });
+  
+  return fechaMax;
+}
+
+function formatearFechaActualizacion(fecha) {
+  if (!fecha) return null;
+  
+  const dia = fecha.getDate().toString().padStart(2, '0');
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+  const anio = fecha.getFullYear();
+  
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  
+  return `${dia} de ${meses[fecha.getMonth()]} del ${anio}`;
+}
+
+function actualizarBadgeFecha(equipos) {
+  const container = document.getElementById('fechaActualizacion');
+  if (!container) return;
+  
+  const fechaMax = obtenerFechaActualizacion(equipos);
+  
+  if (fechaMax) {
+    const fechaFormateada = formatearFechaActualizacion(fechaMax);
+    container.innerHTML = `
+      <div class="fecha-badge">
+        📅 Actualizado hasta el <span class="fecha-valor">${fechaFormateada}</span>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="fecha-badge">
+        📅 Sin datos de transacciones disponibles
+      </div>
+    `;
+  }
+}
 
 // ============================================================
 // UTILIDADES
@@ -1305,7 +1415,7 @@ function renderizarTabla(equipos) {
         </td>
         <td>${formatearFecha(eq.ultima_transaccion) || '-'}</td>
         <td style="text-align: center;">${estadoBadge}</td>
-      </tr>
+       </tr>
     `;
   }).join('');
 }
@@ -1376,6 +1486,9 @@ function cambiarMesFiltroDesdeTabla(mes) {
 
 function renderizarTodo() {
   const equipos = getEquiposFiltrados();
+  
+  // Actualizar badge de fecha de actualización
+  actualizarBadgeFecha(DATOS_COMPLETOS?.equipos || []);
   
   const kpisContainer = document.getElementById('kpisContainer');
   if (kpisContainer) {
