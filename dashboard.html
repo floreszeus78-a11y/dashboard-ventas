@@ -240,7 +240,6 @@
     cursor: pointer;
   }
 
-  /* KPIS - NUEVOS */
   .kpis-container {
     margin-bottom: 30px;
   }
@@ -472,7 +471,7 @@
     border-color: var(--acento);
   }
 
-  /* NUEVO: Filtros de etapa (M0, M1, M2, COMPLETADO) */
+  /* Filtros de etapa (M0, M1, M2, COMPLETADO) */
   .filtros-etapa {
     display: flex;
     gap: 8px;
@@ -518,29 +517,6 @@
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid var(--borde);
-  }
-
-  .filtro-mes-btn {
-    padding: 8px 20px;
-    border-radius: 30px;
-    border: 1px solid var(--borde);
-    background: var(--superficie2);
-    color: var(--texto);
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-
-  .filtro-mes-btn:hover {
-    border-color: var(--acento);
-    transform: translateY(-1px);
-  }
-
-  .filtro-mes-btn.activo-mes-filtro {
-    background: linear-gradient(135deg, var(--acento), #7c3aed);
-    color: white;
-    border: none;
   }
 
   .buscador {
@@ -813,7 +789,7 @@
     </div>
   </div>
 
-  <!-- KPIs Container - NUEVOS KPIS DE EQUIPOS POR ETAPA -->
+  <!-- KPIs Container -->
   <div class="kpis-container" id="kpisContainer"></div>
 
   <!-- Gráficas -->
@@ -847,25 +823,17 @@
     <div class="encabezado-tabla">
       <div>
         <div class="titulo-tabla">📋 Detalle de Equipos - Línea de Tiempo M0/M1/M2</div>
+        
+        <!-- Filtros GPV (por mes actual) -->
         <div style="margin-top: 12px;" class="filtros-gpv">
-          <button class="chip-filtro activo" onclick="filtrarPorGPV('todos')" data-filtro="todos">
-            📋 Todos
-          </button>
-          <button class="chip-filtro" onclick="filtrarPorGPV('meta')" data-filtro="meta">
-            🎯 Meta (≥700)
-          </button>
-          <button class="chip-filtro" onclick="filtrarPorGPV('promedio')" data-filtro="promedio">
-            📊 Promedio (400-699)
-          </button>
-          <button class="chip-filtro" onclick="filtrarPorGPV('bajo')" data-filtro="bajo">
-            ⚠️ Bajo (1-399)
-          </button>
-          <button class="chip-filtro" onclick="filtrarPorGPV('riesgo')" data-filtro="riesgo">
-            🚨 Riesgo (0)
-          </button>
+          <button class="chip-filtro activo" onclick="filtrarPorGPV('todos')" data-filtro="todos">📋 Todos</button>
+          <button class="chip-filtro" onclick="filtrarPorGPV('meta')" data-filtro="meta">🎯 Meta (≥700)</button>
+          <button class="chip-filtro" onclick="filtrarPorGPV('promedio')" data-filtro="promedio">📊 Promedio (400-699)</button>
+          <button class="chip-filtro" onclick="filtrarPorGPV('bajo')" data-filtro="bajo">⚠️ Bajo (1-399)</button>
+          <button class="chip-filtro" onclick="filtrarPorGPV('riesgo')" data-filtro="riesgo">🚨 Riesgo (0)</button>
         </div>
         
-        <!-- NUEVO: Filtro de etapa (M0, M1, M2, COMPLETADO) -->
+        <!-- Filtros de etapa (M0, M1, M2, COMPLETADO) - basados en GPV de cada etapa -->
         <div class="filtros-etapa">
           <span class="etiqueta-filtro" style="margin-right: 8px;">📊 Etapa:</span>
           <button class="chip-etapa activo" onclick="filtrarPorEtapa('todas')" data-etapa="todas">📋 Todas</button>
@@ -875,8 +843,8 @@
           <button class="chip-etapa completado" onclick="filtrarPorEtapa('completado')" data-etapa="completado">✅ Ciclo Completado</button>
         </div>
         
-        <!-- NUEVO: Selector de Mes duplicado (sincronizado) -->
-        <div class="filtros-mes-venta" style="margin-top: 12px;">
+        <!-- Selector de Mes de Venta -->
+        <div class="filtros-mes-venta">
           <span class="etiqueta-filtro" style="margin-right: 8px;">📆 Filtrar por Mes de Venta:</span>
           <select id="mesSelectTabla" onchange="cambiarMesFiltroDesdeTabla(this.value)" style="
             padding: 8px 16px;
@@ -945,14 +913,6 @@ function getEstadoPorGPV(gpv) {
 function getEstadoCompleto(eq) {
   if (eq.mes_actual_idx === -1) return 'COMPLETADO';
   return getEstadoPorGPV(eq.gpv_mes_actual_corriendo || 0);
-}
-
-function getEtapaActual(eq) {
-  if (eq.mes_actual_idx === 0) return 'm0';
-  if (eq.mes_actual_idx === 1) return 'm1';
-  if (eq.mes_actual_idx === 2) return 'm2';
-  if (eq.mes_actual_idx === -1) return 'completado';
-  return 'desconocido';
 }
 
 function getGPVClass(gpv) {
@@ -1070,25 +1030,22 @@ function actualizarFiltrosDinamicos() {
     mesSelectTabla.innerHTML += `<option value="${mes}">${mes}</option>`;
   });
   
-  // Sincronizar valores
   if (mesSelectTabla.value !== mesFiltroActual) {
     mesSelectTabla.value = mesFiltroActual;
   }
 }
 
 // ============================================================
-// KPI: NUEVOS - EQUIPOS POR ETAPA (M0, M1, M2, COMPLETADO)
+// KPI: EQUIPOS POR ETAPA
 // ============================================================
 function renderizarKPIs(equipos) {
   const totalEquipos = equipos.length;
   
-  // Contar equipos por etapa actual (mes_actual_idx)
   const enM0 = equipos.filter(e => e.mes_actual_idx === 0).length;
   const enM1 = equipos.filter(e => e.mes_actual_idx === 1).length;
   const enM2 = equipos.filter(e => e.mes_actual_idx === 2).length;
   const completados = equipos.filter(e => e.mes_actual_idx === -1).length;
   
-  // Calcular GPV total por etapa
   const gpvM0 = equipos.reduce((sum, e) => sum + (e.gpv_m0 || 0), 0);
   const gpvM1 = equipos.reduce((sum, e) => sum + (e.gpv_m1 || 0), 0);
   const gpvM2 = equipos.reduce((sum, e) => sum + (e.gpv_m2 || 0), 0);
@@ -1146,7 +1103,6 @@ function renderizarGraficas(equipos) {
   if (chartDistribucion) chartDistribucion.destroy();
   if (chartEstados) chartEstados.destroy();
   
-  // Gráfico 1: GPV por ejecutivo
   const porEjecutivo = {};
   equipos.forEach(e => {
     const exec = e.responsable_real || 'Sin asignar';
@@ -1184,7 +1140,6 @@ function renderizarGraficas(equipos) {
     }
   });
   
-  // Gráfico 2: Evolución de GPV por etapa
   const gpvM0 = equipos.reduce((sum, e) => sum + (e.gpv_m0 || 0), 0);
   const gpvM1 = equipos.reduce((sum, e) => sum + (e.gpv_m1 || 0), 0);
   const gpvM2 = equipos.reduce((sum, e) => sum + (e.gpv_m2 || 0), 0);
@@ -1215,7 +1170,6 @@ function renderizarGraficas(equipos) {
     }
   });
   
-  // Gráfico 3: Equipos por estado
   const estados = {
     activo: equipos.filter(e => e.estado === 'ACTIVO').length,
     regular: equipos.filter(e => e.estado === 'REGULAR').length,
@@ -1247,7 +1201,7 @@ function renderizarGraficas(equipos) {
 }
 
 // ============================================================
-// EJECUTIVOS - SIN LOS CUADROS CONFUSOS DE M0/M1/M2
+// EJECUTIVOS
 // ============================================================
 function renderizarEjecutivos(equipos) {
   const grid = document.getElementById('ejecutivosGrid');
@@ -1331,12 +1285,12 @@ function renderizarEjecutivos(equipos) {
 }
 
 // ============================================================
-// TABLA - CON NUEVOS FILTROS DE ETAPA Y MES
+// TABLA - CON FILTROS COMBINADOS (GPV + ETAPA)
 // ============================================================
 function renderizarTabla(equipos) {
   let equiposFiltrados = [...equipos];
   
-  // Filtrar por GPV
+  // FILTRO 1: Por GPV del mes actual
   if (filtroGPVActual !== 'todos') {
     equiposFiltrados = equiposFiltrados.filter(e => {
       const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
@@ -1350,11 +1304,20 @@ function renderizarTabla(equipos) {
     });
   }
   
-  // NUEVO: Filtrar por etapa (M0, M1, M2, COMPLETADO)
+  // FILTRO 2: Por etapa (basado en GPV de M0, M1, M2)
   if (filtroEtapaActual !== 'todas') {
     equiposFiltrados = equiposFiltrados.filter(e => {
-      const etapa = getEtapaActual(e);
-      return etapa === filtroEtapaActual;
+      const gpvM0 = parseFloat(e.gpv_m0) || 0;
+      const gpvM1 = parseFloat(e.gpv_m1) || 0;
+      const gpvM2 = parseFloat(e.gpv_m2) || 0;
+      
+      switch(filtroEtapaActual) {
+        case 'm0': return gpvM0 > 0;
+        case 'm1': return gpvM1 > 0;
+        case 'm2': return gpvM2 > 0;
+        case 'completado': return gpvM0 > 0 && gpvM1 > 0 && gpvM2 > 0;
+        default: return true;
+      }
     });
   }
   
@@ -1422,7 +1385,7 @@ function renderizarTabla(equipos) {
               <span style="font-size: 9px; color: var(--texto-suave);">(Total: S/ ${formatearNumero(eq.gpv_total_cohorte)})</span>
             </div>
             <div class="gpv-historico">
-              <span class="mes-badge ${classM0}" title="Mes de Prueba">M0: ${formatearNumero(gpvM0, 0)}</span>
+              <span class="mes-badge ${classM0}" title="Mes de Venta">M0: ${formatearNumero(gpvM0, 0)}</span>
               <span class="mes-badge ${classM1}" title="Primer Mes">M1: ${formatearNumero(gpvM1, 0)}</span>
               <span class="mes-badge ${classM2}" title="Segundo Mes">M2: ${formatearNumero(gpvM2, 0)}</span>
             </div>
@@ -1445,45 +1408,6 @@ function renderizarTabla(equipos) {
 }
 
 // ============================================================
-// NUEVA FUNCIÓN: Filtrar por etapa
-// ============================================================
-function filtrarPorEtapa(etapa) {
-  filtroEtapaActual = etapa;
-  document.querySelectorAll('.chip-etapa').forEach(chip => {
-    chip.classList.remove('activo');
-    if (chip.dataset.etapa === etapa) chip.classList.add('activo');
-  });
-  renderizarTodo();
-}
-
-// ============================================================
-// NUEVA FUNCIÓN: Cambiar mes desde el selector de la tabla
-// ============================================================
-function cambiarMesFiltroDesdeTabla(mes) {
-  mesFiltroActual = mes;
-  // Sincronizar el selector de arriba
-  const mesSelectArriba = document.getElementById('mesSelect');
-  if (mesSelectArriba) mesSelectArriba.value = mes;
-  renderizarTodo();
-}
-
-// ============================================================
-// RENDERIZADO PRINCIPAL
-// ============================================================
-function renderizarTodo() {
-  const equipos = getEquiposFiltrados();
-  
-  const kpisContainer = document.getElementById('kpisContainer');
-  if (kpisContainer) {
-    kpisContainer.innerHTML = renderizarKPIs(equipos);
-  }
-  
-  renderizarGraficas(equipos);
-  renderizarEjecutivos(equipos);
-  renderizarTabla(equipos);
-}
-
-// ============================================================
 // FILTROS Y EVENTOS
 // ============================================================
 function filtrarPorGPV(tipo) {
@@ -1500,6 +1424,15 @@ function filtrarPorGPVClick(gpv) {
   else if (gpv < 400) filtrarPorGPV('bajo');
   else if (gpv < 700) filtrarPorGPV('promedio');
   else filtrarPorGPV('meta');
+}
+
+function filtrarPorEtapa(etapa) {
+  filtroEtapaActual = etapa;
+  document.querySelectorAll('.chip-etapa').forEach(chip => {
+    chip.classList.remove('activo');
+    if (chip.dataset.etapa === etapa) chip.classList.add('activo');
+  });
+  renderizarTodo();
 }
 
 function filtrarPorEjecutivoTabla(exec) {
@@ -1535,10 +1468,29 @@ function cambiarAnio() {
 
 function cambiarMesFiltro() {
   mesFiltroActual = document.getElementById('mesSelect').value;
-  // Sincronizar el selector de la tabla
   const mesSelectTabla = document.getElementById('mesSelectTabla');
   if (mesSelectTabla) mesSelectTabla.value = mesFiltroActual;
   renderizarTodo();
+}
+
+function cambiarMesFiltroDesdeTabla(mes) {
+  mesFiltroActual = mes;
+  const mesSelectArriba = document.getElementById('mesSelect');
+  if (mesSelectArriba) mesSelectArriba.value = mes;
+  renderizarTodo();
+}
+
+function renderizarTodo() {
+  const equipos = getEquiposFiltrados();
+  
+  const kpisContainer = document.getElementById('kpisContainer');
+  if (kpisContainer) {
+    kpisContainer.innerHTML = renderizarKPIs(equipos);
+  }
+  
+  renderizarGraficas(equipos);
+  renderizarEjecutivos(equipos);
+  renderizarTabla(equipos);
 }
 
 // ============================================================
