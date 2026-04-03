@@ -1070,11 +1070,6 @@ function formatearFecha(fecha) {
   return fecha;
 }
 
-// ============================================================
-// 🔥 FUNCIÓN MODIFICADA: getEquiposFiltrados
-// SOLO CAMBIA gpv_mes_actual_corriendo por gpv_m0 para los FILTROS
-// TODO EL RESTO (M0, M1, M2, fechas, etc.) QUEDA IGUAL
-// ============================================================
 function getEquiposFiltrados() {
   let equipos = DATOS_COMPLETOS?.equipos || [];
   
@@ -1095,17 +1090,6 @@ function getEquiposFiltrados() {
       return mes === mesFiltroActual;
     });
   }
-  
-  // 🔥 ÚNICA MODIFICACIÓN: Para efectos de filtros y KPI, usamos gpv_m0
-  // Pero mantenemos TODOS los datos originales (gpv_m0, gpv_m1, gpv_m2, etc.)
-  equipos = equipos.map(e => ({
-    ...e,
-    // SOLO ESTO CAMBIA: el "GPV actual" para filtros ahora es gpv_m0
-    gpv_mes_actual_corriendo: parseFloat(e.gpv_m0) || 0,
-    trx_mes_actual_corriendo: parseInt(e.trx_m0) || 0,
-    // Recálculo de estado basado en gpv_m0
-    estado: getEstadoPorGPV(parseFloat(e.gpv_m0) || 0)
-  }));
   
   return equipos;
 }
@@ -1193,7 +1177,6 @@ function renderizarGraficas(equipos) {
   if (chartDistribucion) chartDistribucion.destroy();
   if (chartEstados) chartEstados.destroy();
   
-  // Por ejecutivo - usando gpv_total_cohorte (como estaba originalmente)
   const porEjecutivo = {};
   equipos.forEach(e => {
     const exec = e.responsable_real || 'Sin asignar';
