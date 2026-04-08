@@ -5,6 +5,69 @@
 // ============================================================
 
 // ============================================================
+// FUNCIÓN PARA OBTENER LA FECHA DE ÚLTIMA ACTUALIZACIÓN
+// ============================================================
+function obtenerFechaUltimaActualizacion() {
+    // Intentar obtener la fecha desde el dashboard si está disponible
+    if (typeof DATOS_COMPLETOS !== 'undefined' && DATOS_COMPLETOS?.equipos) {
+        let fechaMax = null;
+        
+        DATOS_COMPLETOS.equipos.forEach(equipo => {
+            const ultimaTrx = equipo.ultima_transaccion;
+            if (!ultimaTrx || ultimaTrx === '' || ultimaTrx === null) return;
+            
+            let fechaObj = null;
+            
+            if (typeof ultimaTrx === 'string' && ultimaTrx.includes('-')) {
+                const partes = ultimaTrx.split('-');
+                if (partes.length === 3) {
+                    const anio = parseInt(partes[0], 10);
+                    const mes = parseInt(partes[1], 10) - 1;
+                    const dia = parseInt(partes[2], 10);
+                    if (!isNaN(anio) && !isNaN(mes) && !isNaN(dia)) {
+                        fechaObj = new Date(anio, mes, dia);
+                    }
+                }
+            } else if (typeof ultimaTrx === 'string' && ultimaTrx.includes('/')) {
+                const partes = ultimaTrx.split('/');
+                if (partes.length === 3) {
+                    const v0 = parseInt(partes[0], 10);
+                    const v1 = parseInt(partes[1], 10);
+                    const anio = parseInt(partes[2].length === 2 ? '20' + partes[2] : partes[2], 10);
+                    const intentoMM = new Date(anio, v0 - 1, v1);
+                    if (!isNaN(intentoMM.getTime()) && v0 >= 1 && v0 <= 12 && v1 >= 1 && v1 <= 31) {
+                        fechaObj = intentoMM;
+                    } else {
+                        const intentoDD = new Date(anio, v1 - 1, v0);
+                        if (!isNaN(intentoDD.getTime())) {
+                            fechaObj = intentoDD;
+                        }
+                    }
+                }
+            } else if (ultimaTrx instanceof Date) {
+                fechaObj = ultimaTrx;
+            }
+            
+            if (fechaObj && !isNaN(fechaObj.getTime())) {
+                if (!fechaMax || fechaObj > fechaMax) {
+                    fechaMax = fechaObj;
+                }
+            }
+        });
+        
+        if (fechaMax) {
+            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            return `${fechaMax.getDate().toString().padStart(2, '0')} de ${meses[fechaMax.getMonth()]} del ${fechaMax.getFullYear()}`;
+        }
+    }
+    
+    // Si no hay datos, usar la fecha actual
+    const hoy = new Date();
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    return `${hoy.getDate().toString().padStart(2, '0')} de ${meses[hoy.getMonth()]} del ${hoy.getFullYear()}`;
+}
+
+// ============================================================
 // FUNCIÓN DE ESTADO BASADA EN GPV (ACTUALIZADA)
 // ============================================================
 function getEstadoPorGPV(gpv) {
@@ -331,6 +394,7 @@ function ejecutarExportacion() {
 // ============================================================
 function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
+    const fechaActualizacion = obtenerFechaUltimaActualizacion();
     let contenido = [];
     
     let tituloReporte = 'REPORTE DE VENTAS';
@@ -339,6 +403,7 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
     
     contenido.push(`=== ${tituloReporte} ===`);
     contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
+    contenido.push(`📅 ÚLTIMA ACTUALIZACIÓN DE DATOS: ${fechaActualizacion}`);
     contenido.push(`Total de registros: ${datos.length}`);
     contenido.push('');
     contenido.push('');
@@ -419,6 +484,7 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
 // ============================================================
 function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
+    const fechaActualizacion = obtenerFechaUltimaActualizacion();
     let contenido = [];
     const separador = '='.repeat(100);
     
@@ -430,6 +496,7 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     contenido.push(tituloReporte);
     contenido.push(separador);
     contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
+    contenido.push(`📅 ÚLTIMA ACTUALIZACIÓN DE DATOS: ${fechaActualizacion}`);
     contenido.push(`Total de registros: ${datos.length}`);
     contenido.push('');
     contenido.push('');
@@ -581,6 +648,8 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         return;
     }
 
+    const fechaActualizacion = obtenerFechaUltimaActualizacion();
+    
     let tituloPrincipal = 'REPORTE DE VENTAS';
     if (ejecutivoEspecifico) tituloPrincipal += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
     if (mesEspecifico) tituloPrincipal += ` - MES: ${mesEspecifico}`;
@@ -650,6 +719,18 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 margin: 4px 0;
             }
             
+            .fecha-actualizacion {
+                display: inline-block;
+                background: #dcfce7;
+                border: 1px solid #22c55e;
+                padding: 6px 16px;
+                border-radius: 20px;
+                font-weight: 700;
+                font-size: 10px;
+                color: #16a34a;
+                margin-top: 8px;
+            }
+            
             .total-registros {
                 display: inline-block;
                 background: #f0f9ff;
@@ -660,6 +741,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 font-size: 11px;
                 color: #0ea5e9;
                 margin-top: 8px;
+                margin-left: 8px;
             }
             
             /* SECCIÓN RESUMEN POR ESTADO */
@@ -855,7 +937,10 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 <div class="header-icon">📊</div>
                 <h1>${tituloPrincipal}</h1>
                 <div class="subheader">Fecha de exportación: ${new Date().toLocaleString()}</div>
-                <div class="total-registros">📋 Total de registros: ${datos.length}</div>
+                <div>
+                    <span class="fecha-actualizacion">📅 ACTUALIZADO HASTA: ${fechaActualizacion}</span>
+                    <span class="total-registros">📋 Total de registros: ${datos.length}</span>
+                </div>
             </div>
     `;
 
