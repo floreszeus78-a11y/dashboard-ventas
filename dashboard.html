@@ -6,6 +6,7 @@
 <title>Dashboard de Ventas - Punto de Venta</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="exportaciones.js"></script>
 <style>
   :root {
     --fondo: #0a0e1a;
@@ -1545,9 +1546,6 @@ function renderizarTodo() {
 }
 
 // ============================================================
-// EXPORTACIÓN EXCEL
-// ============================================================
-// ============================================================
 // EXPORTACIÓN - CORREGIDO PARA USAR EL SISTEMA COMPLETO
 // ============================================================
 function exportarExcel() {
@@ -1608,6 +1606,7 @@ function exportarBasico() {
     link.download = `dashboard_cohorte_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
 }
+
 // ============================================================
 // CARGA DE DATOS
 // ============================================================
