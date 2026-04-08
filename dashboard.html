@@ -1547,53 +1547,67 @@ function renderizarTodo() {
 // ============================================================
 // EXPORTACIÓN EXCEL
 // ============================================================
+// ============================================================
+// EXPORTACIÓN - CORREGIDO PARA USAR EL SISTEMA COMPLETO
+// ============================================================
 function exportarExcel() {
-  let equipos = getEquiposFiltrados();
-  
-  if (equipos.length === 0) return alert('No hay datos');
-  
-  const csv = [
-    ['#', 'Fecha Venta', 'Mes Venta', 'Año', 'Comercio', 'Serie', 'RUC', 'Ejecutivo', 
-     'Fecha Activacion', 'Ultima TRX', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 
-     'GPV M2', 'TRX M2', 'GPV Total Cohorte', 'TRX Total Cohorte', 
-     'Mes Actual', 'GPV Mes Actual', 'TRX Mes Actual', 'Estado'].join(','),
-    ...equipos.map((e, i) => {
-      const anio = obtenerAnioDesdeFecha(e.fecha_venta) || '';
-      const mes = obtenerMesDesdeFecha(e.fecha_venta) || '';
-      return [
-        i + 1,
-        e.fecha_venta || '',
-        mes,
-        anio,
-        `"${(e.comercio || '').replace(/"/g, '""')}"`,
-        e.numero_serie,
-        e.ruc,
-        e.responsable_real,
-        e.dia_activo || '',
-        e.ultima_transaccion || '',
-        e.gpv_m0 || 0,
-        e.trx_m0 || 0,
-        e.gpv_m1 || 0,
-        e.trx_m1 || 0,
-        e.gpv_m2 || 0,
-        e.trx_m2 || 0,
-        e.gpv_total_cohorte || 0,
-        e.trx_total_cohorte || 0,
-        obtenerEtiquetaMesReal(e),
-        e.gpv_mes_actual_corriendo || 0,
-        e.trx_mes_actual_corriendo || 0,
-        e.estado || 'INACTIVO'
-      ].join(',');
-    })
-  ].join('\n');
-  
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `dashboard_cohorte_${new Date().toISOString().split('T')[0]}.csv`;
-  link.click();
+    // Verificar que exista el sistema de exportación
+    if (typeof mostrarDialogoExportacion === 'function') {
+        mostrarDialogoExportacion();
+    } else {
+        // Fallback: exportación básica CSV si no está cargado exportaciones.js
+        console.warn('Sistema de exportación no disponible, usando exportación básica');
+        exportarBasico();
+    }
 }
 
+// Función de respaldo por si no se carga exportaciones.js
+function exportarBasico() {
+    let equipos = getEquiposFiltrados();
+    
+    if (equipos.length === 0) return alert('No hay datos para exportar');
+    
+    const csv = [
+        ['#', 'Fecha Venta', 'Mes Venta', 'Año', 'Comercio', 'Serie', 'RUC', 'Ejecutivo', 
+         'Fecha Activacion', 'Ultima TRX', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 
+         'GPV M2', 'TRX M2', 'GPV Total Cohorte', 'TRX Total Cohorte', 
+         'Mes Actual', 'GPV Mes Actual', 'TRX Mes Actual', 'Estado'].join(','),
+        ...equipos.map((e, i) => {
+            const anio = obtenerAnioDesdeFecha(e.fecha_venta) || '';
+            const mes = obtenerMesDesdeFecha(e.fecha_venta) || '';
+            return [
+                i + 1,
+                e.fecha_venta || '',
+                mes,
+                anio,
+                `"${(e.comercio || '').replace(/"/g, '""')}"`,
+                e.numero_serie,
+                e.ruc,
+                e.responsable_real,
+                e.dia_activo || '',
+                e.ultima_transaccion || '',
+                e.gpv_m0 || 0,
+                e.trx_m0 || 0,
+                e.gpv_m1 || 0,
+                e.trx_m1 || 0,
+                e.gpv_m2 || 0,
+                e.trx_m2 || 0,
+                e.gpv_total_cohorte || 0,
+                e.trx_total_cohorte || 0,
+                obtenerEtiquetaMesReal(e),
+                e.gpv_mes_actual_corriendo || 0,
+                e.trx_mes_actual_corriendo || 0,
+                e.estado || 'INACTIVO'
+            ].join(',');
+        })
+    ].join('\n');
+    
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `dashboard_cohorte_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+}
 // ============================================================
 // CARGA DE DATOS
 // ============================================================
