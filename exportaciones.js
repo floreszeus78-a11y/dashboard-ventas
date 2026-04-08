@@ -1,7 +1,8 @@
 // ============================================================
 // EXPORTACIONES.JS - Sistema completo de exportación
 // Versión con lógica de estado basada en GPV (según especificación)
-// ACTIVO: ≥ 700 | REGULAR: 400-699 | SIN TANTO USO: 1-399 | INACTIVO: 0
+// ACTIVO (VERDE): ≥ 700 | REGULAR (ANARANJADO): 400-699 
+// SIN TANTO USO (AMARILLO): 1-399 | INACTIVO (ROJO): 0
 // ============================================================
 
 // ============================================================
@@ -69,6 +70,10 @@ function obtenerFechaUltimaActualizacion() {
 
 // ============================================================
 // FUNCIÓN DE ESTADO BASADA EN GPV (ACTUALIZADA)
+// ACTIVO (VERDE): ≥ 700
+// REGULAR (ANARANJADO): 400-699
+// SIN TANTO USO (AMARILLO): 1-399
+// INACTIVO (ROJO): 0
 // ============================================================
 function getEstadoPorGPV(gpv) {
     if (gpv === 0 || gpv === null || gpv === undefined) return 'INACTIVO';
@@ -84,19 +89,19 @@ function getEstadoPorGPV(gpv) {
 function obtenerEstadoTexto(estado) {
     switch(estado) {
         case 'ACTIVO': return '✅ Activo (≥ S/700)';
-        case 'REGULAR': return '⚠️ Regular (S/400-699)';
-        case 'SIN TANTO USO': return '📉 Sin tanto uso (S/1-399)';
-        case 'INACTIVO': return '❌ Inactivo (S/0)';
+        case 'REGULAR': return '🟠 Regular (S/400-699)';
+        case 'SIN TANTO USO': return '🟡 Sin tanto uso (S/1-399)';
+        case 'INACTIVO': return '🔴 Inactivo (S/0)';
         default: return '⚪ Sin datos';
     }
 }
 
 function obtenerColorEstado(estado) {
     switch(estado) {
-        case 'ACTIVO': return '#22c55e';
-        case 'REGULAR': return '#f97316';
-        case 'SIN TANTO USO': return '#eab308';
-        case 'INACTIVO': return '#ef4444';
+        case 'ACTIVO': return '#22c55e';     // VERDE
+        case 'REGULAR': return '#f97316';    // ANARANJADO
+        case 'SIN TANTO USO': return '#eab308'; // AMARILLO
+        case 'INACTIVO': return '#ef4444';   // ROJO
         default: return '#64748b';
     }
 }
@@ -530,7 +535,7 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             pad('TRX M2', 8) +
             pad('GPV Act', 10) +
             pad('TRX Act', 8) +
-            pad('Estado', 12)
+            pad('Estado', 15)
         );
         contenido.push('-'.repeat(250));
         
@@ -538,10 +543,10 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
             const estado = getEstadoPorGPV(gpvActual);
             let estadoTexto = '';
-            if (estado === 'ACTIVO') estadoTexto = 'Activo';
-            else if (estado === 'REGULAR') estadoTexto = 'Regular';
-            else if (estado === 'SIN TANTO USO') estadoTexto = 'Sin tanto uso';
-            else estadoTexto = 'Inactivo';
+            if (estado === 'ACTIVO') estadoTexto = 'Activo (≥700)';
+            else if (estado === 'REGULAR') estadoTexto = 'Regular (400-699)';
+            else if (estado === 'SIN TANTO USO') estadoTexto = 'Sin tanto uso (1-399)';
+            else estadoTexto = 'Inactivo (0)';
             
             const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
             const mesVenta = obtenerNombreMesExport(item.fecha_venta);
@@ -566,7 +571,7 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 pad(item.trx_m2 || 0, 8) +
                 pad(gpvActual, 10) +
                 pad(item.trx_mes_actual_corriendo || 0, 8) +
-                pad(estadoTexto, 12)
+                pad(estadoTexto, 15)
             );
         });
         
@@ -594,9 +599,9 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         }).length;
         
         contenido.push(`✅ ACTIVOS (≥ S/700): ${activos} equipos`);
-        contenido.push(`⚠️ REGULARES (S/400-699): ${regulares} equipos`);
-        contenido.push(`📉 SIN TANTO USO (S/1-399): ${sinUso} equipos`);
-        contenido.push(`❌ INACTIVOS (S/0): ${inactivos} equipos`);
+        contenido.push(`🟠 REGULARES (S/400-699): ${regulares} equipos`);
+        contenido.push(`🟡 SIN TANTO USO (S/1-399): ${sinUso} equipos`);
+        contenido.push(`🔴 INACTIVOS (S/0): ${inactivos} equipos`);
         
         // Agregar detalle de transacciones por mes
         contenido.push('');
@@ -639,7 +644,7 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
 }
 
 // ============================================================
-// EXPORTAR PDF - VERSIÓN CORREGIDA CON FORMATO EXACTO COMO IMAGEN
+// EXPORTAR PDF
 // ============================================================
 function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const ventanaReporte = window.open('', '_blank');
@@ -868,7 +873,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             .col-trx { width: 4%; }
             .col-estado { width: 8%; }
             
-            /* Estados en tabla */
+            /* Estados en tabla con colores */
             .estado-badge {
                 display: inline-flex;
                 align-items: center;
@@ -1014,15 +1019,15 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             } else if (estado === 'REGULAR') {
                 estadoClass = 'estado-regular';
                 estadoTexto = 'Regular';
-                estadoIcono = '⚠️';
+                estadoIcono = '🟠';
             } else if (estado === 'SIN TANTO USO') {
                 estadoClass = 'estado-sin-uso';
                 estadoTexto = 'Sin tanto uso';
-                estadoIcono = '📉';
+                estadoIcono = '🟡';
             } else {
                 estadoClass = 'estado-inactivo';
                 estadoTexto = 'Inactivo';
-                estadoIcono = '❌';
+                estadoIcono = '🔴';
             }
             
             const fechaVenta = formatearFechaExport(item.fecha_venta);
