@@ -572,7 +572,7 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
 }
 
 // ============================================================
-// EXPORTAR PDF - VERSIÓN OPTIMIZADA CON WINDOW.PRINT()
+// EXPORTAR PDF - VERSIÓN CORREGIDA CON FORMATO EXACTO COMO IMAGEN
 // ============================================================
 function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
     const ventanaReporte = window.open('', '_blank');
@@ -585,6 +585,24 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     if (ejecutivoEspecifico) tituloPrincipal += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
     if (mesEspecifico) tituloPrincipal += ` - MES: ${mesEspecifico}`;
 
+    // Calcular estadísticas
+    const activos = datos.filter(e => {
+        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        return getEstadoPorGPV(gpv) === 'ACTIVO';
+    }).length;
+    const regulares = datos.filter(e => {
+        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        return getEstadoPorGPV(gpv) === 'REGULAR';
+    }).length;
+    const sinUso = datos.filter(e => {
+        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        return getEstadoPorGPV(gpv) === 'SIN TANTO USO';
+    }).length;
+    const inactivos = datos.filter(e => {
+        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        return getEstadoPorGPV(gpv) === 'INACTIVO';
+    }).length;
+
     let contenidoHTML = `
     <!DOCTYPE html>
     <html lang="es">
@@ -594,66 +612,217 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-                font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 margin: 0;
                 padding: 20px;
                 background: white;
                 color: #1f2937;
-                font-size: 10px;
+                font-size: 9px;
                 line-height: 1.3;
             }
             .report-container { max-width: 100%; margin: 0 auto; }
+            
+            /* HEADER PRINCIPAL */
             .header {
                 text-align: center;
-                margin-bottom: 30px;
-                padding-bottom: 20px;
+                margin-bottom: 15px;
+                padding-bottom: 15px;
                 border-bottom: 3px solid #0ea5e9;
             }
+            
+            .header-icon {
+                font-size: 32px;
+                margin-bottom: 8px;
+            }
+            
             h1 {
                 color: #0ea5e9;
-                font-size: 24px;
+                font-size: 22px;
                 font-weight: 800;
-                margin-bottom: 10px;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
+            
             .subheader {
                 color: #6b7280;
-                font-size: 11px;
-                margin: 5px 0;
+                font-size: 10px;
+                margin: 4px 0;
             }
+            
             .total-registros {
+                display: inline-block;
+                background: #f0f9ff;
+                border: 1px solid #0ea5e9;
+                padding: 6px 16px;
+                border-radius: 20px;
                 font-weight: 700;
-                font-size: 13px;
+                font-size: 11px;
                 color: #0ea5e9;
-                margin-top: 10px;
+                margin-top: 8px;
             }
-            h2 {
-                font-size: 16px;
+            
+            /* SECCIÓN RESUMEN POR ESTADO */
+            .resumen-section {
+                margin: 20px 0;
+            }
+            
+            .resumen-title {
+                font-size: 14px;
                 font-weight: 700;
-                margin: 20px 0 15px 0;
                 color: #374151;
-                border-left: 4px solid #0ea5e9;
-                padding-left: 12px;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
+            
+            .resumen-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            
+            .resumen-card {
+                text-align: center;
+                padding: 15px 10px;
+                border-radius: 8px;
+                border: 1px solid #e5e7eb;
+            }
+            
+            .resumen-card.activos {
+                background: #f0fdf4;
+                border-color: #22c55e;
+            }
+            
+            .resumen-card.regulares {
+                background: #fff7ed;
+                border-color: #f97316;
+            }
+            
+            .resumen-card.sin-uso {
+                background: #fefce8;
+                border-color: #eab308;
+            }
+            
+            .resumen-card.inactivos {
+                background: #fef2f2;
+                border-color: #ef4444;
+            }
+            
+            .resumen-numero {
+                font-size: 28px;
+                font-weight: 800;
+                margin-bottom: 4px;
+            }
+            
+            .resumen-card.activos .resumen-numero { color: #22c55e; }
+            .resumen-card.regulares .resumen-numero { color: #f97316; }
+            .resumen-card.sin-uso .resumen-numero { color: #eab308; }
+            .resumen-card.inactivos .resumen-numero { color: #ef4444; }
+            
+            .resumen-label {
+                font-size: 9px;
+                color: #6b7280;
+                font-weight: 600;
+            }
+            
+            /* TABLA DETALLADA */
+            .tabla-section {
+                margin-top: 20px;
+            }
+            
+            .tabla-title {
+                font-size: 14px;
+                font-weight: 700;
+                color: #374151;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding-left: 8px;
+                border-left: 4px solid #0ea5e9;
+            }
+            
             table {
                 width: 100%;
                 border-collapse: collapse;
-                margin: 15px 0;
-                font-size: 9px;
+                font-size: 8px;
+                margin-top: 10px;
             }
+            
             th {
-                background: #f3f4f6;
+                background: #f8fafc;
                 padding: 8px 6px;
-                text-align: left;
+                text-align: center;
                 font-weight: 700;
-                color: #1f2937;
-                border: 1px solid #e5e7eb;
+                color: #374151;
+                border: 1px solid #d1d5db;
+                font-size: 8px;
+                white-space: nowrap;
             }
+            
             td {
                 padding: 6px;
                 border: 1px solid #e5e7eb;
-                vertical-align: top;
+                vertical-align: middle;
+                text-align: center;
             }
-            tr:nth-child(even) { background-color: #f9fafb; }
+            
+            tr:nth-child(even) { background-color: #fafafa; }
+            
+            /* Columnas específicas */
+            .col-num { width: 3%; }
+            .col-fecha { width: 7%; }
+            .col-mes { width: 6%; }
+            .col-comercio { width: 14%; text-align: left !important; }
+            .col-serie { width: 10%; font-family: monospace; font-size: 7px; }
+            .col-ruc { width: 8%; font-family: monospace; }
+            .col-ejecutivo { width: 8%; }
+            .col-fecha-act { width: 7%; }
+            .col-ultima { width: 7%; }
+            .col-gpv { width: 6%; text-align: right !important; }
+            .col-trx { width: 4%; }
+            .col-estado { width: 8%; }
+            
+            /* Estados en tabla */
+            .estado-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 3px 8px;
+                border-radius: 12px;
+                font-size: 8px;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+            
+            .estado-activo {
+                background: #dcfce7;
+                color: #16a34a;
+            }
+            
+            .estado-regular {
+                background: #ffedd5;
+                color: #ea580c;
+            }
+            
+            .estado-sin-uso {
+                background: #fef9c3;
+                color: #ca8a04;
+            }
+            
+            .estado-inactivo {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+            
+            .text-right { text-align: right !important; }
+            .text-left { text-align: left !important; }
+            .font-bold { font-weight: 700; }
+            
+            /* FOOTER */
             .footer {
                 margin-top: 30px;
                 padding-top: 15px;
@@ -662,98 +831,88 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 color: #9ca3af;
                 border-top: 1px solid #e5e7eb;
             }
-            .text-right { text-align: right; }
-            .text-center { text-align: center; }
-            .font-bold { font-weight: 700; }
-            .estado-activo { color: #16a34a; font-weight: 700; }
-            .estado-regular { color: #ea580c; font-weight: 700; }
-            .estado-sin-uso { color: #eab308; font-weight: 700; }
-            .estado-inactivo { color: #dc2626; font-weight: 700; }
-            .page-break { page-break-before: always; }
+            
+            /* PRINT OPTIMIZATIONS */
             @media print {
                 body { margin: 0; padding: 10px; }
-                th { background: #f3f4f6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                tr:nth-child(even) { background-color: #f9fafb; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                th { background: #f8fafc !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                tr:nth-child(even) { background-color: #fafafa !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                .resumen-card { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                .estado-badge { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                .header { border-bottom-color: #0ea5e9 !important; -webkit-print-color-adjust: exact !important; }
+            }
+            
+            @page {
+                size: landscape;
+                margin: 10mm;
             }
         </style>
     </head>
     <body>
         <div class="report-container">
+            <!-- HEADER -->
             <div class="header">
-                <h1>📊 ${tituloPrincipal}</h1>
+                <div class="header-icon">📊</div>
+                <h1>${tituloPrincipal}</h1>
                 <div class="subheader">Fecha de exportación: ${new Date().toLocaleString()}</div>
                 <div class="total-registros">📋 Total de registros: ${datos.length}</div>
             </div>
     `;
 
     if (incluirTabla) {
-        // Calcular resumen de estados
-        const activos = datos.filter(e => {
-            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-            return getEstadoPorGPV(gpv) === 'ACTIVO';
-        }).length;
-        const regulares = datos.filter(e => {
-            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-            return getEstadoPorGPV(gpv) === 'REGULAR';
-        }).length;
-        const sinUso = datos.filter(e => {
-            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-            return getEstadoPorGPV(gpv) === 'SIN TANTO USO';
-        }).length;
-        const inactivos = datos.filter(e => {
-            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
-            return getEstadoPorGPV(gpv) === 'INACTIVO';
-        }).length;
-        
+        // RESUMEN POR ESTADO
         contenidoHTML += `
-            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="margin-bottom: 10px;">📊 Resumen por Estado</h3>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-                    <div style="background: #dcfce7; padding: 10px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 20px; font-weight: 700; color: #16a34a;">${activos}</div>
-                        <div style="font-size: 10px;">Activos (≥ S/700)</div>
+            <!-- RESUMEN POR ESTADO -->
+            <div class="resumen-section">
+                <div class="resumen-title">📊 Resumen por Estado</div>
+                <div class="resumen-grid">
+                    <div class="resumen-card activos">
+                        <div class="resumen-numero">${activos}</div>
+                        <div class="resumen-label">Activos (≥ S/700)</div>
                     </div>
-                    <div style="background: #ffedd5; padding: 10px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 20px; font-weight: 700; color: #ea580c;">${regulares}</div>
-                        <div style="font-size: 10px;">Regulares (S/400-699)</div>
+                    <div class="resumen-card regulares">
+                        <div class="resumen-numero">${regulares}</div>
+                        <div class="resumen-label">Regulares (S/400-699)</div>
                     </div>
-                    <div style="background: #fef9c3; padding: 10px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 20px; font-weight: 700; color: #eab308;">${sinUso}</div>
-                        <div style="font-size: 10px;">Sin tanto uso (S/1-399)</div>
+                    <div class="resumen-card sin-uso">
+                        <div class="resumen-numero">${sinUso}</div>
+                        <div class="resumen-label">Sin tanto uso (S/1-399)</div>
                     </div>
-                    <div style="background: #fee2e2; padding: 10px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 20px; font-weight: 700; color: #dc2626;">${inactivos}</div>
-                        <div style="font-size: 10px;">Inactivos (S/0)</div>
+                    <div class="resumen-card inactivos">
+                        <div class="resumen-numero">${inactivos}</div>
+                        <div class="resumen-label">Inactivos (S/0)</div>
                     </div>
                 </div>
             </div>
             
-            <h2>📋 Tabla Detallada de Equipos</h2>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Fecha Venta</th>
-                            <th>Mes Venta</th>
-                            <th>Comercio</th>
-                            <th>Serie</th>
-                            <th>RUC</th>
-                            <th>Ejecutivo</th>
-                            <th>Fecha Activación</th>
-                            <th>Última Transacción</th>
-                            <th class="text-right">GPV M0</th>
-                            <th class="text-right">TRX M0</th>
-                            <th class="text-right">GPV M1</th>
-                            <th class="text-right">TRX M1</th>
-                            <th class="text-right">GPV M2</th>
-                            <th class="text-right">TRX M2</th>
-                            <th class="text-right">GPV Actual</th>
-                            <th class="text-right">TRX Actual</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <!-- TABLA DETALLADA -->
+            <div class="tabla-section">
+                <div class="tabla-title">📋 Tabla Detallada de Equipos</div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-num">#</th>
+                                <th class="col-fecha">Fecha<br>Venta</th>
+                                <th class="col-mes">Mes<br>Venta</th>
+                                <th class="col-comercio text-left">Comercio</th>
+                                <th class="col-serie">Serie</th>
+                                <th class="col-ruc">RUC</th>
+                                <th class="col-ejecutivo">Ejecutivo</th>
+                                <th class="col-fecha-act">Fecha<br>Activación</th>
+                                <th class="col-ultima">Última<br>Transacción</th>
+                                <th class="col-gpv">GPV<br>M0</th>
+                                <th class="col-trx">TRX<br>M0</th>
+                                <th class="col-gpv">GPV<br>M1</th>
+                                <th class="col-trx">TRX<br>M1</th>
+                                <th class="col-gpv">GPV<br>M2</th>
+                                <th class="col-trx">TRX<br>M2</th>
+                                <th class="col-gpv">GPV<br>Actual</th>
+                                <th class="col-trx">TRX<br>Actual</th>
+                                <th class="col-estado">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
         `;
 
         datos.forEach((item, i) => {
@@ -761,89 +920,61 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             const estado = getEstadoPorGPV(gpvActual);
             let estadoClass = '';
             let estadoTexto = '';
+            let estadoIcono = '';
             
             if (estado === 'ACTIVO') {
                 estadoClass = 'estado-activo';
-                estadoTexto = '✅ Activo';
+                estadoTexto = 'Activo';
+                estadoIcono = '✅';
             } else if (estado === 'REGULAR') {
                 estadoClass = 'estado-regular';
-                estadoTexto = '⚠️ Regular';
+                estadoTexto = 'Regular';
+                estadoIcono = '⚠️';
             } else if (estado === 'SIN TANTO USO') {
                 estadoClass = 'estado-sin-uso';
-                estadoTexto = '📉 Sin tanto uso';
+                estadoTexto = 'Sin tanto uso';
+                estadoIcono = '📉';
             } else {
                 estadoClass = 'estado-inactivo';
-                estadoTexto = '❌ Inactivo';
+                estadoTexto = 'Inactivo';
+                estadoIcono = '❌';
             }
+            
+            const fechaVenta = formatearFechaExport(item.fecha_venta);
+            const mesVenta = obtenerNombreMesExport(item.fecha_venta);
+            const fechaActivacion = formatearFechaExport(item.dia_activo);
+            const ultimaTransaccion = formatearFechaExport(item.ultima_transaccion);
             
             contenidoHTML += `
                 <tr>
-                    <td class="text-center">${i + 1}</td>
-                    <td>${formatearFechaExport(item.fecha_venta)}</td>
-                    <td>${obtenerNombreMesExport(item.fecha_venta)}</td>
-                    <td>${(item.comercio || '-').substring(0, 35)}</td>
-                    <td><code>${item.numero_serie || '-'}</code></td>
-                    <td>${item.ruc || '-'}</td>
-                    <td>${item.responsable_real || '-'}</td>
-                    <td>${formatearFechaExport(item.dia_activo)}</td>
-                    <td>${formatearFechaExport(item.ultima_transaccion)}</td>
-                    <td class="text-right">${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
-                    <td class="text-right">${item.trx_m0 || 0}</td>
-                    <td class="text-right">${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
-                    <td class="text-right">${item.trx_m1 || 0}</td>
-                    <td class="text-right">${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
-                    <td class="text-right">${item.trx_m2 || 0}</td>
-                    <td class="text-right font-bold">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
-                    <td class="text-right">${item.trx_mes_actual_corriendo || 0}</td>
-                    <td class="text-center ${estadoClass}">${estadoTexto}</td>
-                 </tr>
+                    <td class="col-num">${i + 1}</td>
+                    <td class="col-fecha">${fechaVenta}</td>
+                    <td class="col-mes">${mesVenta}</td>
+                    <td class="col-comercio text-left">${(item.comercio || '-').substring(0, 35)}</td>
+                    <td class="col-serie"><code>${item.numero_serie || '-'}</code></td>
+                    <td class="col-ruc"><code>${item.ruc || '-'}</code></td>
+                    <td class="col-ejecutivo">${item.responsable_real || '-'}</td>
+                    <td class="col-fecha-act">${fechaActivacion}</td>
+                    <td class="col-ultima">${ultimaTransaccion}</td>
+                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
+                    <td class="col-trx">${item.trx_m0 || 0}</td>
+                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
+                    <td class="col-trx">${item.trx_m1 || 0}</td>
+                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
+                    <td class="col-trx">${item.trx_m2 || 0}</td>
+                    <td class="col-gpv font-bold" style="color: #0ea5e9;">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
+                    <td class="col-trx font-bold">${item.trx_mes_actual_corriendo || 0}</td>
+                    <td class="col-estado">
+                        <span class="estado-badge ${estadoClass}">${estadoIcono} ${estadoTexto}</span>
+                    </td>
+                </tr>
             `;
         });
 
         contenidoHTML += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-        
-        // Agregar detalle de transacciones
-        contenidoHTML += `
-            <div class="page-break"></div>
-            <h2>📊 Detalle de Transacciones por Mes</h2>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Serie</th>
-                            <th>Comercio</th>
-                            <th class="text-right">TRX M0</th>
-                            <th class="text-right">TRX M1</th>
-                            <th class="text-right">TRX M2</th>
-                            <th class="text-right">TRX Actual</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-        
-        datos.slice(0, 50).forEach((item, i) => {
-            contenidoHTML += `
-                <tr>
-                    <td class="text-center">${i + 1}</td>
-                    <td><code>${item.numero_serie || '-'}</code></td>
-                    <td>${(item.comercio || '-').substring(0, 35)}</td>
-                    <td class="text-right">${item.trx_m0 || 0}</td>
-                    <td class="text-right">${item.trx_m1 || 0}</td>
-                    <td class="text-right">${item.trx_m2 || 0}</td>
-                    <td class="text-right font-bold">${item.trx_mes_actual_corriendo || 0}</td>
-                </tr>
-            `;
-        });
-        
-        contenidoHTML += `
-                    </tbody>
-                </table>
-                ${datos.length > 50 ? '<p style="font-size: 9px; color: #6b7280; margin-top: 10px;">* Mostrando primeros 50 registros de transacciones</p>' : ''}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         `;
     }
@@ -853,16 +984,20 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 Reporte generado automáticamente el ${new Date().toLocaleString()} | Sistema de Gestión de Ventas Culqi
             </div>
         </div>
+        
+        <script>
+            window.onload = function() {
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            };
+        </script>
     </body>
     </html>
     `;
 
     ventanaReporte.document.write(contenidoHTML);
     ventanaReporte.document.close();
-    
-    ventanaReporte.onload = function() {
-        ventanaReporte.print();
-    };
 }
 
 function descargarArchivo(blob, nombreArchivo) {
