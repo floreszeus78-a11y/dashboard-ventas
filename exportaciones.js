@@ -6,6 +6,35 @@
 // ============================================================
 
 // ============================================================
+// FUNCIÓN CRÍTICA: LIMPIAR NÚMEROS DE FORMATO DE MONEDA
+// Convierte "S/ 1,234.56" o "1.234,56" → 1234.56
+// ============================================================
+function limpiarNumero(valor) {
+    if (valor === null || valor === undefined || valor === '') return 0;
+    if (typeof valor === 'number') return valor;
+    
+    // Convertir a string y limpiar
+    let str = String(valor);
+    
+    // Remover símbolo de moneda y espacios
+    str = str.replace(/[S\/\$]/g, '').trim();
+    
+    // Detectar formato: si tiene coma como separador decimal (europeo)
+    // ej: "1.234,56" (miles con punto, decimal con coma)
+    if (str.match(/\d+\.\d{3},\d{2}$/) || str.match(/\d+,\d{2}$/)) {
+        // Formato europeo: 1.234,56 o 234,56
+        str = str.replace(/\./g, ''); // quitar puntos de miles
+        str = str.replace(/,/g, '.'); // convertir coma decimal a punto
+    } else {
+        // Formato americano/inglés: 1,234.56
+        str = str.replace(/,/g, ''); // quitar comas de miles
+    }
+    
+    const num = parseFloat(str);
+    return isNaN(num) ? 0 : num;
+}
+
+// ============================================================
 // FUNCIÓN PARA OBTENER LA FECHA DE ÚLTIMA ACTUALIZACIÓN
 // ============================================================
 function obtenerFechaUltimaActualizacion() {
@@ -69,17 +98,20 @@ function obtenerFechaUltimaActualizacion() {
 }
 
 // ============================================================
-// FUNCIÓN DE ESTADO BASADA EN GPV (ACTUALIZADA)
+// FUNCIÓN DE ESTADO BASADA EN GPV (CORREGIDA)
 // ACTIVO (VERDE): ≥ 700
 // REGULAR (ANARANJADO): 400-699
 // SIN TANTO USO (AMARILLO): 1-399
 // INACTIVO (ROJO): 0
 // ============================================================
 function getEstadoPorGPV(gpv) {
-    if (gpv === 0 || gpv === null || gpv === undefined) return 'INACTIVO';
-    if (gpv >= 700) return 'ACTIVO';
-    if (gpv >= 400 && gpv <= 699) return 'REGULAR';
-    if (gpv >= 1 && gpv <= 399) return 'SIN TANTO USO';
+    // Limpiar el valor por si viene como string con formato
+    const valor = limpiarNumero(gpv);
+    
+    if (valor === 0 || valor === null || valor === undefined) return 'INACTIVO';
+    if (valor >= 700) return 'ACTIVO';
+    if (valor >= 400 && valor <= 699) return 'REGULAR';
+    if (valor >= 1 && valor <= 399) return 'SIN TANTO USO';
     return 'INACTIVO';
 }
 
@@ -314,7 +346,7 @@ function obtenerDatosConFiltrosAplicados() {
     }
     if (typeof filtroGPVActual !== 'undefined' && filtroGPVActual !== 'todos') {
         equipos = equipos.filter(e => {
-            const gpvActual = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            const gpvActual = limpiarNumero(e.gpv_mes_actual_corriendo);
             switch(filtroGPVActual) {
                 case 'meta': return gpvActual >= 700;
                 case 'promedio': return gpvActual >= 400 && gpvActual < 700;
@@ -442,7 +474,7 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
         contenido.push(headers.map(h => `"${h}"`).join(','));
         
         datos.forEach((item, i) => {
-            const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
+            const gpvActual = limpiarNumero(item.gpv_mes_actual_corriendo);
             const estado = getEstadoPorGPV(gpvActual);
             let estadoTexto = '';
             if (estado === 'ACTIVO') estadoTexto = 'Activo (≥ S/700)';
@@ -465,11 +497,11 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
                 item.responsable_real || '',
                 `"${fechaActivacionFormateada}"`,
                 `"${ultimaTransaccionFormateada}"`,
-                item.gpv_m0 || 0,
+                limpiarNumero(item.gpv_m0),
                 item.trx_m0 || 0,
-                item.gpv_m1 || 0,
+                limpiarNumero(item.gpv_m1),
                 item.trx_m1 || 0,
-                item.gpv_m2 || 0,
+                limpiarNumero(item.gpv_m2),
                 item.trx_m2 || 0,
                 item.etiqueta_mes_actual || '',
                 gpvActual,
@@ -540,7 +572,7 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         contenido.push('-'.repeat(250));
         
         datos.forEach((item, i) => {
-            const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
+            const gpvActual = limpiarNumero(item.gpv_mes_actual_corriendo);
             const estado = getEstadoPorGPV(gpvActual);
             let estadoTexto = '';
             if (estado === 'ACTIVO') estadoTexto = 'Activo (≥700)';
@@ -563,11 +595,11 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 pad(item.responsable_real || '-', 20) +
                 pad(fechaActivacionFormateada, 16) +
                 pad(ultimaTransaccionFormateada, 18) +
-                pad(item.gpv_m0 || 0, 10) +
+                pad(limpiarNumero(item.gpv_m0), 10) +
                 pad(item.trx_m0 || 0, 8) +
-                pad(item.gpv_m1 || 0, 10) +
+                pad(limpiarNumero(item.gpv_m1), 10) +
                 pad(item.trx_m1 || 0, 8) +
-                pad(item.gpv_m2 || 0, 10) +
+                pad(limpiarNumero(item.gpv_m2), 10) +
                 pad(item.trx_m2 || 0, 8) +
                 pad(gpvActual, 10) +
                 pad(item.trx_mes_actual_corriendo || 0, 8) +
@@ -582,19 +614,19 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         contenido.push(separador);
         
         const activos = datos.filter(e => {
-            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
             return getEstadoPorGPV(gpv) === 'ACTIVO';
         }).length;
         const regulares = datos.filter(e => {
-            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
             return getEstadoPorGPV(gpv) === 'REGULAR';
         }).length;
         const sinUso = datos.filter(e => {
-            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
             return getEstadoPorGPV(gpv) === 'SIN TANTO USO';
         }).length;
         const inactivos = datos.filter(e => {
-            const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+            const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
             return getEstadoPorGPV(gpv) === 'INACTIVO';
         }).length;
         
@@ -659,21 +691,21 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     if (ejecutivoEspecifico) tituloPrincipal += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
     if (mesEspecifico) tituloPrincipal += ` - MES: ${mesEspecifico}`;
 
-    // Calcular estadísticas
+    // Calcular estadísticas USANDO limpiarNumero
     const activos = datos.filter(e => {
-        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
         return getEstadoPorGPV(gpv) === 'ACTIVO';
     }).length;
     const regulares = datos.filter(e => {
-        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
         return getEstadoPorGPV(gpv) === 'REGULAR';
     }).length;
     const sinUso = datos.filter(e => {
-        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
         return getEstadoPorGPV(gpv) === 'SIN TANTO USO';
     }).length;
     const inactivos = datos.filter(e => {
-        const gpv = parseFloat(e.gpv_mes_actual_corriendo) || 0;
+        const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
         return getEstadoPorGPV(gpv) === 'INACTIVO';
     }).length;
 
@@ -1006,7 +1038,11 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
         `;
 
         datos.forEach((item, i) => {
-            const gpvActual = parseFloat(item.gpv_mes_actual_corriendo) || 0;
+            const gpvActual = limpiarNumero(item.gpv_mes_actual_corriendo);
+            const gpvM0 = limpiarNumero(item.gpv_m0);
+            const gpvM1 = limpiarNumero(item.gpv_m1);
+            const gpvM2 = limpiarNumero(item.gpv_m2);
+            
             const estado = getEstadoPorGPV(gpvActual);
             let estadoClass = '';
             let estadoTexto = '';
@@ -1046,11 +1082,11 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                     <td class="col-ejecutivo">${item.responsable_real || '-'}</td>
                     <td class="col-fecha-act">${fechaActivacion}</td>
                     <td class="col-ultima">${ultimaTransaccion}</td>
-                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(item.gpv_m0 || 0, 0)}</td>
+                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(gpvM0, 0)}</td>
                     <td class="col-trx">${item.trx_m0 || 0}</td>
-                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(item.gpv_m1 || 0, 0)}</td>
+                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(gpvM1, 0)}</td>
                     <td class="col-trx">${item.trx_m1 || 0}</td>
-                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(item.gpv_m2 || 0, 0)}</td>
+                    <td class="col-gpv font-bold">S/ ${formatearNumeroExport(gpvM2, 0)}</td>
                     <td class="col-trx">${item.trx_m2 || 0}</td>
                     <td class="col-gpv font-bold" style="color: #0ea5e9;">S/ ${formatearNumeroExport(gpvActual, 0)}</td>
                     <td class="col-trx font-bold">${item.trx_mes_actual_corriendo || 0}</td>
