@@ -321,9 +321,13 @@ function solicitarDatos() {
 }
 
 function getEstadoPorGPV(gpv) {
-  if (gpv === 0) return 'INACTIVO';
-  if (gpv < 400) return 'REGULAR';
-  return 'ACTIVO';
+    const valor = limpiarNumero ? limpiarNumero(gpv) : Number(gpv);
+    
+    if (valor === 0 || valor === null || valor === undefined || isNaN(valor)) return 'INACTIVO';
+    if (valor >= 700) return 'ACTIVO';
+    if (valor >= 400 && valor <= 699) return 'REGULAR';
+    if (valor >= 1 && valor <= 399) return 'SIN TANTO USO';
+    return 'INACTIVO';
 }
 
 function getGPVClass(gpv) {
