@@ -412,6 +412,12 @@
       <span>Reportes</span>
     </button>
     
+    <!-- 🔥 NUEVO BOTÓN CONSULTOR IA 🔥 -->
+    <button class="nav-item" onclick="loadDashboard('ia_chat.html')">
+      <span class="nav-icon">🤖</span>
+      <span>Consultor IA</span>
+    </button>
+    
     <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--borde); margin-top: 20px;">
       <a href="#" class="nav-item" style="text-decoration: none; color: inherit;">
         <span class="nav-icon">⚙️</span>
@@ -567,7 +573,8 @@ function loadDashboard(filename) {
     'equipos.html': 'Equipos Culqi',
     'ejecutivos.html': 'Ejecutivos',
     'comercios.html': 'Comercios',
-    'reportes.html': 'Reportes'
+    'reportes.html': 'Reportes',
+    'ia_chat.html': 'Consultor IA'
   };
   const mobileTitle = document.querySelector('.mobile-title');
   if (mobileTitle && titleMap[filename]) {
