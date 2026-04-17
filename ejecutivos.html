@@ -301,6 +301,38 @@
 </div>
 
 <script>
+// ============================================================
+// FUNCIÓN DE LIMPIEZA DE NÚMEROS (FALLBACK LOCAL)
+// ============================================================
+function limpiarNumero(valor) {
+    if (valor === null || valor === undefined || valor === '') return 0;
+    if (typeof valor === 'number') return isNaN(valor) ? 0 : valor;
+    
+    let str = valor.toString().trim();
+    if (str === '-' || str === '') return 0;
+    
+    str = str.replace(/[S\/\$\s]/g, '');
+    
+    if (str.includes(',') && str.includes('.')) {
+        const lastComma = str.lastIndexOf(',');
+        const lastDot = str.lastIndexOf('.');
+        if (lastComma > lastDot) {
+            str = str.replace(/\./g, '').replace(',', '.');
+        } else {
+            str = str.replace(/,/g, '');
+        }
+    } else if (str.includes(',') && !str.includes('.')) {
+        const partes = str.split(',');
+        if (partes.length === 2 && partes[1].length <= 2) {
+            str = str.replace(',', '.');
+        } else {
+            str = str.replace(/,/g, '');
+        }
+    }
+    
+    const num = parseFloat(str);
+    return isNaN(num) ? 0 : num;
+}
 let datosCompletos = null;
 let equiposFiltrados = [];
 let paginaActual = 1;
