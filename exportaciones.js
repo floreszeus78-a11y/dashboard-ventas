@@ -1,33 +1,25 @@
 // ============================================================
 // EXPORTACIONES.JS - Sistema completo de exportación
-// Versión con lógica de estado basada en GPV (según especificación)
+// Versión 2.0 - Con filtros avanzados por Estado GPV y Mes de Venta
 // ACTIVO (VERDE): ≥ 700 | REGULAR (ANARANJADO): 400-699 
 // SIN TANTO USO (AMARILLO): 1-399 | INACTIVO (ROJO): 0
 // ============================================================
 
 // ============================================================
 // FUNCIÓN CRÍTICA: LIMPIAR NÚMEROS DE FORMATO DE MONEDA
-// Convierte "S/ 1,234.56" o "1.234,56" → 1234.56
 // ============================================================
 function limpiarNumero(valor) {
     if (valor === null || valor === undefined || valor === '') return 0;
     if (typeof valor === 'number') return valor;
     
-    // Convertir a string y limpiar
     let str = String(valor);
-    
-    // Remover símbolo de moneda y espacios
     str = str.replace(/[S\/\$]/g, '').trim();
     
-    // Detectar formato: si tiene coma como separador decimal (europeo)
-    // ej: "1.234,56" (miles con punto, decimal con coma)
     if (str.match(/\d+\.\d{3},\d{2}$/) || str.match(/\d+,\d{2}$/)) {
-        // Formato europeo: 1.234,56 o 234,56
-        str = str.replace(/\./g, ''); // quitar puntos de miles
-        str = str.replace(/,/g, '.'); // convertir coma decimal a punto
+        str = str.replace(/\./g, '');
+        str = str.replace(/,/g, '.');
     } else {
-        // Formato americano/inglés: 1,234.56
-        str = str.replace(/,/g, ''); // quitar comas de miles
+        str = str.replace(/,/g, '');
     }
     
     const num = parseFloat(str);
@@ -35,14 +27,24 @@ function limpiarNumero(valor) {
 }
 
 // ============================================================
+// OBTENER DATOS GLOBALES (Compatible con dashboard y ejecutivos)
+// ============================================================
+function getDatosGlobales() {
+    if (typeof DATOS_COMPLETOS !== 'undefined' && DATOS_COMPLETOS) return DATOS_COMPLETOS;
+    if (typeof datosCompletos !== 'undefined' && datosCompletos) return datosCompletos;
+    if (typeof datosGlobales !== 'undefined' && datosGlobales) return datosGlobales;
+    return null;
+}
+
+// ============================================================
 // FUNCIÓN PARA OBTENER LA FECHA DE ÚLTIMA ACTUALIZACIÓN
 // ============================================================
 function obtenerFechaUltimaActualizacion() {
-    // Intentar obtener la fecha desde el dashboard si está disponible
-    if (typeof DATOS_COMPLETOS !== 'undefined' && DATOS_COMPLETOS?.equipos) {
+    const datos = getDatosGlobales();
+    if (datos?.equipos) {
         let fechaMax = null;
         
-        DATOS_COMPLETOS.equipos.forEach(equipo => {
+        datos.equipos.forEach(equipo => {
             const ultimaTrx = equipo.ultima_transaccion;
             if (!ultimaTrx || ultimaTrx === '' || ultimaTrx === null) return;
             
@@ -86,26 +88,20 @@ function obtenerFechaUltimaActualizacion() {
         });
         
         if (fechaMax) {
-            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
             return `${fechaMax.getDate().toString().padStart(2, '0')} de ${meses[fechaMax.getMonth()]} del ${fechaMax.getFullYear()}`;
         }
     }
     
-    // Si no hay datos, usar la fecha actual
     const hoy = new Date();
-    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     return `${hoy.getDate().toString().padStart(2, '0')} de ${meses[hoy.getMonth()]} del ${hoy.getFullYear()}`;
 }
 
 // ============================================================
-// FUNCIÓN DE ESTADO BASADA EN GPV (CORREGIDA)
-// ACTIVO (VERDE): ≥ 700
-// REGULAR (ANARANJADO): 400-699
-// SIN TANTO USO (AMARILLO): 1-399
-// INACTIVO (ROJO): 0
+// FUNCIÓN DE ESTADO BASADA EN GPV
 // ============================================================
 function getEstadoPorGPV(gpv) {
-    // Limpiar el valor por si viene como string con formato
     const valor = limpiarNumero(gpv);
     
     if (valor === 0 || valor === null || valor === undefined) return 'INACTIVO';
@@ -116,7 +112,7 @@ function getEstadoPorGPV(gpv) {
 }
 
 // ============================================================
-// FUNCIÓN PARA OBTENER TEXTO Y COLOR DEL ESTADO
+// FUNCIONES AUXILIARES
 // ============================================================
 function obtenerEstadoTexto(estado) {
     switch(estado) {
@@ -130,15 +126,14 @@ function obtenerEstadoTexto(estado) {
 
 function obtenerColorEstado(estado) {
     switch(estado) {
-        case 'ACTIVO': return '#22c55e';     // VERDE
-        case 'REGULAR': return '#f97316';    // ANARANJADO
-        case 'SIN TANTO USO': return '#eab308'; // AMARILLO
-        case 'INACTIVO': return '#ef4444';   // ROJO
+        case 'ACTIVO': return '#22c55e';
+        case 'REGULAR': return '#f97316';
+        case 'SIN TANTO USO': return '#eab308';
+        case 'INACTIVO': return '#ef4444';
         default: return '#64748b';
     }
 }
 
-// Función auxiliar para formatear números
 function formatearNumeroExport(num, dec = 2) {
     if (num === null || num === undefined || isNaN(num)) return dec === 0 ? '0' : '0.00';
     const numero = Number(num);
@@ -146,7 +141,6 @@ function formatearNumeroExport(num, dec = 2) {
     return numero.toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
-// Función para formatear fecha a DD/MM/YYYY
 function formatearFechaExport(fecha) {
     if (!fecha) return '-';
     if (typeof fecha === 'string' && fecha.includes('-')) {
@@ -161,7 +155,6 @@ function formatearFechaExport(fecha) {
     return fecha;
 }
 
-// Función para obtener nombre del mes
 function obtenerNombreMesExport(fecha) {
     if (!fecha) return '-';
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -173,10 +166,37 @@ function obtenerNombreMesExport(fecha) {
     return '-';
 }
 
-// Función principal que muestra el diálogo de exportación
+function obtenerMesDesdeFechaExport(fecha) {
+    if (!fecha) return null;
+    if (typeof fecha === 'string' && fecha.includes('-')) {
+        const mesNum = parseInt(fecha.split('-')[1]);
+        const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+        if (!isNaN(mesNum) && mesNum >= 1 && mesNum <= 12) return meses[mesNum - 1];
+    }
+    return null;
+}
+
+// Aliases para compatibilidad con módulos existentes
+function formatearNumero(num, dec) { return formatearNumeroExport(num, dec); }
+function formatearFecha(fecha) { return formatearFechaExport(fecha); }
+
+// ============================================================
+// DIÁLOGO DE EXPORTACIÓN MEJORADO
+// ============================================================
 function mostrarDialogoExportacion() {
-    const ejecutivos = [...new Set(DATOS_COMPLETOS?.equipos.map(e => e.responsable_real).filter(e => e))];
-    const meses = DATOS_COMPLETOS?.meses_disponibles || [];
+    const datos = getDatosGlobales();
+    const ejecutivos = [...new Set(datos?.equipos?.map(e => e.responsable_real).filter(e => e)) || [])];
+    
+    // Extraer meses disponibles
+    const mesesSet = new Set();
+    if (datos?.equipos) {
+        datos.equipos.forEach(e => {
+            const mes = obtenerMesDesdeFechaExport(e.fecha_venta);
+            if (mes) mesesSet.add(mes);
+        });
+    }
+    const ordenMeses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+    const mesesDisponibles = ordenMeses.filter(m => mesesSet.has(m));
     
     const modal = document.createElement('div');
     modal.id = 'modalExportacion';
@@ -195,12 +215,24 @@ function mostrarDialogoExportacion() {
         font-family: 'Inter', sans-serif;
     `;
     
+    const selectStyle = `
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--borde);
+        background: var(--superficie2);
+        color: var(--texto);
+        font-size: 14px;
+        cursor: pointer;
+        margin-bottom: 12px;
+    `;
+    
     modal.innerHTML = `
         <div style="
             background: var(--superficie);
             border-radius: 24px;
             padding: 32px;
-            max-width: 500px;
+            max-width: 520px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
@@ -211,84 +243,72 @@ function mostrarDialogoExportacion() {
                 📥 Exportar Reporte
             </h2>
             
-            <div style="margin-bottom: 24px;">
+            <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--texto);">
-                    📄 Formato de exportación:
+                    📄 Formato:
                 </label>
-                <select id="formatoExportacion" style="
-                    width: 100%;
-                    padding: 12px;
-                    border-radius: 12px;
-                    border: 1px solid var(--borde);
-                    background: var(--superficie2);
-                    color: var(--texto);
-                    font-size: 14px;
-                    cursor: pointer;
-                ">
+                <select id="formatoExportacion" style="${selectStyle}">
                     <option value="excel">📊 Excel (CSV)</option>
-                    <option value="pdf">📄 PDF</option>
+                    <option value="pdf">📄 PDF (Imprimir / Guardar)</option>
                     <option value="txt">📝 Texto (TXT)</option>
                 </select>
             </div>
             
-            <div style="margin-bottom: 24px;">
+            <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--texto);">
-                    🎯 Rango de datos:
+                    🎯 Rango base:
                 </label>
-                <select id="rangoExportacion" style="
-                    width: 100%;
-                    padding: 12px;
-                    border-radius: 12px;
-                    border: 1px solid var(--borde);
-                    background: var(--superficie2);
-                    color: var(--texto);
-                    font-size: 14px;
-                    cursor: pointer;
-                    margin-bottom: 12px;
-                ">
-                    <option value="filtros_actuales">✅ Datos con filtros actuales</option>
+                <select id="rangoExportacion" style="${selectStyle}">
                     <option value="todos">📋 Todos los datos</option>
+                    <option value="filtros_actuales">✅ Datos con filtros actuales del dashboard</option>
                     <option value="ejecutivo">👤 Por ejecutivo específico</option>
-                    <option value="mes">📅 Por mes específico</option>
+                    <option value="mes">📅 Por mes específico (rango)</option>
                 </select>
                 
-                <div id="opcionEjecutivo" style="display: none; margin-top: 12px;">
-                    <select id="ejecutivoSeleccionado" style="
-                        width: 100%;
-                        padding: 12px;
-                        border-radius: 12px;
-                        border: 1px solid var(--borde);
-                        background: var(--superficie2);
-                        color: var(--texto);
-                        font-size: 14px;
-                    ">
+                <div id="opcionEjecutivo" style="display: none; margin-top: 4px;">
+                    <select id="ejecutivoSeleccionado" style="${selectStyle}">
                         <option value="">Seleccionar ejecutivo...</option>
                         ${ejecutivos.map(exec => `<option value="${exec}">${exec}</option>`).join('')}
                     </select>
                 </div>
                 
-                <div id="opcionMes" style="display: none; margin-top: 12px;">
-                    <select id="mesSeleccionado" style="
-                        width: 100%;
-                        padding: 12px;
-                        border-radius: 12px;
-                        border: 1px solid var(--borde);
-                        background: var(--superficie2);
-                        color: var(--texto);
-                        font-size: 14px;
-                    ">
+                <div id="opcionMes" style="display: none; margin-top: 4px;">
+                    <select id="mesSeleccionado" style="${selectStyle}">
                         <option value="">Seleccionar mes...</option>
-                        ${meses.map(mes => `<option value="${mes}">${mes}</option>`).join('')}
+                        ${mesesDisponibles.map(mes => `<option value="${mes}">${mes}</option>`).join('')}
                     </select>
                 </div>
             </div>
             
+            <div style="margin-bottom: 20px; padding-top: 16px; border-top: 1px solid var(--borde);">
+                <label style="display: block; margin-bottom: 12px; font-weight: 600; color: var(--texto);">
+                    🎯 Filtrar por Estado GPV
+                </label>
+                <select id="filtroEstadoGPV" style="${selectStyle}">
+                    <option value="todos">📋 Todos los estados</option>
+                    <option value="meta">🎯 Meta (≥ S/ 700)</option>
+                    <option value="promedio">📊 Promedio (S/ 400 - 699)</option>
+                    <option value="bajo">⚠️ Bajo (S/ 1 - 399)</option>
+                    <option value="riesgo">🚨 Riesgo (S/ 0)</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 12px; font-weight: 600; color: var(--texto);">
+                    📅 Filtrar por Mes de Venta
+                </label>
+                <select id="filtroMesVenta" style="${selectStyle}">
+                    <option value="todos">📅 Todos los meses</option>
+                    ${mesesDisponibles.map(mes => `<option value="${mes}">${mes}</option>`).join('')}
+                </select>
+            </div>
+            
             <div style="margin-bottom: 24px;">
                 <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--texto);">
-                    📊 Información adicional:
+                    📊 Contenido del reporte:
                 </label>
                 <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--texto); font-size: 14px;">
                         <input type="checkbox" id="incluirTabla" checked>
                         <span>Incluir tabla detallada</span>
                     </label>
@@ -336,16 +356,17 @@ function cerrarModalExportacion() {
 }
 
 function obtenerDatosConFiltrosAplicados() {
-    let equipos = [...(DATOS_COMPLETOS?.equipos || [])];
+    let datos = getDatosGlobales()?.equipos || [];
+    if (datos.length === 0) return datos;
     
     if (typeof mesActual !== 'undefined' && mesActual !== 'TODOS') {
-        equipos = equipos.filter(e => e.mes_venta === mesActual);
+        datos = datos.filter(e => obtenerMesDesdeFechaExport(e.fecha_venta) === mesActual);
     }
     if (typeof ejecutivoActual !== 'undefined' && ejecutivoActual !== 'TODOS') {
-        equipos = equipos.filter(e => e.responsable_real === ejecutivoActual);
+        datos = datos.filter(e => e.responsable_real === ejecutivoActual);
     }
     if (typeof filtroGPVActual !== 'undefined' && filtroGPVActual !== 'todos') {
-        equipos = equipos.filter(e => {
+        datos = datos.filter(e => {
             const gpvActual = limpiarNumero(e.gpv_mes_actual_corriendo);
             switch(filtroGPVActual) {
                 case 'meta': return gpvActual >= 700;
@@ -356,31 +377,41 @@ function obtenerDatosConFiltrosAplicados() {
             }
         });
     }
-    
-    return equipos;
+    return datos;
 }
 
+// ============================================================
+// EJECUTAR EXPORTACIÓN CON FILTROS
+// ============================================================
 function ejecutarExportacion() {
     const formato = document.getElementById('formatoExportacion').value;
     const rango = document.getElementById('rangoExportacion').value;
-    const incluirTabla = document.getElementById('incluirTabla').checked;
+    const filtroEstado = document.getElementById('filtroEstadoGPV')?.value || 'todos';
+    const filtroMes = document.getElementById('filtroMesVenta')?.value || 'todos';
+    const incluirTabla = document.getElementById('incluirTabla')?.checked ?? true;
     
     let datos = [];
     let ejecutivoEspecifico = null;
     let mesEspecifico = null;
+    let textoFiltroEstado = null;
+    let textoFiltroMes = 'Todos los meses';
     
+    const mapEstadoTexto = {
+        'todos': null,
+        'meta': '🎯 Meta (≥ S/ 700)',
+        'promedio': '📊 Promedio (S/ 400 - 699)',
+        'bajo': '⚠️ Bajo (S/ 1 - 399)',
+        'riesgo': '🚨 Riesgo (S/ 0)'
+    };
+    textoFiltroEstado = mapEstadoTexto[filtroEstado] || null;
+    
+    // Obtener datos base según rango
     switch(rango) {
         case 'filtros_actuales':
             datos = obtenerDatosConFiltrosAplicados();
-            if (typeof ejecutivoActual !== 'undefined' && ejecutivoActual !== 'TODOS') {
-                ejecutivoEspecifico = ejecutivoActual;
-            }
-            if (typeof mesActual !== 'undefined' && mesActual !== 'TODOS') {
-                mesEspecifico = mesActual;
-            }
             break;
         case 'todos':
-            datos = [...(DATOS_COMPLETOS?.equipos || [])];
+            datos = [...(getDatosGlobales()?.equipos || [])];
             break;
         case 'ejecutivo':
             ejecutivoEspecifico = document.getElementById('ejecutivoSeleccionado').value;
@@ -388,7 +419,7 @@ function ejecutarExportacion() {
                 alert('Por favor selecciona un ejecutivo');
                 return;
             }
-            datos = DATOS_COMPLETOS.equipos.filter(e => e.responsable_real === ejecutivoEspecifico);
+            datos = getDatosGlobales()?.equipos.filter(e => e.responsable_real === ejecutivoEspecifico) || [];
             break;
         case 'mes':
             mesEspecifico = document.getElementById('mesSeleccionado').value;
@@ -396,12 +427,33 @@ function ejecutarExportacion() {
                 alert('Por favor selecciona un mes');
                 return;
             }
-            datos = DATOS_COMPLETOS.equipos.filter(e => e.mes_venta === mesEspecifico);
+            datos = getDatosGlobales()?.equipos.filter(e => obtenerMesDesdeFechaExport(e.fecha_venta) === mesEspecifico) || [];
+            textoFiltroMes = mesEspecifico;
             break;
     }
     
+    // Aplicar filtro adicional: Estado GPV
+    if (filtroEstado !== 'todos') {
+        datos = datos.filter(e => {
+            const gpvActual = limpiarNumero(e.gpv_mes_actual_corriendo);
+            switch(filtroEstado) {
+                case 'meta': return gpvActual >= 700;
+                case 'promedio': return gpvActual >= 400 && gpvActual < 700;
+                case 'bajo': return gpvActual > 0 && gpvActual < 400;
+                case 'riesgo': return gpvActual === 0;
+                default: return true;
+            }
+        });
+    }
+    
+    // Aplicar filtro adicional: Mes de Venta
+    if (filtroMes !== 'todos') {
+        datos = datos.filter(e => obtenerMesDesdeFechaExport(e.fecha_venta) === filtroMes);
+        textoFiltroMes = filtroMes;
+    }
+    
     if (datos.length === 0) {
-        alert('No hay datos para exportar');
+        alert('No hay datos para exportar con los filtros seleccionados');
         return;
     }
     
@@ -409,19 +461,24 @@ function ejecutarExportacion() {
     
     let nombreBase = 'reporte_ventas';
     if (ejecutivoEspecifico) {
-        const nombreLimpio = ejecutivoEspecifico.replace(/[^a-zA-Z0-9]/g, '_');
-        nombreBase = `REPORTE-${nombreLimpio}`;
+        nombreBase = `REPORTE-${ejecutivoEspecifico.replace(/[^a-zA-Z0-9]/g, '_')}`;
     }
+    
+    const filtrosReporte = {
+        ejecutivo: ejecutivoEspecifico,
+        mes: textoFiltroMes,
+        estado: textoFiltroEstado
+    };
     
     switch(formato) {
         case 'excel':
-            exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico);
+            exportarExcelCompleto(datos, incluirTabla, nombreBase, filtrosReporte);
             break;
         case 'pdf':
-            exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico);
+            exportarPDFCompleto(datos, incluirTabla, nombreBase, filtrosReporte);
             break;
         case 'txt':
-            exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico);
+            exportarTXTCompleto(datos, incluirTabla, nombreBase, filtrosReporte);
             break;
     }
 }
@@ -429,20 +486,21 @@ function ejecutarExportacion() {
 // ============================================================
 // EXPORTAR EXCEL (CSV)
 // ============================================================
-function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
+function exportarExcelCompleto(datos, incluirTabla, nombreBase, filtrosReporte = {}) {
+    const { ejecutivo, mes, estado } = filtrosReporte;
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
     const fechaActualizacion = obtenerFechaUltimaActualizacion();
     let contenido = [];
     
     let tituloReporte = 'REPORTE DE VENTAS';
-    if (ejecutivoEspecifico) tituloReporte += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
-    if (mesEspecifico) tituloReporte += ` - MES: ${mesEspecifico}`;
+    if (ejecutivo) tituloReporte += ` - EJECUTIVO: ${ejecutivo}`;
+    if (estado) tituloReporte += ` - ${estado}`;
+    if (mes && mes !== 'Todos los meses') tituloReporte += ` - MES: ${mes}`;
     
     contenido.push(`=== ${tituloReporte} ===`);
     contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
     contenido.push(`📅 ÚLTIMA ACTUALIZACIÓN DE DATOS: ${fechaActualizacion}`);
     contenido.push(`Total de registros: ${datos.length}`);
-    contenido.push('');
     contenido.push('');
     
     if (incluirTabla) {
@@ -450,36 +508,20 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
         contenido.push('');
         
         const headers = [
-            '#', 
-            'Fecha Venta', 
-            'Mes Venta',
-            'Comercio', 
-            'Serie', 
-            'RUC', 
-            'Ejecutivo',
-            'Fecha Activación',
-            'Última Transacción',
-            'GPV M0', 
-            'TRX M0', 
-            'GPV M1', 
-            'TRX M1', 
-            'GPV M2', 
-            'TRX M2',
-            'Mes Actual',
-            'GPV Actual', 
-            'TRX Actual', 
-            'Estado'
+            '#', 'Fecha Venta', 'Mes Venta', 'Comercio', 'Serie', 'RUC', 'Ejecutivo',
+            'Fecha Activación', 'Última Transacción', 'GPV M0', 'TRX M0', 'GPV M1', 'TRX M1', 
+            'GPV M2', 'TRX M2', 'Mes Actual', 'GPV Actual', 'TRX Actual', 'Estado'
         ];
         
         contenido.push(headers.map(h => `"${h}"`).join(','));
         
         datos.forEach((item, i) => {
             const gpvActual = limpiarNumero(item.gpv_mes_actual_corriendo);
-            const estado = getEstadoPorGPV(gpvActual);
+            const estadoItem = getEstadoPorGPV(gpvActual);
             let estadoTexto = '';
-            if (estado === 'ACTIVO') estadoTexto = 'Activo (≥ S/700)';
-            else if (estado === 'REGULAR') estadoTexto = 'Regular (S/400-699)';
-            else if (estado === 'SIN TANTO USO') estadoTexto = 'Sin tanto uso (S/1-399)';
+            if (estadoItem === 'ACTIVO') estadoTexto = 'Activo (≥ S/700)';
+            else if (estadoItem === 'REGULAR') estadoTexto = 'Regular (S/400-699)';
+            else if (estadoItem === 'SIN TANTO USO') estadoTexto = 'Sin tanto uso (S/1-399)';
             else estadoTexto = 'Inactivo (S/0)';
             
             const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
@@ -519,15 +561,17 @@ function exportarExcelCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecif
 // ============================================================
 // EXPORTAR TXT
 // ============================================================
-function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
+function exportarTXTCompleto(datos, incluirTabla, nombreBase, filtrosReporte = {}) {
+    const { ejecutivo, mes, estado } = filtrosReporte;
     const nombreArchivo = `${nombreBase}_${new Date().toISOString().split('T')[0]}`;
     const fechaActualizacion = obtenerFechaUltimaActualizacion();
     let contenido = [];
     const separador = '='.repeat(100);
     
     let tituloReporte = 'REPORTE DE VENTAS';
-    if (ejecutivoEspecifico) tituloReporte += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
-    if (mesEspecifico) tituloReporte += ` - MES: ${mesEspecifico}`;
+    if (ejecutivo) tituloReporte += ` - EJECUTIVO: ${ejecutivo}`;
+    if (estado) tituloReporte += ` - ${estado}`;
+    if (mes && mes !== 'Todos los meses') tituloReporte += ` - MES: ${mes}`;
     
     contenido.push(separador);
     contenido.push(tituloReporte);
@@ -535,7 +579,6 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     contenido.push(`Fecha de exportación: ${new Date().toLocaleString()}`);
     contenido.push(`📅 ÚLTIMA ACTUALIZACIÓN DE DATOS: ${fechaActualizacion}`);
     contenido.push(`Total de registros: ${datos.length}`);
-    contenido.push('');
     contenido.push('');
     
     if (incluirTabla) {
@@ -567,17 +610,17 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             pad('TRX M2', 8) +
             pad('GPV Act', 10) +
             pad('TRX Act', 8) +
-            pad('Estado', 15)
+            pad('Estado', 18)
         );
         contenido.push('-'.repeat(250));
         
         datos.forEach((item, i) => {
             const gpvActual = limpiarNumero(item.gpv_mes_actual_corriendo);
-            const estado = getEstadoPorGPV(gpvActual);
+            const estadoItem = getEstadoPorGPV(gpvActual);
             let estadoTexto = '';
-            if (estado === 'ACTIVO') estadoTexto = 'Activo (≥700)';
-            else if (estado === 'REGULAR') estadoTexto = 'Regular (400-699)';
-            else if (estado === 'SIN TANTO USO') estadoTexto = 'Sin tanto uso (1-399)';
+            if (estadoItem === 'ACTIVO') estadoTexto = 'Activo (≥700)';
+            else if (estadoItem === 'REGULAR') estadoTexto = 'Regular (400-699)';
+            else if (estadoItem === 'SIN TANTO USO') estadoTexto = 'Sin tanto uso (1-399)';
             else estadoTexto = 'Inactivo (0)';
             
             const fechaVentaFormateada = formatearFechaExport(item.fecha_venta);
@@ -603,72 +646,24 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 pad(item.trx_m2 || 0, 8) +
                 pad(gpvActual, 10) +
                 pad(item.trx_mes_actual_corriendo || 0, 8) +
-                pad(estadoTexto, 15)
+                pad(estadoTexto, 18)
             );
         });
         
-        // Agregar resumen de estados
         contenido.push('');
         contenido.push(separador);
         contenido.push('RESUMEN POR ESTADO');
         contenido.push(separador);
         
-        const activos = datos.filter(e => {
-            const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
-            return getEstadoPorGPV(gpv) === 'ACTIVO';
-        }).length;
-        const regulares = datos.filter(e => {
-            const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
-            return getEstadoPorGPV(gpv) === 'REGULAR';
-        }).length;
-        const sinUso = datos.filter(e => {
-            const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
-            return getEstadoPorGPV(gpv) === 'SIN TANTO USO';
-        }).length;
-        const inactivos = datos.filter(e => {
-            const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
-            return getEstadoPorGPV(gpv) === 'INACTIVO';
-        }).length;
+        const activos = datos.filter(e => getEstadoPorGPV(limpiarNumero(e.gpv_mes_actual_corriendo)) === 'ACTIVO').length;
+        const regulares = datos.filter(e => getEstadoPorGPV(limpiarNumero(e.gpv_mes_actual_corriendo)) === 'REGULAR').length;
+        const sinUso = datos.filter(e => getEstadoPorGPV(limpiarNumero(e.gpv_mes_actual_corriendo)) === 'SIN TANTO USO').length;
+        const inactivos = datos.filter(e => getEstadoPorGPV(limpiarNumero(e.gpv_mes_actual_corriendo)) === 'INACTIVO').length;
         
         contenido.push(`✅ ACTIVOS (≥ S/700): ${activos} equipos`);
         contenido.push(`🟠 REGULARES (S/400-699): ${regulares} equipos`);
         contenido.push(`🟡 SIN TANTO USO (S/1-399): ${sinUso} equipos`);
         contenido.push(`🔴 INACTIVOS (S/0): ${inactivos} equipos`);
-        
-        // Agregar detalle de transacciones por mes
-        contenido.push('');
-        contenido.push(separador);
-        contenido.push('DETALLE DE TRANSACCIONES POR MES (PRIMEROS 20 REGISTROS)');
-        contenido.push(separador);
-        contenido.push('');
-        
-        const padDetalle = (texto, ancho) => {
-            const str = String(texto || '-');
-            return str.length > ancho ? str.substring(0, ancho - 3) + '...' : str.padEnd(ancho);
-        };
-        
-        contenido.push(
-            padDetalle('#', 5) +
-            padDetalle('Serie', 15) +
-            padDetalle('Comercio', 30) +
-            padDetalle('TRX M0', 8) +
-            padDetalle('TRX M1', 8) +
-            padDetalle('TRX M2', 8) +
-            padDetalle('TRX Actual', 12)
-        );
-        contenido.push('-'.repeat(86));
-        
-        datos.slice(0, 20).forEach((item, i) => {
-            contenido.push(
-                padDetalle(i + 1, 5) +
-                padDetalle(item.numero_serie || '-', 15) +
-                padDetalle(item.comercio || '-', 30) +
-                padDetalle(item.trx_m0 || 0, 8) +
-                padDetalle(item.trx_m1 || 0, 8) +
-                padDetalle(item.trx_m2 || 0, 8) +
-                padDetalle(item.trx_mes_actual_corriendo || 0, 12)
-            );
-        });
     }
     
     const blob = new Blob([contenido.join('\n')], { type: 'text/plain;charset=utf-8;' });
@@ -678,36 +673,23 @@ function exportarTXTCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
 // ============================================================
 // EXPORTAR PDF
 // ============================================================
-function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecifico, mesEspecifico) {
+function exportarPDFCompleto(datos, incluirTabla, nombreBase, filtrosReporte = {}) {
     const ventanaReporte = window.open('', '_blank');
     if (!ventanaReporte) {
         alert('Por favor, permite las ventanas emergentes para generar el reporte en PDF.');
         return;
     }
 
+    const { ejecutivo, mes, estado } = filtrosReporte;
     const fechaActualizacion = obtenerFechaUltimaActualizacion();
     
     let tituloPrincipal = 'REPORTE DE VENTAS';
-    if (ejecutivoEspecifico) tituloPrincipal += ` - EJECUTIVO: ${ejecutivoEspecifico}`;
-    if (mesEspecifico) tituloPrincipal += ` - MES: ${mesEspecifico}`;
-
-    // Calcular estadísticas USANDO limpiarNumero
-    const activos = datos.filter(e => {
-        const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
-        return getEstadoPorGPV(gpv) === 'ACTIVO';
-    }).length;
-    const regulares = datos.filter(e => {
-        const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
-        return getEstadoPorGPV(gpv) === 'REGULAR';
-    }).length;
-    const sinUso = datos.filter(e => {
-        const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
-        return getEstadoPorGPV(gpv) === 'SIN TANTO USO';
-    }).length;
-    const inactivos = datos.filter(e => {
-        const gpv = limpiarNumero(e.gpv_mes_actual_corriendo);
-        return getEstadoPorGPV(gpv) === 'INACTIVO';
-    }).length;
+    if (ejecutivo) tituloPrincipal += ` - ${ejecutivo}`;
+    
+    const activos = datos.filter(e => getEstadoPorGPV(limpiarNumero(e.gpv_mes_actual_corriendo)) === 'ACTIVO').length;
+    const regulares = datos.filter(e => getEstadoPorGPV(limpiarNumero(e.gpv_mes_actual_corriendo)) === 'REGULAR').length;
+    const sinUso = datos.filter(e => getEstadoPorGPV(limpiarNumero(e.gpv_mes_actual_corriendo)) === 'SIN TANTO USO').length;
+    const inactivos = datos.filter(e => getEstadoPorGPV(limpiarNumero(e.gpv_mes_actual_corriendo)) === 'INACTIVO').length;
 
     let contenidoHTML = `
     <!DOCTYPE html>
@@ -728,7 +710,6 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             }
             .report-container { max-width: 100%; margin: 0 auto; }
             
-            /* HEADER PRINCIPAL */
             .header {
                 text-align: center;
                 margin-bottom: 15px;
@@ -781,7 +762,24 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 margin-left: 8px;
             }
             
-            /* SECCIÓN RESUMEN POR ESTADO */
+            .filtros-badge {
+                margin-top: 10px;
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .filtro-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 10px;
+                font-weight: 700;
+            }
+            
             .resumen-section {
                 margin: 20px 0;
             }
@@ -847,7 +845,6 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 font-weight: 600;
             }
             
-            /* TABLA DETALLADA */
             .tabla-section {
                 margin-top: 20px;
             }
@@ -891,7 +888,6 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             
             tr:nth-child(even) { background-color: #fafafa; }
             
-            /* Columnas específicas */
             .col-num { width: 3%; }
             .col-fecha { width: 7%; }
             .col-mes { width: 6%; }
@@ -903,9 +899,8 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             .col-ultima { width: 7%; }
             .col-gpv { width: 6%; text-align: right !important; }
             .col-trx { width: 4%; }
-            .col-estado { width: 8%; }
+            .col-estado { width: 10%; }
             
-            /* Estados en tabla con colores */
             .estado-badge {
                 display: inline-flex;
                 align-items: center;
@@ -941,7 +936,6 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
             .text-left { text-align: left !important; }
             .font-bold { font-weight: 700; }
             
-            /* FOOTER */
             .footer {
                 margin-top: 30px;
                 padding-top: 15px;
@@ -951,7 +945,6 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 border-top: 1px solid #e5e7eb;
             }
             
-            /* PRINT OPTIMIZATIONS */
             @media print {
                 body { margin: 0; padding: 10px; }
                 th { background: #f8fafc !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -959,6 +952,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 .resumen-card { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 .estado-badge { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 .header { border-bottom-color: #0ea5e9 !important; -webkit-print-color-adjust: exact !important; }
+                .filtro-tag { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
             
             @page {
@@ -969,7 +963,6 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
     </head>
     <body>
         <div class="report-container">
-            <!-- HEADER -->
             <div class="header">
                 <div class="header-icon">📊</div>
                 <h1>${tituloPrincipal}</h1>
@@ -978,13 +971,16 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                     <span class="fecha-actualizacion">📅 ACTUALIZADO HASTA: ${fechaActualizacion}</span>
                     <span class="total-registros">📋 Total de registros: ${datos.length}</span>
                 </div>
+                <div class="filtros-badge">
+                    ${ejecutivo ? `<span class="filtro-tag" style="background:#f0f9ff; border:1px solid #0ea5e9; color:#0ea5e9;">👤 ${ejecutivo}</span>` : ''}
+                    ${estado ? `<span class="filtro-tag" style="background:#fff7ed; border:1px solid #f97316; color:#f97316;">${estado}</span>` : ''}
+                    ${mes && mes !== 'Todos los meses' ? `<span class="filtro-tag" style="background:#f0fdf4; border:1px solid #22c55e; color:#16a34a;">📅 ${mes}</span>` : ''}
+                </div>
             </div>
     `;
 
     if (incluirTabla) {
-        // RESUMEN POR ESTADO
         contenidoHTML += `
-            <!-- RESUMEN POR ESTADO -->
             <div class="resumen-section">
                 <div class="resumen-title">📊 Resumen por Estado</div>
                 <div class="resumen-grid">
@@ -1007,7 +1003,6 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 </div>
             </div>
             
-            <!-- TABLA DETALLADA -->
             <div class="tabla-section">
                 <div class="tabla-title">📋 Tabla Detallada de Equipos</div>
                 <div style="overflow-x: auto;">
@@ -1058,7 +1053,7 @@ function exportarPDFCompleto(datos, incluirTabla, nombreBase, ejecutivoEspecific
                 estadoIcono = '🟠';
             } else if (estado === 'SIN TANTO USO') {
                 estadoClass = 'estado-sin-uso';
-                estadoTexto = 'Sin tanto uso';
+                estadoTexto = 'Sin uso';
                 estadoIcono = '🟡';
             } else {
                 estadoClass = 'estado-inactivo';
